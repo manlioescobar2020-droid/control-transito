@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control de Tránsito</title>
+    <!-- Cargamos Socket.io -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* LOGIN */
+        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; background: #2c3e50; color: white; }
+        .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 350px; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .login-box h2 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
+        input { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        button:active { background-color: #219150; }
+        button.secondary { background-color: #7f8c8d; margin-top: 5px; }
+
+        /* APP PRINCIPAL */
+        #app-screen { display: none; flex-direction: column; height: 100%; }
+        header { background-color: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; overflow-y: auto; flex: 1; }
+        
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+
+        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .checkbox-item { display: flex; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #eee; }
+        .checkbox-item input { width: auto; margin-right: 10px; transform: scale(1.5); }
+        .checkbox-item label { margin: 0; cursor: pointer; font-size: 14px; }
+
+        .status-msg { padding: 10px; margin-top: 10px; border-radius: 5px; display: none; text-align: center; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        #gps-status { font-size: 12px; color: #666; text-align: center; margin-top: 5px; }
+        .gps-ok { color: green; font-weight: bold; }
+        .gps-error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Acceso Inspector</h2>
+            <input type="text" id="login-user" placeholder="Usuario">
+            <input type="password" id="login-pass" placeholder="Contraseña">
+            <button onclick="login()">Ingresar</button>
+            <div id="login-msg" class="status-msg"></div>
+        </div>
+    </div>
+
+    <!-- PANTALLA APP -->
+    <div id="app-screen">
+        <header>
+            <span id="inspector-name">Inspector</span>
+            <button onclick="logout()" style="width: auto; padding: 5px 15px; font-size: 12px; background: #c0392b;">Salir</button>
+        </header>
+
+        <div class="container">
+            <!-- BÚSQUEDA -->
+            <div class="card">
+                <h3>🔍 Inscripción Rápida</h3>
+                <input type="text" id="input-patente" placeholder="Ingrese Patrícula (Ej: ABC123)" onkeyup="this.value = this.value.toUpperCase()">
+                <button onclick="buscarVehiculo()">Buscar / Agregar</button>
+                <div id="gps-status">📡 Iniciando GPS...</div>
+            </div>
+
+            <!-- FORMULARIO -->
+            <div id="control-form" class="card" style="display: none;">
+                <h3>📝 Ficha del Vehículo</h3>
+                
+                <label>Modelo:</label>
+                <input type="text" id="modelo" placeholder="Ej: Fiat Cronos">
+                
+                <label>Número 08:</label>
+                <input type="text" id="numero-08" placeholder="ID del Carnet 08">
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex:1">
+                        <label>Vence Seguro:</label>
+                        <input type="date" id="fecha-seguro">
+                    </div>
+                    <div style="flex:1">
+                        <label>Vence RTO:</label>
+                        <input type="date" id="fecha-rto">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; font-size: 16px;">Requisitos</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item"><input type="checkbox" id="chk-cedula"><label>Cédula</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="chk-licencia"><label>Licencia</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="chk-seguro"><label>Seguro Vigente</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="chk-08"><label>08 Pagado</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="chk-rto"><label>RTO Habilitada</label></div>
+                </div>
+
+                <label style="margin-top: 15px; display:block;">Observaciones:</label>
+                <input type="text" id="observaciones" placeholder="Ej: Retención de licencia">
+
+                <button onclick="registrarControl()">💾 GUARDAR CONTROL</button>
+                <div id="form-msg" class="status-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentUserId = null;
+        let currentUserName = null;
+        let currentLat = null;
+        let currentLon = null;
+
+        socket = io('http://localhost:3000');
+
+        socket.on('connect', () => { console.log('✅ Socket conectado'); });
+        
+        socket.on('nuevo_control_registrado', (data) => {
+            // Aquí podrías poner un sonido
+            alert(`⚠️ Nuevo control: ${data.patricula} por inspector #${data.id_inspector}`);
+        });
+
+        async function login() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const msgDiv = document.getElementById('login-msg');
+
+            try {
+                const response = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: user, password: pass })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUserId = data.user.id;
+                    currentUserName = data.user.nombre;
+                    document.getElementById('inspector-name').innerText = data.user.nombre;
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'flex';
+                    iniciarGPS();
+                } else {
+                    mostrarError(msgDiv, data.message);
+                }
+            } catch (err) {
+                mostrarError(msgDiv, 'Error de conexión');
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        async function buscarVehiculo() {
+            const patente = document.getElementById('input-patente').value.toUpperCase().trim();
+            if (!patente) return alert('Ingrese una patente');
+            const form = document.getElementById('control-form');
+            form.style.display = 'block';
+
+            try {
+                const response = await fetch(`http://localhost:3000/vehiculos/${patente}`);
+                const data = await response.json();
+
+                if (data) {
+                    document.getElementById('modelo').value = data.modelo || '';
+                    document.getElementById('numero-08').value = data.numero_08 || '';
+                    document.getElementById('fecha-seguro').value = data.fecha_seguro_vence || '';
+                    document.getElementById('fecha-rto').value = data.fecha_rto_vence || '';
+                } else {
+                    // Limpiar para nuevo registro
+                    document.getElementById('modelo').value = '';
+                    document.getElementById('numero-08').value = '';
+                    document.getElementById('fecha-seguro').value = '';
+                    document.getElementById('fecha-rto').value = '';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al buscar vehículo');
+            }
+        }
+
+        async function registrarControl() {
+            // --- CORRECCIÓN GPS: NO BLOQUEAR SI FALLA ---
+            const gpsStatus = document.getElementById('gps-status');
+            if (currentLat === null || currentLon === null) {
+                console.warn("⚠️ Guardando sin GPS (Modo PC o señal débil)");
+                gpsStatus.innerText = "📡 Guardando sin GPS exacto";
+                // NO hacemos 'return', dejamos que continúe
+            }
+            // ---------------------------------------------
+
+            const patente = document.getElementById('input-patente').value.toUpperCase();
+            const bodyData = {
+                patricula: patente,
+                modelo: document.getElementById('modelo').value,
+                numero_08: document.getElementById('numero-08').value,
+                fecha_seguro_vence: document.getElementById('fecha-seguro').value || null,
+                fecha_rto_vence: document.getElementById('fecha-rto').value || null,
+                id_inspector: currentUserId,
+                latitud: currentLat, 
+                longitud: currentLon,
+                texto_ubicacion: currentLat ? "GPS Automático" : "Sin GPS (Manual)",
+                tiene_cedula: document.getElementById('chk-cedula').checked,
+                tiene_licencia: document.getElementById('chk-licencia').checked,
+                tiene_seguro: document.getElementById('chk-seguro').checked,
+                tiene_08_pago: document.getElementById('chk-08').checked,
+                tiene_rto_habilitada: document.getElementById('chk-rto').checked,
+                observaciones: document.getElementById('observaciones').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/registrar-control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const msgDiv = document.getElementById('form-msg');
+                    msgDiv.className = 'status-msg status-success';
+                    msgDiv.style.display = 'block';
+                    msgDiv.innerText = '¡Guardado correctamente!';
+                    
+                    setTimeout(() => {
+                        msgDiv.style.display = 'none';
+                        document.getElementById('input-patente').value = '';
+                        document.getElementById('control-form').style.display = 'none';
+                        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+                        document.getElementById('observaciones').value = '';
+                    }, 2000);
+
+                } else {
+                    alert('Error: ' + JSON.stringify(result));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de red al guardar');
+            }
+        }
+
+        function iniciarGPS() {
+            const status = document.getElementById('gps-status');
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition((position) => {
+                    currentLat = position.coords.latitude;
+                    currentLon = position.coords.longitude;
+                    status.innerText = `📍 GPS Activo: ${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}`;
+                    status.className = 'gps-ok';
+                }, (error) => {
+                    status.innerText = "❌ GPS no disponible (Guardará sin ubicación)";
+                    status.className = 'gps-error';
+                    console.warn("GPS Error:", error);
+                }, { enableHighAccuracy: true });
+            } else {
+                status.innerText = "GPS no soportado en este dispositivo";
+            }
+        }
+
+        function mostrarError(div, text) {
+            div.className = 'status-msg status-error';
+            div.style.display = 'block';
+            div.innerText = text;
+        }
+    </script>
+</body>
+</html>

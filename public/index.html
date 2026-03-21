@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control de Tránsito</title>
+    <style>
+        body { font-family: sans-serif; background: #ecf0f1; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #bdc3c7; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        button.danger { background: #e74c3c; }
+        button.success { background: #27ae60; }
+        
+        .hidden { display: none; }
+        
+        .card { margin-bottom: 15px; padding: 10px; border-radius: 5px; }
+        .alert-warning { background: #f1c40f; color: #7f6000; border: 1px solid #f39c12; }
+        .alert-success { background: #2ecc71; color: white; }
+        .alert-danger { background: #e74c3c; color: white; }
+        
+        label { font-size: 14px; color: #7f8c8d; }
+        .grupo-check { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
+        .grupo-check input { width: auto; }
+    </style>
+    <!-- Socket.io (Necesario para tiempo real) -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="pantallaLogin" class="container">
+        <h2>Iniciar Sesión</h2>
+        <input type="text" id="txtUsuario" placeholder="Usuario">
+        <input type="password" id="txtPassword" placeholder="Contraseña">
+        <button onclick="iniciarSesion()">Entrar</button>
+        <p id="errorLogin" style="color:red; text-align:center; display:none;">Credenciales incorrectas</p>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL -->
+    <div id="pantallaPrincipal" class="container hidden">
+        <h2>Bienvenido, <span id="nombreInspector"></span></h2>
+        
+        <!-- Sección de Búsqueda -->
+        <div>
+            <label>Ingrese Patente</label>
+            <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase;">
+            <button onclick="buscarVehiculo()">Consultar</button>
+        </div>
+
+        <div id="divResultado" class="hidden"></div>
+
+        <!-- Formulario de Registro (Se muestra solo si es necesario) -->
+        <div id="divFormulario" class="hidden" style="margin-top:20px; border-top:1px solid #ccc; padding-top:10px;">
+            <h3>Datos del Control</h3>
+            
+            <input type="text" id="txtModelo" placeholder="Modelo (Ej: Ford Fiesta)">
+            <input type="number" id="txtNro08" placeholder="Número 08">
+            
+            <label>Vence Seguro</label>
+            <input type="date" id="txtSeguro">
+            
+            <label>Vence RTO</label>
+            <input type="date" id="txtRTO">
+
+            <hr>
+            <div class="grupo-check">
+                <input type="checkbox" id="chkCedula"> <label for="chkCedula">Tiene Cédula</label>
+            </div>
+            <div class="grupo-check">
+                <input type="checkbox" id="chkLicencia"> <label for="chkLicencia">Tiene Licencia</label>
+            </div>
+            <div class="grupo-check">
+                <input type="checkbox" id="chkSeguro"> <label for="chkSeguro">Tiene Seguro</label>
+            </div>
+            <div class="grupo-check">
+                <input type="checkbox" id="chk08"> <label for="chk08">08 Pagado</label>
+            </div>
+            <div class="grupo-check">
+                <input type="checkbox" id="chkRTO"> <label for="chkRTO">RTO Habilitada</label>
+            </div>
+
+            <textarea id="txtObs" placeholder="Observaciones..." style="width:100%; height:60px; margin-top:5px;"></textarea>
+            
+            <button class="success" onclick="registrarControl()">Registrar Control</button>
+        </div>
+        
+        <button class="danger" style="margin-top:20px;" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
+    <script>
+        let usuarioActual = null;
+        let vehiculoActual = null;
+        const socket = io(); // Conexión socket
+
+        // --- FUNCIONES DE AUTENTICACIÓN ---
+        async function iniciarSesion() {
+            const usuario = document.getElementById('txtUsuario').value;
+            const pass = document.getElementById('txtPassword').value;
+            
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password: pass })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                usuarioActual = data.user;
+                document.getElementById('nombreInspector').innerText = usuarioActual.nombre || usuarioActual.usuario;
+                document.getElementById('pantallaLogin').classList.add('hidden');
+                document.getElementById('pantallaPrincipal').classList.remove('hidden');
+                document.getElementById('errorLogin').style.display = 'none';
+            } else {
+                document.getElementById('errorLogin').style.display = 'block';
+            }
+        }
+
+        function cerrarSesion() {
+            location.reload();
+        }
+
+        // --- FUNCIONES DEL SISTEMA ---
+        async function buscarVehiculo() {
+            const patente = document.getElementById('txtPatente').value.toUpperCase();
+            if(!patente) return alert("Ingrese una patente");
+
+            const res = await fetch(`/vehiculos/${patente}`);
+            const data = await res.json();
+            
+            vehiculoActual = data.vehiculo; // Puede ser null si es nuevo
+            const ultimoControl = data.ultimoControl; // Puede ser null
+
+            const divRes = document.getElementById('divResultado');
+            const divForm = document.getElementById('divFormulario');
+            
+            divRes.classList.remove('hidden');
+            divForm.classList.remove('hidden'); // Mostrar formulario siempre
+
+            // Lógica para decidir si mostrar alerta
+            let html = "";
+            
+            if (ultimoControl) {
+                // HAY REGISTRO PREVIO
+                const fechaCtrl = new Date(ultimoControl.fecha_hora);
+                const ahora = new Date();
+                const minutosPasados = Math.round((ahora - fechaCtrl) / 60000);
+
+                html += `<div class="card alert-warning">
+                    <strong>⚠️ ATENCIÓN</strong><br>
+                    Este vehículo fue controlado hace <strong>${minutosPasados} minutos</strong>.<br>
+                    Inspector ID: ${ultimoControl.id_inspector}<br>
+                    Fecha: ${fechaCtrl.toLocaleString()}
+                </div>`;
+            } else {
+                html += `<div class="card alert-success">Vehículo sin controles recientes.</div>`;
+            }
+
+            // Si el vehículo ya existe en la BD, llenamos los datos
+            if (vehiculoActual) {
+                html += `<div class="card" style="background:#f9f9f9; border:1px solid #ddd;">
+                    <strong>Datos Registrados:</strong><br>
+                    Modelo: ${vehiculoActual.modelo || 'N/A'}<br>
+                    Seguro Vence: ${vehiculoActual.fecha_seguro_vence || 'N/A'}<br>
+                </div>`;
+                
+                // Rellenar formulario para edición rápida
+                document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
+                document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
+                document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? vehiculoActual.fecha_seguro_vence.split('T')[0] : '';
+                document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? vehiculoActual.fecha_rto_vence.split('T')[0] : '';
+            } else {
+                html += `<div class="card alert-danger">Vehículo nuevo. Ingrese datos.</div>`;
+                // Limpiar formulario
+                document.getElementById('txtModelo').value = '';
+                document.getElementById('txtNro08').value = '';
+                document.getElementById('txtSeguro').value = '';
+                document.getElementById('txtRTO').value = '';
+            }
+
+            divRes.innerHTML = html;
+        }
+
+        async function registrarControl() {
+            if(!usuarioActual) return alert("Debe iniciar sesión");
+            
+            // Obtener ubicación (si el navegador permite)
+            let lat = null, lon = null;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    lat = pos.coords.latitude;
+                    lon = pos.coords.longitude;
+                    enviarDatos(lat, lon);
+                }, () => enviarDatos(null, null)); // Si falla, envía sin ubicación
+            } else {
+                enviarDatos(null, null);
+            }
+        }
+
+        async function enviarDatos(lat, lon) {
+            const payload = {
+                patricula: document.getElementById('txtPatente').value.toUpperCase(),
+                modelo: document.getElementById('txtModelo').value,
+                numero_08: document.getElementById('txtNro08').value,
+                fecha_seguro_vence: document.getElementById('txtSeguro').value,
+                fecha_rto_vence: document.getElementById('txtRTO').value,
+                id_inspector: usuarioActual.id,
+                latitud: lat,
+                longitud: lon,
+                texto_ubicacion: "Ubicación manual", // O usar API de geocoding
+                tiene_cedula: document.getElementById('chkCedula').checked,
+                tiene_licencia: document.getElementById('chkLicencia').checked,
+                tiene_seguro: document.getElementById('chkSeguro').checked,
+                tiene_08_pago: document.getElementById('chk08').checked,
+                tiene_rto_habilitada: document.getElementById('chkRTO').checked,
+                observaciones: document.getElementById('txtObs').value
+            };
+
+            try {
+                const res = await fetch('/registrar-control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("✅ Control registrado exitosamente");
+                    // Resetear interfaz
+                    document.getElementById('txtPatente').value = '';
+                    document.getElementById('divResultado').classList.add('hidden');
+                    document.getElementById('divFormulario').classList.add('hidden');
+                } else {
+                    alert("Error al guardar");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error de conexión");
+            }
+        }
+    </script>
+</body>
+</html>
