@@ -142,13 +142,12 @@ app.get('/api/historial', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener historial' });
     }
 });
-// 4. CREAR USUARIO (Solo para testing, idealmente validar token)
+// 4. CREAR USUARIO
 app.post('/api/crear-usuario', async (req, res) => {
     const { usuario, password, nombre, rol } = req.body;
     
-    // Validación simple
     if (!usuario || !password || !rol) {
-        return res.status(400).json({ error: "Faltan datos" });
+        return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
     try {
