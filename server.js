@@ -142,7 +142,7 @@ app.get('/api/historial', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener historial' });
     }
 });
-// 4. CREAR USUARIO
+// 4. CREAR USUARIO (Corregido con DNI)
 app.post('/api/crear-usuario', async (req, res) => {
     const { usuario, password, nombre, rol } = req.body;
     
@@ -151,9 +151,10 @@ app.post('/api/crear-usuario', async (req, res) => {
     }
 
     try {
+        // Agregamos 'dni' con valor NULL ya que no lo pedimos en el formulario
         const result = await pool.query(
-            'INSERT INTO usuarios (usuario, password, nombre, rol) VALUES ($1, $2, $3, $4) RETURNING id',
-            [usuario, password, nombre || usuario, rol]
+            'INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [usuario, password, nombre || usuario, rol, null] // El último null es para el DNI
         );
         res.json({ success: true, id: result.rows[0].id });
     } catch (err) {
@@ -161,7 +162,7 @@ app.post('/api/crear-usuario', async (req, res) => {
         if (err.code === '23505') {
             return res.status(400).json({ error: "El usuario ya existe" });
         }
-        res.status(500).json({ error: 'Error al crear usuario' });
+        res.status(500).json({ error: 'Error al crear usuario', details: err.message });
     }
 });
 // --- INICIAR SERVIDOR ---
