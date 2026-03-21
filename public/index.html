@@ -134,6 +134,10 @@
         .text-center { text-align: center; }
     </style>
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Librerías para el Mapa (Leaflet) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
 </head>
 <body>
 
@@ -161,6 +165,10 @@
         <div class="header">
             <h1>Control Vehicular</h1>
             <p>Inspector: <span id="spanNombre">...</span></p>
+                <p>Inspector: <span id="spanNombre">...</span></p>
+    <!-- BOTÓN NUEVO -->
+    <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; margin-top: 10px; background: #dc2626;">📍 Ver Mapa de Controles</button>
+</div>
         </div>
 
         <div class="section active" id="searchSection">
