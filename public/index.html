@@ -366,42 +366,51 @@
         }
 
         async function enviarDatos(lat, lon) {
-            const payload = {
-                patricula: document.getElementById('txtPatente').value.toUpperCase(),
-                modelo: document.getElementById('txtModelo').value,
-                numero_08: document.getElementById('txtNro08').value,
-                fecha_seguro_vence: document.getElementById('txtSeguro').value,
-                fecha_rto_vence: document.getElementById('txtRTO').value,
-                id_inspector: usuarioActual.id,
-                latitud: lat,
-                longitud: lon,
-                texto_ubicacion: "Ubicación GPS",
-                tiene_cedula: document.getElementById('chkCedula').checked,
-                tiene_licencia: document.getElementById('chkLicencia').checked,
-                tiene_seguro: document.getElementById('chkSeguro').checked,
-                tiene_08_pago: document.getElementById('chk08').checked,
-                tiene_rto_habilitada: document.getElementById('chkRTO').checked,
-                observaciones: document.getElementById('txtObs').value
-            };
+    // 1. Bloquear botón para evitar dobles clics
+    const btn = document.querySelector('#footerBtn button');
+    btn.disabled = true; 
+    btn.innerHTML = "⏳ Guardando...";
 
-            try {
-                const res = await fetch('/registrar-control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert("✅ Control registrado con éxito");
-                    limpiarPantalla(); // Usamos la función de limpiar
-                } else {
-                    alert("Error al guardar");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Error de conexión");
-            }
+    const payload = {
+        patricula: document.getElementById('txtPatente').value.toUpperCase(),
+        modelo: document.getElementById('txtModelo').value,
+        numero_08: document.getElementById('txtNro08').value,
+        fecha_seguro_vence: document.getElementById('txtSeguro').value,
+        fecha_rto_vence: document.getElementById('txtRTO').value,
+        id_inspector: usuarioActual.id,
+        latitud: lat,
+        longitud: lon,
+        texto_ubicacion: "Ubicación GPS",
+        tiene_cedula: document.getElementById('chkCedula').checked,
+        tiene_licencia: document.getElementById('chkLicencia').checked,
+        tiene_seguro: document.getElementById('chkSeguro').checked,
+        tiene_08_pago: document.getElementById('chk08').checked,
+        tiene_rto_habilitada: document.getElementById('chkRTO').checked,
+        observaciones: document.getElementById('txtObs').value
+    };
+
+    try {
+        const res = await fetch('/registrar-control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("✅ Control registrado con éxito");
+            limpiarPantalla();
+        } else {
+            alert("Error al guardar");
         }
+    } catch (err) {
+        console.error(err);
+        alert("Error de conexión");
+    } finally {
+        // 2. Desbloquear botón al terminar (éxito o error)
+        btn.disabled = false;
+        btn.innerHTML = "✅ REGISTRAR CONTROL";
+    }
+}
     </script>
 </body>
 </html>
