@@ -129,7 +129,19 @@ app.post('/registrar-control', async (req, res) => {
         client.release();
     }
 });
-
+// 4. HISTORIAL PARA MAPA (Supervisor)
+app.get('/api/historial', async (req, res) => {
+    try {
+        // Pedimos los últimos 50 controles que tengan coordenadas válidas
+        const result = await pool.query(
+            'SELECT id, patricula, fecha_hora, latitud, longitud FROM registros_controles WHERE latitud IS NOT NULL ORDER BY fecha_hora DESC LIMIT 50'
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener historial:", err.message);
+        res.status(500).json({ error: 'Error al obtener historial' });
+    }
+});
 // --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
