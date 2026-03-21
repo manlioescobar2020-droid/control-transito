@@ -3,100 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Control de Tránsito</title>
+    <title>Control de Tránsito</title>
     <style>
-        body { font-family: sans-serif; background: #ecf0f1; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        /* --- ESTILOS MODERNOS --- */
+        :root {
+            --primary: #2563eb; /* Azul profesional */
+            --success: #16a34a; /* Verde */
+            --danger: #dc2626; /* Rojo */
+            --warning: #f59e0b; /* Amarillo */
+            --dark: #1e293b;
+            --light: #f1f5f9;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e2e8f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            padding-bottom: 80px; /* Espacio para botón guardar */
+            box-sizing: border-box;
+        }
         
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #bdc3c7; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        button:hover { background: #2980b9; }
-        button.danger { background: #e74c3c; }
-        button.success { background: #27ae60; }
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
         
-        .hidden { display: none; }
+        /* Login Screen */
+        .login-box {
+            padding: 40px 20px;
+        }
+        .login-box h2 { text-align: center; color: var(--dark); margin-bottom: 30px; }
         
-        .card { margin-bottom: 15px; padding: 10px; border-radius: 5px; }
-        .alert-warning { background: #f1c40f; color: #7f6000; border: 1px solid #f39c12; }
-        .alert-success { background: #2ecc71; color: white; }
-        .alert-danger { background: #e74c3c; color: white; }
+        /* Inputs & Buttons Genéricos */
+        input, select, textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
         
-        label { font-size: 14px; color: #7f8c8d; }
-        .grupo-check { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
-        .grupo-check input { width: auto; }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: #64748b; color: white; margin-top: 10px; }
+        
+        /* Main App Sections */
+        .section { padding: 20px; display: none; }
+        .section.active { display: block; }
+        
+        /* Tarjeta de Resultado */
+        .card {
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .card-alert { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .card-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .card-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        
+        .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Formulario de Control */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #475569; font-size: 14px; }
+        
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .check-item {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .check-item:has(input:checked) { border-color: var(--primary); background: #eff6ff; }
+        .check-item input { width: 20px; height: 20px; margin: 0; }
+        
+        /* Footer fijo para guardar */
+        .footer-fixed {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+            display: none; /* Se muestra solo al buscar */
+        }
+        
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
     </style>
-    <!-- Socket.io (Necesario para tiempo real) -->
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
     <!-- PANTALLA DE LOGIN -->
-    <div id="pantallaLogin" class="container">
-        <h2>Iniciar Sesión</h2>
+    <div id="loginScreen" class="container login-box section active">
+        <div class="text-center" style="margin-bottom: 30px;">
+            <div style="font-size: 50px;">👮‍♂️</div>
+            <h2>Control de Tránsito</h2>
+            <p style="color:#64748b;">Ingresá tus credenciales para iniciar tu turno</p>
+        </div>
+        
         <input type="text" id="txtUsuario" placeholder="Usuario">
         <input type="password" id="txtPassword" placeholder="Contraseña">
-        <button onclick="iniciarSesion()">Entrar</button>
-        <p id="errorLogin" style="color:red; text-align:center; display:none;">Credenciales incorrectas</p>
+        
+        <div id="loginError" class="card card-alert hidden" style="text-align:center;">
+            Usuario o contraseña incorrectos
+        </div>
+        
+        <button class="btn-primary" onclick="iniciarSesion()">INICIAR SESIÓN</button>
     </div>
 
     <!-- PANTALLA PRINCIPAL -->
-    <div id="pantallaPrincipal" class="container hidden">
-        <h2>Bienvenido, <span id="nombreInspector"></span></h2>
+    <div id="mainApp" class="container">
         
-        <!-- Sección de Búsqueda -->
-        <div>
-            <label>Ingrese Patente</label>
-            <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase;">
-            <button onclick="buscarVehiculo()">Consultar</button>
+        <div class="header">
+            <h1>Control Vehicular</h1>
+            <p>Inspector: <span id="spanNombre">...</span></p>
         </div>
 
-        <div id="divResultado" class="hidden"></div>
-
-        <!-- Formulario de Registro (Se muestra solo si es necesario) -->
-        <div id="divFormulario" class="hidden" style="margin-top:20px; border-top:1px solid #ccc; padding-top:10px;">
-            <h3>Datos del Control</h3>
-            
-            <input type="text" id="txtModelo" placeholder="Modelo (Ej: Ford Fiesta)">
-            <input type="number" id="txtNro08" placeholder="Número 08">
-            
-            <label>Vence Seguro</label>
-            <input type="date" id="txtSeguro">
-            
-            <label>Vence RTO</label>
-            <input type="date" id="txtRTO">
-
-            <hr>
-            <div class="grupo-check">
-                <input type="checkbox" id="chkCedula"> <label for="chkCedula">Tiene Cédula</label>
-            </div>
-            <div class="grupo-check">
-                <input type="checkbox" id="chkLicencia"> <label for="chkLicencia">Tiene Licencia</label>
-            </div>
-            <div class="grupo-check">
-                <input type="checkbox" id="chkSeguro"> <label for="chkSeguro">Tiene Seguro</label>
-            </div>
-            <div class="grupo-check">
-                <input type="checkbox" id="chk08"> <label for="chk08">08 Pagado</label>
-            </div>
-            <div class="grupo-check">
-                <input type="checkbox" id="chkRTO"> <label for="chkRTO">RTO Habilitada</label>
+        <div class="section active" id="searchSection">
+            <!-- Buscador -->
+            <div style="padding: 20px;">
+                <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;">
+                </div>
+                <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
 
-            <textarea id="txtObs" placeholder="Observaciones..." style="width:100%; height:60px; margin-top:5px;"></textarea>
-            
-            <button class="success" onclick="registrarControl()">Registrar Control</button>
+            <!-- Resultado de la búsqueda -->
+            <div id="divResultado" style="padding: 0 20px;"></div>
         </div>
-        
-        <button class="danger" style="margin-top:20px;" onclick="cerrarSesion()">Cerrar Sesión</button>
+
+        <!-- Formulario de Registro (oculto al principio) -->
+        <div id="formSection" class="section">
+            <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
+                
+                <div class="form-group">
+                    <label>DATOS DEL VEHÍCULO</label>
+                    <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)">
+                    <input type="text" id="txtNro08" placeholder="Nro. 08">
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1">
+                            <label style="font-size:12px; color:#94a3b8;">Vence Seguro</label>
+                            <input type="date" id="txtSeguro">
+                        </div>
+                        <div style="flex:1">
+                            <label style="font-size:12px; color:#94a3b8;">Vence RTO</label>
+                            <input type="date" id="txtRTO">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>DOCUMENTACIÓN PRESENTADA</label>
+                    <div class="checkbox-grid">
+                        <label class="check-item"><input type="checkbox" id="chkCedula"> Cédula</label>
+                        <label class="check-item"><input type="checkbox" id="chkLicencia"> Licencia</label>
+                        <label class="check-item"><input type="checkbox" id="chkSeguro"> Seguro</label>
+                        <label class="check-item"><input type="checkbox" id="chk08"> 08 Pagado</label>
+                        <label class="check-item"><input type="checkbox" id="chkRTO"> RTO OK</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>OBSERVACIONES</label>
+                    <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..."></textarea>
+                </div>
+                
+                <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTÓN FLOTANTE DE REGISTRAR -->
+    <div id="footerBtn" class="footer-fixed">
+        <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
     </div>
 
     <script>
         let usuarioActual = null;
         let vehiculoActual = null;
-        const socket = io(); // Conexión socket
+        const socket = io();
 
-        // --- FUNCIONES DE AUTENTICACIÓN ---
         async function iniciarSesion() {
             const usuario = document.getElementById('txtUsuario').value;
             const pass = document.getElementById('txtPassword').value;
@@ -110,20 +244,15 @@
             const data = await res.json();
             if (data.success) {
                 usuarioActual = data.user;
-                document.getElementById('nombreInspector').innerText = usuarioActual.nombre || usuarioActual.usuario;
-                document.getElementById('pantallaLogin').classList.add('hidden');
-                document.getElementById('pantallaPrincipal').classList.remove('hidden');
-                document.getElementById('errorLogin').style.display = 'none';
+                document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
+                document.getElementById('loginScreen').classList.remove('active');
+                document.getElementById('mainApp').style.display = 'block';
             } else {
-                document.getElementById('errorLogin').style.display = 'block';
+                document.getElementById('loginError').classList.remove('hidden');
+                setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
             }
         }
 
-        function cerrarSesion() {
-            location.reload();
-        }
-
-        // --- FUNCIONES DEL SISTEMA ---
         async function buscarVehiculo() {
             const patente = document.getElementById('txtPatente').value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
@@ -131,70 +260,83 @@
             const res = await fetch(`/vehiculos/${patente}`);
             const data = await res.json();
             
-            vehiculoActual = data.vehiculo; // Puede ser null si es nuevo
-            const ultimoControl = data.ultimoControl; // Puede ser null
-
+            vehiculoActual = data.vehiculo;
+            const ultimoControl = data.ultimoControl;
             const divRes = document.getElementById('divResultado');
-            const divForm = document.getElementById('divFormulario');
+            const footerBtn = document.getElementById('footerBtn');
             
-            divRes.classList.remove('hidden');
-            divForm.classList.remove('hidden'); // Mostrar formulario siempre
+            footerBtn.style.display = 'block'; // Mostrar botón guardar
+            document.getElementById('formSection').classList.remove('active'); // Ocultar form si estaba
 
-            // Lógica para decidir si mostrar alerta
             let html = "";
             
             if (ultimoControl) {
-                // HAY REGISTRO PREVIO
+                // CALCULAR TIEMPO
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
                 const ahora = new Date();
-                const minutosPasados = Math.round((ahora - fechaCtrl) / 60000);
+                const minutos = Math.round((ahora - fechaCtrl) / 60000);
+                const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
 
-                html += `<div class="card alert-warning">
-                    <strong>⚠️ ATENCIÓN</strong><br>
-                    Este vehículo fue controlado hace <strong>${minutosPasados} minutos</strong>.<br>
-                    Inspector ID: ${ultimoControl.id_inspector}<br>
-                    Fecha: ${fechaCtrl.toLocaleString()}
+                html += `
+                <div class="card card-alert">
+                    <h3>⚠️ ATENCIÓN</h3>
+                    <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
+                    <p style="font-size:12px; opacity:0.8">Inspector ID: ${ultimoControl.id_inspector} - ${fechaCtrl.toLocaleString()}</p>
                 </div>`;
             } else {
-                html += `<div class="card alert-success">Vehículo sin controles recientes.</div>`;
+                html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
-            // Si el vehículo ya existe en la BD, llenamos los datos
             if (vehiculoActual) {
-                html += `<div class="card" style="background:#f9f9f9; border:1px solid #ddd;">
-                    <strong>Datos Registrados:</strong><br>
-                    Modelo: ${vehiculoActual.modelo || 'N/A'}<br>
-                    Seguro Vence: ${vehiculoActual.fecha_seguro_vence || 'N/A'}<br>
+                html += `
+                <div class="card" style="background:#f8fafc;">
+                    <h3>ℹ️ Datos del Vehículo</h3>
+                    <p><strong>Modelo:</strong> ${vehiculoActual.modelo || 'No registrado'}</p>
+                    <p><strong>Seguro:</strong> ${vehiculoActual.fecha_seguro_vence || 'N/A'}</p>
                 </div>`;
                 
-                // Rellenar formulario para edición rápida
+                // Rellenar formulario
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
                 document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? vehiculoActual.fecha_seguro_vence.split('T')[0] : '';
                 document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? vehiculoActual.fecha_rto_vence.split('T')[0] : '';
             } else {
-                html += `<div class="card alert-danger">Vehículo nuevo. Ingrese datos.</div>`;
-                // Limpiar formulario
-                document.getElementById('txtModelo').value = '';
-                document.getElementById('txtNro08').value = '';
-                document.getElementById('txtSeguro').value = '';
-                document.getElementById('txtRTO').value = '';
+                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos del vehículo en el formulario.</p></div>`;
+                 // Limpiar form
+                 document.getElementById('txtModelo').value = '';
+                 document.getElementById('txtNro08').value = '';
+                 document.getElementById('txtSeguro').value = '';
+                 document.getElementById('txtRTO').value = '';
             }
+            
+            // Mostrar botón para abrir formulario si necesitan editar
+            html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
 
             divRes.innerHTML = html;
         }
 
+        function mostrarFormulario() {
+            document.getElementById('formSection').classList.add('active');
+            document.getElementById('searchSection').classList.remove('active');
+            document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
+        }
+
+        function cerrarFormulario() {
+            document.getElementById('formSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+        }
+
         async function registrarControl() {
-            if(!usuarioActual) return alert("Debe iniciar sesión");
+            if(!usuarioActual) return alert("Sesión expirada");
             
-            // Obtener ubicación (si el navegador permite)
+            // Lógica de ubicación
             let lat = null, lon = null;
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     lat = pos.coords.latitude;
                     lon = pos.coords.longitude;
                     enviarDatos(lat, lon);
-                }, () => enviarDatos(null, null)); // Si falla, envía sin ubicación
+                }, () => enviarDatos(null, null));
             } else {
                 enviarDatos(null, null);
             }
@@ -210,7 +352,7 @@
                 id_inspector: usuarioActual.id,
                 latitud: lat,
                 longitud: lon,
-                texto_ubicacion: "Ubicación manual", // O usar API de geocoding
+                texto_ubicacion: "Ubicación GPS",
                 tiene_cedula: document.getElementById('chkCedula').checked,
                 tiene_licencia: document.getElementById('chkLicencia').checked,
                 tiene_seguro: document.getElementById('chkSeguro').checked,
@@ -227,11 +369,12 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("✅ Control registrado exitosamente");
+                    alert("✅ Control registrado con éxito");
                     // Resetear interfaz
                     document.getElementById('txtPatente').value = '';
-                    document.getElementById('divResultado').classList.add('hidden');
-                    document.getElementById('divFormulario').classList.add('hidden');
+                    document.getElementById('divResultado').innerHTML = '';
+                    document.getElementById('footerBtn').style.display = 'none';
+                    cerrarFormulario();
                 } else {
                     alert("Error al guardar");
                 }
