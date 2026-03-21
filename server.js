@@ -28,13 +28,13 @@ const pool = new Pool({
 // --- RUTAS API ---
 
 // 1. LOGIN
+// 1. LOGIN
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
     try {
-        // Buscamos en la tabla usuarios (esquema public por defecto)
-        // LOWER() permite que "Man", "man" o "MAN" funcionen igual
+        // Agregamos 'rol' a la búsqueda
         const result = await pool.query(
-            'SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER($1) AND password = $2', 
+            'SELECT id, usuario, nombre, rol FROM usuarios WHERE LOWER(usuario) = LOWER($1) AND password = $2', 
             [usuario, password]
         );
 
@@ -140,6 +140,29 @@ app.get('/api/historial', async (req, res) => {
     } catch (err) {
         console.error("Error al obtener historial:", err.message);
         res.status(500).json({ error: 'Error al obtener historial' });
+    }
+});
+// 4. CREAR USUARIO (Solo para testing, idealmente validar token)
+app.post('/api/crear-usuario', async (req, res) => {
+    const { usuario, password, nombre, rol } = req.body;
+    
+    // Validación simple
+    if (!usuario || !password || !rol) {
+        return res.status(400).json({ error: "Faltan datos" });
+    }
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO usuarios (usuario, password, nombre, rol) VALUES ($1, $2, $3, $4) RETURNING id',
+            [usuario, password, nombre || usuario, rol]
+        );
+        res.json({ success: true, id: result.rows[0].id });
+    } catch (err) {
+        console.error("Error crear usuario:", err.message);
+        if (err.code === '23505') {
+            return res.status(400).json({ error: "El usuario ya existe" });
+        }
+        res.status(500).json({ error: 'Error al crear usuario' });
     }
 });
 // --- INICIAR SERVIDOR ---
