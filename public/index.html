@@ -4,140 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Tránsito</title>
+    
+    <!-- ESTILOS CSS -->
     <style>
-        /* --- ESTILOS MODERNOS --- */
         :root {
-            --primary: #2563eb;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning: #f59e0b;
-            --dark: #1e293b;
-            --light: #f1f5f9;
+            --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; --dark: #1e293b; --light: #f1f5f9;
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e2e8f0;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: white;
-            min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            position: relative;
-            padding-bottom: 80px;
-            box-sizing: border-box;
-        }
-        
-        /* Header */
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
         
-        /* Login Screen */
         .login-box { padding: 40px 20px; }
         .login-box h2 { text-align: center; color: var(--dark); margin-bottom: 30px; }
         
-        /* Inputs & Buttons Genéricos */
-        input, select, textarea {
-            width: 100%;
-            padding: 15px;
-            margin: 8px 0;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
+        input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s; }
         input:focus { border-color: var(--primary); outline: none; }
         
-        button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-        }
+        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
         button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-secondary { background: #64748b; color: white; margin-top: 10px; }
         
-        /* Main App Sections */
         .section { padding: 20px; display: none; }
         .section.active { display: block; }
         
-        /* Tarjeta de Resultado */
-        .card {
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            border: 1px solid #e2e8f0;
-        }
+        .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid #e2e8f0; }
         .card-alert { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .card-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .card-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-        
         .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
         
-        /* Formulario de Control */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #475569; font-size: 14px; }
         
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .check-item {
-            background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .check-item { background: #f8fafc; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; }
         .check-item:has(input:checked) { border-color: var(--primary); background: #eff6ff; }
         .check-item input { width: 20px; height: 20px; margin: 0; }
         
-        /* Footer fijo para guardar */
-        .footer-fixed {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            max-width: 500px;
-            background: white;
-            padding: 15px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            box-sizing: border-box;
-            display: none;
-        }
-        
+        .footer-fixed { position: fixed; bottom: 0; width: 100%; max-width: 500px; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); box-sizing: border-box; display: none; }
         .hidden { display: none !important; }
         .text-center { text-align: center; }
+        
+        /* Estilos específicos del mapa */
+        #map { height: 100%; width: 100%; background: #f0f0f0; }
     </style>
+
+    <!-- LIBRERÍAS EXTERNAS -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- Librerías para el Mapa (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-</head>
 </head>
 <body>
 
@@ -165,46 +87,32 @@
         <div class="header">
             <h1>Control Vehicular</h1>
             <p>Inspector: <span id="spanNombre">...</span></p>
-                <p>Inspector: <span id="spanNombre">...</span></p>
-    <!-- BOTÓN NUEVO -->
-    <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; margin-top: 10px; background: #dc2626;">📍 Ver Mapa de Controles</button>
-</div>
+            <!-- BOTÓN MAPA -->
+            <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; margin-top: 10px;">📍 Ver Mapa de Controles</button>
         </div>
 
+        <!-- Sección Buscador -->
         <div class="section active" id="searchSection">
-            <!-- Buscador -->
             <div style="padding: 20px;">
                 <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;">
-                </div>
+                <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;">
                 <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
-
-            <!-- Resultado de la búsqueda -->
             <div id="divResultado" style="padding: 0 20px;"></div>
         </div>
 
-        <!-- Formulario de Registro (oculto al principio) -->
+        <!-- Sección Formulario -->
         <div id="formSection" class="section">
             <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                
                 <div class="form-group">
                     <label>DATOS DEL VEHÍCULO</label>
                     <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)">
                     <input type="text" id="txtNro08" placeholder="Nro. 08">
                     <div style="display:flex; gap:10px;">
-                        <div style="flex:1">
-                            <label style="font-size:12px; color:#94a3b8;">Vence Seguro</label>
-                            <input type="date" id="txtSeguro">
-                        </div>
-                        <div style="flex:1">
-                            <label style="font-size:12px; color:#94a3b8;">Vence RTO</label>
-                            <input type="date" id="txtRTO">
-                        </div>
+                        <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
+                        <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>DOCUMENTACIÓN PRESENTADA</label>
                     <div class="checkbox-grid">
@@ -215,27 +123,39 @@
                         <label class="check-item"><input type="checkbox" id="chkRTO"> RTO OK</label>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>OBSERVACIONES</label>
                     <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..."></textarea>
                 </div>
-                
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
         </div>
 
+        <!-- Sección Mapa -->
+        <div id="mapSection" class="section" style="height: 80vh; padding:0; position:relative;">
+            <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
+            <div id="map"></div>
+        </div>
+
     </div>
 
-    <!-- BOTÓN FLOTANTE DE REGISTRAR -->
+    <!-- BOTÓN FLOTANTE REGISTRAR -->
     <div id="footerBtn" class="footer-fixed">
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
     </div>
 
+    <!-- LÓGICA JAVASCRIPT -->
     <script>
         let usuarioActual = null;
         let vehiculoActual = null;
+        let map = null; // Variable para el mapa
         const socket = io();
+
+        // --- FUNCIONES DE PANTALLA ---
+        function mostrarMainApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+        }
 
         async function iniciarSesion() {
             const usuario = document.getElementById('txtUsuario').value;
@@ -251,15 +171,14 @@
             if (data.success) {
                 usuarioActual = data.user;
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
-                // Ocultamos login y mostramos app principal
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
+                mostrarMainApp();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
                 setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
             }
         }
 
+        // --- FUNCIONES DE VEHÍCULOS ---
         async function buscarVehiculo() {
             const patente = document.getElementById('txtPatente').value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
@@ -283,39 +202,28 @@
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
 
-                html += `
-                <div class="card card-alert">
-                    <h3>⚠️ ATENCIÓN</h3>
-                    <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
-                    <p style="font-size:12px; opacity:0.8">Inspector ID: ${ultimoControl.id_inspector} - ${fechaCtrl.toLocaleString()}</p>
-                </div>`;
+                html += `<div class="card card-alert"><h3>⚠️ ATENCIÓN</h3><p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p><p style="font-size:12px; opacity:0.8">Inspector ID: ${ultimoControl.id_inspector} - ${fechaCtrl.toLocaleString()}</p></div>`;
             } else {
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
             if (vehiculoActual) {
-                html += `
-                <div class="card" style="background:#f8fafc;">
-                    <h3>ℹ️ Datos del Vehículo</h3>
-                    <p><strong>Modelo:</strong> ${vehiculoActual.modelo || 'No registrado'}</p>
-                    <p><strong>Seguro:</strong> ${vehiculoActual.fecha_seguro_vence || 'N/A'}</p>
-                </div>`;
+                html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos del Vehículo</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || 'No registrado'}</p><p><strong>Seguro:</strong> ${vehiculoActual.fecha_seguro_vence || 'N/A'}</p></div>`;
                 
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
                 document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? vehiculoActual.fecha_seguro_vence.split('T')[0] : '';
                 document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? vehiculoActual.fecha_rto_vence.split('T')[0] : '';
             } else {
-                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos del vehículo en el formulario.</p></div>`;
+                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos del vehículo.</p></div>`;
                  document.getElementById('txtModelo').value = '';
                  document.getElementById('txtNro08').value = '';
                  document.getElementById('txtSeguro').value = '';
                  document.getElementById('txtRTO').value = '';
             }
             
-            html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
-            // BOTÓN DE CANCELAR AGREGADO
-            html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar / Nueva Búsqueda</button>`;
+            html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos</button>`;
+            html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar</button>`;
 
             divRes.innerHTML = html;
         }
@@ -331,15 +239,12 @@
             document.getElementById('searchSection').classList.add('active');
         }
 
-        // FUNCIÓN DE LIMPIAR PANTALLA AGREGADA
         function limpiarPantalla() {
             document.getElementById('txtPatente').value = '';
             document.getElementById('divResultado').innerHTML = '';
             document.getElementById('footerBtn').style.display = 'none';
             document.getElementById('formSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
-            
-            // Limpiar formulario
             document.getElementById('txtModelo').value = '';
             document.getElementById('txtNro08').value = '';
             document.getElementById('chkCedula').checked = false;
@@ -350,6 +255,53 @@
             document.getElementById('txtObs').value = '';
         }
 
+        // --- FUNCIONES DE MAPA ---
+        async function abrirMapa() {
+            document.getElementById('searchSection').classList.remove('active');
+            document.getElementById('formSection').classList.remove('active');
+            document.getElementById('mapSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'none';
+
+            if (map) {
+                map.invalidateSize();
+                return;
+            }
+
+            // Coordenadas de Santo Tomé, Corrientes
+            map = L.map('map').setView([-28.5343, -56.0406], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            try {
+                const res = await fetch('/api/historial');
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    alert("No hay controles con ubicación aún.");
+                    return;
+                }
+
+                data.forEach(ctrl => {
+                    if (ctrl.latitud && ctrl.longitud) {
+                        const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
+                        const fecha = new Date(ctrl.fecha_hora).toLocaleString();
+                        marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                alert("Error al cargar mapa");
+            }
+        }
+
+        function cerrarMapa() {
+            document.getElementById('mapSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+        }
+
+        // --- FUNCIÓN REGISTRAR CONTROL ---
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
             
@@ -366,51 +318,49 @@
         }
 
         async function enviarDatos(lat, lon) {
-    // 1. Bloquear botón para evitar dobles clics
-    const btn = document.querySelector('#footerBtn button');
-    btn.disabled = true; 
-    btn.innerHTML = "⏳ Guardando...";
+            const btn = document.querySelector('#footerBtn button');
+            btn.disabled = true; 
+            btn.innerHTML = "⏳ Guardando...";
 
-    const payload = {
-        patricula: document.getElementById('txtPatente').value.toUpperCase(),
-        modelo: document.getElementById('txtModelo').value,
-        numero_08: document.getElementById('txtNro08').value,
-        fecha_seguro_vence: document.getElementById('txtSeguro').value,
-        fecha_rto_vence: document.getElementById('txtRTO').value,
-        id_inspector: usuarioActual.id,
-        latitud: lat,
-        longitud: lon,
-        texto_ubicacion: "Ubicación GPS",
-        tiene_cedula: document.getElementById('chkCedula').checked,
-        tiene_licencia: document.getElementById('chkLicencia').checked,
-        tiene_seguro: document.getElementById('chkSeguro').checked,
-        tiene_08_pago: document.getElementById('chk08').checked,
-        tiene_rto_habilitada: document.getElementById('chkRTO').checked,
-        observaciones: document.getElementById('txtObs').value
-    };
+            const payload = {
+                patricula: document.getElementById('txtPatente').value.toUpperCase(),
+                modelo: document.getElementById('txtModelo').value,
+                numero_08: document.getElementById('txtNro08').value,
+                fecha_seguro_vence: document.getElementById('txtSeguro').value,
+                fecha_rto_vence: document.getElementById('txtRTO').value,
+                id_inspector: usuarioActual.id,
+                latitud: lat,
+                longitud: lon,
+                texto_ubicacion: "Ubicación GPS",
+                tiene_cedula: document.getElementById('chkCedula').checked,
+                tiene_licencia: document.getElementById('chkLicencia').checked,
+                tiene_seguro: document.getElementById('chkSeguro').checked,
+                tiene_08_pago: document.getElementById('chk08').checked,
+                tiene_rto_habilitada: document.getElementById('chkRTO').checked,
+                observaciones: document.getElementById('txtObs').value
+            };
 
-    try {
-        const res = await fetch('/registrar-control', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert("✅ Control registrado con éxito");
-            limpiarPantalla();
-        } else {
-            alert("Error al guardar");
+            try {
+                const res = await fetch('/registrar-control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("✅ Control registrado con éxito");
+                    limpiarPantalla();
+                } else {
+                    alert("Error al guardar");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error de conexión");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "✅ REGISTRAR CONTROL";
+            }
         }
-    } catch (err) {
-        console.error(err);
-        alert("Error de conexión");
-    } finally {
-        // 2. Desbloquear botón al terminar (éxito o error)
-        btn.disabled = false;
-        btn.innerHTML = "✅ REGISTRAR CONTROL";
-    }
-}
     </script>
 </body>
 </html>
