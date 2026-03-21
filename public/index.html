@@ -30,6 +30,7 @@
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-secondary { background: #64748b; color: white; margin-top: 10px; }
+        .btn-purple { background: #7c3aed; color: white; margin-top: 10px; }
         
         .section { padding: 20px; display: none; }
         .section.active { display: block; }
@@ -52,7 +53,7 @@
         .hidden { display: none !important; }
         .text-center { text-align: center; }
         
-        /* Estilos específicos del mapa */
+        /* Estilos mapa */
         #map { height: 100%; width: 100%; background: #f0f0f0; }
     </style>
 
@@ -86,9 +87,13 @@
         
         <div class="header">
             <h1>Control Vehicular</h1>
-            <p>Inspector: <span id="spanNombre">...</span></p>
-            <!-- BOTÓN MAPA -->
-            <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; margin-top: 10px;">📍 Ver Mapa de Controles</button>
+            <p>Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)</p>
+            
+            <!-- Botones de Admin (Ocultos por defecto) -->
+            <div id="adminTools" style="display:none; margin-top:10px;">
+                <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 48%; margin-right: 2%;">📍 Mapa</button>
+                <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 48%; background: #7c3aed;">👤 Usuarios</button>
+            </div>
         </div>
 
         <!-- Sección Buscador -->
@@ -137,6 +142,28 @@
             <div id="map"></div>
         </div>
 
+        <!-- Sección Crear Usuario -->
+        <div id="userSection" class="section">
+            <div style="padding: 20px;">
+                <h3>Crear Nuevo Usuario</h3>
+                <input type="text" id="newUsuario" placeholder="Nombre de usuario (ej: juan123)">
+                <input type="password" id="newPassword" placeholder="Contraseña">
+                <input type="text" id="newNombre" placeholder="Nombre real (ej: Juan Perez)">
+                
+                <div class="form-group" style="margin-top:10px;">
+                    <label>Rol:</label>
+                    <select id="newRol" style="width:100%; padding:15px; border-radius:8px; border:2px solid #e2e8f0;">
+                        <option value="INSPECTOR">INSPECTOR</option>
+                        <option value="OWNER">OWNER (Administrador)</option>
+                    </select>
+                </div>
+
+                <button class="btn-success" onclick="guardarUsuario()" style="margin-top:15px;">💾 Guardar Usuario</button>
+                <button class="btn-secondary" onclick="cerrarUsuarios()">Cancelar</button>
+                <div id="msgUsuario" style="margin-top:10px; text-align:center; font-weight:bold;"></div>
+            </div>
+        </div>
+
     </div>
 
     <!-- BOTÓN FLOTANTE REGISTRAR -->
@@ -148,10 +175,10 @@
     <script>
         let usuarioActual = null;
         let vehiculoActual = null;
-        let map = null; // Variable para el mapa
+        let map = null;
         const socket = io();
 
-        // --- FUNCIONES DE PANTALLA ---
+        // --- INICIO Y PERMISOS ---
         function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
@@ -171,6 +198,15 @@
             if (data.success) {
                 usuarioActual = data.user;
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
+                document.getElementById('spanRol').innerText = usuarioActual.rol;
+
+                // LÓGICA DE ROLES: Mostrar botones solo si es OWNER
+                if (usuarioActual.rol === 'OWNER') {
+                    document.getElementById('adminTools').style.display = 'block';
+                } else {
+                    document.getElementById('adminTools').style.display = 'none';
+                }
+
                 mostrarMainApp();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
@@ -202,24 +238,19 @@
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
 
-                html += `<div class="card card-alert"><h3>⚠️ ATENCIÓN</h3><p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p><p style="font-size:12px; opacity:0.8">Inspector ID: ${ultimoControl.id_inspector} - ${fechaCtrl.toLocaleString()}</p></div>`;
+                html += `<div class="card card-alert"><h3>⚠️ ATENCIÓN</h3><p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p></div>`;
             } else {
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
             if (vehiculoActual) {
-                html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos del Vehículo</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || 'No registrado'}</p><p><strong>Seguro:</strong> ${vehiculoActual.fecha_seguro_vence || 'N/A'}</p></div>`;
-                
+                html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
-                document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? vehiculoActual.fecha_seguro_vence.split('T')[0] : '';
-                document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? vehiculoActual.fecha_rto_vence.split('T')[0] : '';
             } else {
-                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos del vehículo.</p></div>`;
+                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
                  document.getElementById('txtModelo').value = '';
                  document.getElementById('txtNro08').value = '';
-                 document.getElementById('txtSeguro').value = '';
-                 document.getElementById('txtRTO').value = '';
             }
             
             html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos</button>`;
@@ -259,6 +290,7 @@
         async function abrirMapa() {
             document.getElementById('searchSection').classList.remove('active');
             document.getElementById('formSection').classList.remove('active');
+            document.getElementById('userSection').classList.remove('active');
             document.getElementById('mapSection').classList.add('active');
             document.getElementById('footerBtn').style.display = 'none';
 
@@ -267,33 +299,24 @@
                 return;
             }
 
-            // Coordenadas de Santo Tomé, Corrientes
             map = L.map('map').setView([-28.5343, -56.0406], 14);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
             try {
                 const res = await fetch('/api/historial');
                 const data = await res.json();
-
-                if (data.length === 0) {
-                    alert("No hay controles con ubicación aún.");
-                    return;
+                if (data.length > 0) {
+                    data.forEach(ctrl => {
+                        if (ctrl.latitud && ctrl.longitud) {
+                            const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
+                            const fecha = new Date(ctrl.fecha_hora).toLocaleString();
+                            marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
+                        }
+                    });
+                } else {
+                    alert("No hay datos aún.");
                 }
-
-                data.forEach(ctrl => {
-                    if (ctrl.latitud && ctrl.longitud) {
-                        const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
-                        const fecha = new Date(ctrl.fecha_hora).toLocaleString();
-                        marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
-                    }
-                });
-            } catch (err) {
-                console.error(err);
-                alert("Error al cargar mapa");
-            }
+            } catch (err) { alert("Error al cargar mapa"); }
         }
 
         function cerrarMapa() {
@@ -301,7 +324,47 @@
             document.getElementById('searchSection').classList.add('active');
         }
 
-        // --- FUNCIÓN REGISTRAR CONTROL ---
+        // --- FUNCIONES DE USUARIOS ---
+        function abrirUsuarios() {
+            document.getElementById('searchSection').classList.remove('active');
+            document.getElementById('mapSection').classList.remove('active');
+            document.getElementById('userSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'none';
+            document.getElementById('msgUsuario').innerHTML = '';
+        }
+
+        function cerrarUsuarios() {
+            document.getElementById('userSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+        }
+
+        async function guardarUsuario() {
+            const usuario = document.getElementById('newUsuario').value;
+            const password = document.getElementById('newPassword').value;
+            const nombre = document.getElementById('newNombre').value;
+            const rol = document.getElementById('newRol').value;
+
+            if(!usuario || !password) return alert("Falta usuario o contraseña");
+
+            try {
+                const res = await fetch('/api/crear-usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password, nombre, rol })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
+                    document.getElementById('newUsuario').value = '';
+                    document.getElementById('newPassword').value = '';
+                } else {
+                    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
+                }
+            } catch (err) { alert("Error de conexión"); }
+        }
+
+        // --- REGISTRAR CONTROL ---
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
             
