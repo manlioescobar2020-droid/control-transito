@@ -1,4 +1,4 @@
-// server.js - MODO DEBUG
+// server.js - CORREGIDO FINAL
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -7,11 +7,12 @@ const { Server } = require('socket.io');
 const path = require('path');
 
 const app = express();
-// --- AGREGAR ESTAS 3 LÍNEAS ---
+
+// --- DIAGNÓSTICO (Dejamos esto para confirmar que conecta) ---
 console.log("--- DIAGNÓSTICO DE RENDER ---");
 console.log("¿DATABASE_URL existe?", process.env.DATABASE_URL ? "SÍ" : "NO");
 console.log("-----------------------------");
-// --------------------------------
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(cors());
@@ -24,36 +25,23 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// --- RUTA DE LOGIN CON DEBUG ---
+// --- RUTAS API ---
+
+// 1. LOGIN
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
-    console.log(`--- INTENTO DE LOGIN ---`);
-    console.log(`Usuario recibido: "${usuario}"`);
-    console.log(`Password recibido: "${password}"`);
-
+    console.log(`--- INTENTO DE LOGIN: ${usuario} ---`);
     try {
-        // 1. Intentamos buscar en 'production'
-        let result = await pool.query('SELECT * FROM production.usuarios WHERE usuario = $1 AND password = $2', [usuario, password]);
-        console.log(`Buscando en 'production.usuarios': ${result.rows.length} resultados`);
+        // BUSCAMOS EN LA TABLA USUARIOS (CARPETA PUBLIC POR DEFECTO)
+        // Usamos LOWER para que "Man" sea igual a "man"
+        const result = await pool.query('SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER($1) AND password = $2', [usuario, password]);
         
-        // 2. Si no hay, intentamos en 'public' (sin prefijo)
-        if (result.rows.length === 0) {
-            result = await pool.query('SELECT * FROM usuarios WHERE usuario = $1 AND password = $2', [usuario, password]);
-            console.log(`Buscando en 'public.usuarios': ${result.rows.length} resultados`);
-        }
-        
-        // 3. Si todavía no hay, listamos todos los usuarios para ver qué hay
-        if (result.rows.length === 0) {
-            const todos = await pool.query("SELECT * FROM production.usuarios");
-            console.log("USUARIOS EXISTENTES EN PRODUCTION:", todos.rows);
-            const todosPublic = await pool.query("SELECT * FROM usuarios");
-            console.log("USUARIOS EXISTENTES EN PUBLIC:", todosPublic.rows);
-        }
+        console.log("Resultado de búsqueda:", result.rows.length);
 
         if (result.rows.length > 0) {
             res.json({ success: true, user: result.rows[0] });
         } else {
-            res.status(401).json({ success: false, message: 'Credenciales incorrectas (Ver logs para detalles)' });
+            res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
         }
     } catch (err) {
         console.error("ERROR CRÍTICO:", err.message);
@@ -61,28 +49,49 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// --- RUTAS VEHÍCULOS (Simplificadas para probar) ---
+// 2. BUSCAR VEHÍCULO
 app.get('/vehiculos/:patricula', async (req, res) => {
     const { patricula } = req.params;
     try {
-        // Intentamos en ambos lados
-        let vehiculo = await pool.query('SELECT * FROM production.vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
-        if (vehiculo.rows.length === 0) vehiculo = await pool.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
-        
-        let control = await pool.query('SELECT * FROM production.registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
-        if (control.rows.length === 0) control = await pool.query('SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
+        // Buscamos sin el prefijo production.
+        const vehiculoResult = await pool.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
+        const controlResult = await pool.query('SELECT fecha_hora, id_inspector FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
 
-        res.json({ vehiculo: vehiculo.rows[0], ultimoControl: control.rows[0] });
+        res.json({ 
+            vehiculo: vehiculoResult.rows[0] || null, 
+            ultimoControl: controlResult.rows[0] || null 
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error' });
+        console.error("Error Buscar:", err);
+        res.status(500).json({ error: 'Error al buscar vehículo' });
     }
 });
 
-// --- REGISTRAR CONTROL (Simplificado) ---
+// 3. REGISTRAR CONTROL
 app.post('/registrar-control', async (req, res) => {
-    // (Usa el mismo código de antes si quieres, o ponemos uno simple luego)
-    res.json({ success: true, message: "Recibido" });
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones } = req.body;
+
+        // Upsert Vehiculo (sin production.)
+        const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, fecha_rto_vence = EXCLUDED.fecha_rto_vence`;
+        await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence, fecha_rto_vence]);
+
+        // Insert Registro (sin production.)
+        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
+        const result = await client.query(insertRegistro, [patricula.toUpperCase(), id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones]);
+
+        await client.query('COMMIT');
+        io.emit('nuevo_control_registrado', result.rows[0]);
+        res.json({ success: true, registro: result.rows[0] });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("ERROR AL GUARDAR:", err);
+        res.status(500).json({ error: 'Error al registrar control' });
+    } finally {
+        client.release();
+    }
 });
 
 const PORT = process.env.PORT || 3000;
