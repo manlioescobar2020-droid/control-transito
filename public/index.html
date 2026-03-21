@@ -7,10 +7,10 @@
     <style>
         /* --- ESTILOS MODERNOS --- */
         :root {
-            --primary: #2563eb; /* Azul profesional */
-            --success: #16a34a; /* Verde */
-            --danger: #dc2626; /* Rojo */
-            --warning: #f59e0b; /* Amarillo */
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
             --dark: #1e293b;
             --light: #f1f5f9;
         }
@@ -30,7 +30,7 @@
             min-height: 100vh;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             position: relative;
-            padding-bottom: 80px; /* Espacio para botón guardar */
+            padding-bottom: 80px;
             box-sizing: border-box;
         }
         
@@ -45,9 +45,7 @@
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
         
         /* Login Screen */
-        .login-box {
-            padding: 40px 20px;
-        }
+        .login-box { padding: 40px 20px; }
         .login-box h2 { text-align: center; color: var(--dark); margin-bottom: 30px; }
         
         /* Inputs & Buttons Genéricos */
@@ -129,7 +127,7 @@
             padding: 15px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             box-sizing: border-box;
-            display: none; /* Se muestra solo al buscar */
+            display: none;
         }
         
         .hidden { display: none !important; }
@@ -140,7 +138,7 @@
 <body>
 
     <!-- PANTALLA DE LOGIN -->
-    <div id="loginScreen" class="container login-box section active">
+    <div id="loginScreen" class="container login-box">
         <div class="text-center" style="margin-bottom: 30px;">
             <div style="font-size: 50px;">👮‍♂️</div>
             <h2>Control de Tránsito</h2>
@@ -157,8 +155,9 @@
         <button class="btn-primary" onclick="iniciarSesion()">INICIAR SESIÓN</button>
     </div>
 
-    <!-- PANTALLA PRINCIPAL -->
+    <!-- PANTALLA PRINCIPAL (OCULTA AL PRINCIPIO) -->
     <div id="mainApp" class="container" style="display:none;">
+        
         <div class="header">
             <h1>Control Vehicular</h1>
             <p>Inspector: <span id="spanNombre">...</span></p>
@@ -244,7 +243,8 @@
             if (data.success) {
                 usuarioActual = data.user;
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
-                document.getElementById('loginScreen').classList.remove('active');
+                // Ocultamos login y mostramos app principal
+                document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
@@ -264,13 +264,12 @@
             const divRes = document.getElementById('divResultado');
             const footerBtn = document.getElementById('footerBtn');
             
-            footerBtn.style.display = 'block'; // Mostrar botón guardar
-            document.getElementById('formSection').classList.remove('active'); // Ocultar form si estaba
+            footerBtn.style.display = 'block'; 
+            document.getElementById('formSection').classList.remove('active'); 
 
             let html = "";
             
             if (ultimoControl) {
-                // CALCULAR TIEMPO
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
                 const ahora = new Date();
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
@@ -294,25 +293,23 @@
                     <p><strong>Seguro:</strong> ${vehiculoActual.fecha_seguro_vence || 'N/A'}</p>
                 </div>`;
                 
-                // Rellenar formulario
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
                 document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? vehiculoActual.fecha_seguro_vence.split('T')[0] : '';
                 document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? vehiculoActual.fecha_rto_vence.split('T')[0] : '';
             } else {
                  html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos del vehículo en el formulario.</p></div>`;
-                 // Limpiar form
                  document.getElementById('txtModelo').value = '';
                  document.getElementById('txtNro08').value = '';
                  document.getElementById('txtSeguro').value = '';
                  document.getElementById('txtRTO').value = '';
             }
             
-            // Mostrar botones: Editar y Cancelar
-html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
-html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar / Nueva Búsqueda</button>`;
+            html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
+            // BOTÓN DE CANCELAR AGREGADO
+            html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar / Nueva Búsqueda</button>`;
 
-divRes.innerHTML = html;
+            divRes.innerHTML = html;
         }
 
         function mostrarFormulario() {
@@ -326,10 +323,28 @@ divRes.innerHTML = html;
             document.getElementById('searchSection').classList.add('active');
         }
 
+        // FUNCIÓN DE LIMPIAR PANTALLA AGREGADA
+        function limpiarPantalla() {
+            document.getElementById('txtPatente').value = '';
+            document.getElementById('divResultado').innerHTML = '';
+            document.getElementById('footerBtn').style.display = 'none';
+            document.getElementById('formSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+            
+            // Limpiar formulario
+            document.getElementById('txtModelo').value = '';
+            document.getElementById('txtNro08').value = '';
+            document.getElementById('chkCedula').checked = false;
+            document.getElementById('chkLicencia').checked = false;
+            document.getElementById('chkSeguro').checked = false;
+            document.getElementById('chk08').checked = false;
+            document.getElementById('chkRTO').checked = false;
+            document.getElementById('txtObs').value = '';
+        }
+
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
             
-            // Lógica de ubicación
             let lat = null, lon = null;
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -370,11 +385,7 @@ divRes.innerHTML = html;
                 const data = await res.json();
                 if (data.success) {
                     alert("✅ Control registrado con éxito");
-                    // Resetear interfaz
-                    document.getElementById('txtPatente').value = '';
-                    document.getElementById('divResultado').innerHTML = '';
-                    document.getElementById('footerBtn').style.display = 'none';
-                    cerrarFormulario();
+                    limpiarPantalla(); // Usamos la función de limpiar
                 } else {
                     alert("Error al guardar");
                 }
@@ -383,22 +394,6 @@ divRes.innerHTML = html;
                 alert("Error de conexión");
             }
         }
-        function limpiarPantalla() {
-    document.getElementById('txtPatente').value = '';
-    document.getElementById('divResultado').innerHTML = '';
-    document.getElementById('footerBtn').style.display = 'none';
-    document.getElementById('formSection').classList.remove('active');
-    document.getElementById('searchSection').classList.add('active');
-    // Opcional: Limpiar los campos del formulario
-    document.getElementById('txtModelo').value = '';
-    document.getElementById('txtNro08').value = '';
-    document.getElementById('chkCedula').checked = false;
-    document.getElementById('chkLicencia').checked = false;
-    document.getElementById('chkSeguro').checked = false;
-    document.getElementById('chk08').checked = false;
-    document.getElementById('chkRTO').checked = false;
-    document.getElementById('txtObs').value = '';
-}
     </script>
 </body>
 </html>
