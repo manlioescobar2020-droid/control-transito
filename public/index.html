@@ -158,8 +158,7 @@
     </div>
 
     <!-- PANTALLA PRINCIPAL -->
-    <div id="mainApp" class="container">
-        
+    <div id="mainApp" class="container" style="display:none;">
         <div class="header">
             <h1>Control Vehicular</h1>
             <p>Inspector: <span id="spanNombre">...</span></p>
@@ -309,10 +308,11 @@
                  document.getElementById('txtRTO').value = '';
             }
             
-            // Mostrar botón para abrir formulario si necesitan editar
-            html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
+            // Mostrar botones: Editar y Cancelar
+html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos / Cargar Documentación</button>`;
+html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar / Nueva Búsqueda</button>`;
 
-            divRes.innerHTML = html;
+divRes.innerHTML = html;
         }
 
         function mostrarFormulario() {
@@ -383,6 +383,22 @@
                 alert("Error de conexión");
             }
         }
+        function limpiarPantalla() {
+    document.getElementById('txtPatente').value = '';
+    document.getElementById('divResultado').innerHTML = '';
+    document.getElementById('footerBtn').style.display = 'none';
+    document.getElementById('formSection').classList.remove('active');
+    document.getElementById('searchSection').classList.add('active');
+    // Opcional: Limpiar los campos del formulario
+    document.getElementById('txtModelo').value = '';
+    document.getElementById('txtNro08').value = '';
+    document.getElementById('chkCedula').checked = false;
+    document.getElementById('chkLicencia').checked = false;
+    document.getElementById('chkSeguro').checked = false;
+    document.getElementById('chk08').checked = false;
+    document.getElementById('chkRTO').checked = false;
+    document.getElementById('txtObs').value = '';
+}
     </script>
 </body>
 </html>
