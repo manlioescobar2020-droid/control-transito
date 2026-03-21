@@ -8,19 +8,19 @@ const path = require('path'); // Necesario para servir la web app
 
 const app = express();
 
-// Configuración para servir archivos estáticos (la carpeta 'public')
+// ConfiguraciÃ³n para servir archivos estÃ¡ticos (la carpeta 'public')
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(cors());
 
-// Configuración de Socket.io
+// ConfiguraciÃ³n de Socket.io
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-// --- CONFIGURACIÓN DE BASE DE DATOS (PARA INTERNET) ---
-// Ya no ponemos la contraseña aquí, la leeremos de las variables del servidor
+// --- CONFIGURACIÃ“N DE BASE DE DATOS (PARA INTERNET) ---
+// Ya no ponemos la contraseÃ±a aquÃ­, la leeremos de las variables del servidor
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, 
   ssl: {
@@ -28,10 +28,10 @@ const pool = new Pool({
   }
 });
 
-// ... (todo el medio del código igual) ...
+// ... (todo el medio del cÃ³digo igual) ...
 
 // INICIAR SERVIDOR
-// Render asigna un puerto dinámico, lo leemos con process.env.PORT
+// Render asigna un puerto dinÃ¡mico, lo leemos con process.env.PORT
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Servidor listo en el puerto ${PORT}`);
@@ -46,7 +46,7 @@ app.post('/login', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, user: result.rows[0] });
         } else {
-            res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
+            res.status(401).json({ success: false, message: 'Usuario o contraseÃ±a incorrectos' });
         }
     } catch (err) {
         console.error("Error Login:", err);
@@ -54,16 +54,16 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// 2. BUSCAR VEHÍCULO (MEJORADO)
+// 2. BUSCAR VEHÃCULO (MEJORADO)
 app.get('/vehiculos/:patricula', async (req, res) => {
     const { patricula } = req.params;
     const client = await pool.connect(); // Usamos cliente para transacciones seguras
     
     try {
-        // A. Buscar datos del vehículo
+        // A. Buscar datos del vehÃ­culo
         const vehiculoResult = await client.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
         
-        // B. Buscar el ÚLTIMO control de ese vehículo
+        // B. Buscar el ÃšLTIMO control de ese vehÃ­culo
         const controlResult = await client.query(
             'SELECT fecha_hora, id_inspector FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
             [patricula.toUpperCase()]
@@ -79,7 +79,7 @@ app.get('/vehiculos/:patricula', async (req, res) => {
 
     } catch (err) {
         console.error("Error Buscar:", err);
-        res.status(500).json({ error: 'Error al buscar vehículo' });
+        res.status(500).json({ error: 'Error al buscar vehÃ­culo' });
     } finally {
         client.release();
     }
@@ -97,7 +97,7 @@ app.post('/registrar-control', async (req, res) => {
             tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones 
         } = req.body;
 
-        // A. Guardar o Actualizar Vehículo (Upsert)
+        // A. Guardar o Actualizar VehÃ­culo (Upsert)
         const upsertVehiculo = `
             INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence)
             VALUES ($1, $2, $3, $4, $5)
@@ -138,10 +138,4 @@ app.post('/registrar-control', async (req, res) => {
     } finally {
         client.release();
     }
-});
-
-// INICIAR SERVIDOR
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`?? Servidor listo en http://localhost:${PORT}`);
 });
