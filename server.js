@@ -20,7 +20,6 @@ const io = new Server(server, {
 });
 
 // --- CONFIGURACIÓN DE BASE DE DATOS (NEON) ---
-// Usamos la variable de entorno para seguridad
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -28,14 +27,14 @@ const pool = new Pool({
     }
 });
 
-// --- RUTAS API (Van ANTES de server.listen) ---
+// --- RUTAS API ---
 
 // 1. LOGIN
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
     try {
-        // OJO: Asegúrate que las columnas en tu tabla Neon sean 'usuario' y 'password'
-        const result = await pool.query('SELECT * FROM usuarios WHERE usuario = $1 AND password = $2', [usuario, password]);
+        // CORRECCIÓN: Agregado 'production.' antes del nombre de la tabla
+        const result = await pool.query('SELECT * FROM production.usuarios WHERE usuario = $1 AND password = $2', [usuario, password]);
         if (result.rows.length > 0) {
             res.json({ success: true, user: result.rows[0] });
         } else {
@@ -47,17 +46,16 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// 2. BUSCAR VEHÍCULO (Con lógica de último control)
+// 2. BUSCAR VEHÍCULO
 app.get('/vehiculos/:patricula', async (req, res) => {
     const { patricula } = req.params;
     const client = await pool.connect();
     try {
-        // A. Buscar datos del vehículo
-        const vehiculoResult = await client.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
+        // CORRECCIÓN: Agregado 'production.' en ambas tablas
+        const vehiculoResult = await client.query('SELECT * FROM production.vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
         
-        // B. Buscar el ÚLTIMO control de ese vehículo
         const controlResult = await client.query(
-            'SELECT fecha_hora, id_inspector FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
+            'SELECT fecha_hora, id_inspector FROM production.registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
             [patricula.toUpperCase()]
         );
 
@@ -90,9 +88,9 @@ app.post('/registrar-control', async (req, res) => {
             tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones
         } = req.body;
 
-        // A. Guardar o Actualizar Vehículo (Upsert)
+        // CORRECCIÓN: Agregado 'production.' en INSERT
         const upsertVehiculo = `
-            INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence)
+            INSERT INTO production.vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence)
             VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (patricula)
             DO UPDATE SET
@@ -103,9 +101,9 @@ app.post('/registrar-control', async (req, res) => {
         `;
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence, fecha_rto_vence]);
 
-        // B. Guardar Registro del Control
+        // CORRECCIÓN: Agregado 'production.' en INSERT
         const insertRegistro = `
-            INSERT INTO registros_controles
+            INSERT INTO production.registros_controles
             (patricula, id_inspector, latitud, longitud, texto_ubicacion,
             tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -133,7 +131,7 @@ app.post('/registrar-control', async (req, res) => {
     }
 });
 
-// --- INICIAR SERVIDOR (AL FINAL DE TODO) ---
+// --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Servidor listo en el puerto ${PORT}`);
