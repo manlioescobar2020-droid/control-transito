@@ -71,6 +71,14 @@
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <!-- LIBRERÍAS EXTERNAS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- AGREGAR ESTO: TOASTIFY (Notificaciones) -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 <body>
 
@@ -95,15 +103,24 @@
     <!-- PANTALLA PRINCIPAL (OCULTA AL PRINCIPIO) -->
     <div id="mainApp" class="container" style="display:none;">
         
-        <div class="header">
-            <h1>Control Vehicular</h1>
-            <p>Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)</p>
-            
-            <!-- Botones de Admin (Ocultos por defecto) -->
-            <div id="adminTools" style="display:none; margin-top:10px;">
-                <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 48%; margin-right: 2%;">📍 Mapa</button>
-                <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 48%; background: #7c3aed;">👤 Usuarios</button>
+               <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+            <div>
+                <h1 style="margin:0;">Control Vehicular</h1>
+                <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">
+                    Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)
+                </p>
+                
+                <!-- Botones de Admin (Ocultos por defecto) -->
+                <div id="adminTools" style="display:none; margin-top:10px;">
+                    <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 48%; margin-right: 2%;">📍 Mapa</button>
+                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 48%; background: #7c3aed;">👤 Usuarios</button>
+                </div>
             </div>
+
+            <!-- NUEVO BOTÓN CERRAR SESIÓN -->
+            <button onclick="cerrarSesion()" class="btn-secondary" style="width: auto; padding: 10px 15px; font-size: 14px; margin-top: 5px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);">
+                Salir ❌
+            </button>
         </div>
 
         <!-- Sección Buscador -->
@@ -499,20 +516,53 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
+                                const data = await res.json();
                 if (data.success) {
-                    alert("✅ Control registrado con éxito");
+                    mostrarToast("✅ Control registrado con éxito", "success");
                     limpiarPantalla();
                 } else {
-                    alert("Error al guardar");
+                    mostrarToast("Error al guardar control", "error");
                 }
-            } catch (err) {
+                       } catch (err) {
                 console.error(err);
-                alert("Error de conexión");
+                mostrarToast("Error de conexión", "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = "✅ REGISTRAR CONTROL";
             }
+        }
+
+                // --- FUNCIONES DE INTERFAZ Y SESIÓN ---
+
+        // 1. Función Helper para mostrar notificaciones (Reemplaza a 'alert')
+        function mostrarToast(mensaje, tipo = "success") {
+            let colorFondo = "#16a34a"; // Verde por defecto
+            if (tipo === "error") colorFondo = "#dc2626"; // Rojo
+            if (tipo === "info") colorFondo = "#2563eb"; // Azul
+
+            Toastify({
+                text: mensaje,
+                duration: 3000,
+                gravity: "top", // `top` or `bottom`
+                position: "center", // `left`, `center` or `right`
+                stopOnFocus: true, // Prevents dismissing of toast on hover
+                style: {
+                    background: colorFondo,
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    fontWeight: "bold"
+                },
+            }).showToast();
+        }
+
+        // 2. Función Cerrar Sesión
+        function cerrarSesion() {
+            mostrarToast("Cerrando sesión...", "info");
+            
+            // Esperamos 1 segundo para que el usuario vea el mensaje y recargamos
+            setTimeout(() => {
+                location.reload(); 
+            }, 1000);
         }
     </script>
 </body>
