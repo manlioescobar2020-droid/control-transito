@@ -165,6 +165,27 @@ app.post('/api/crear-usuario', async (req, res) => {
         res.status(500).json({ error: 'Error al crear usuario', details: err.message });
     }
 });
+// --- NUEVA RUTA: LISTAR USUARIOS (Solo OWNER) ---
+app.get('/api/usuarios', async (req, res) => {
+    // 1. Verificamos que haya sesión y sea OWNER
+    if (!req.session.usuario || req.session.usuario.rol !== 'OWNER') {
+        return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    try {
+        // 2. Consultamos la base de datos
+        // Seleccionamos solo nombre_completo y rol, ordenados por nombre
+        const result = await pool.query(
+            'SELECT nombre_completo, rol FROM usuarios ORDER BY nombre_completo ASC'
+        );
+        
+        // 3. Enviamos los datos
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 // --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
