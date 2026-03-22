@@ -166,7 +166,30 @@
         </div>
 
     </div>
-
+<!-- SECCIÓN LISTA DE USUARIOS -->
+<section id="seccionListaUsuarios" class="card card-body mb-3" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">👥 Usuarios Registrados</h4>
+        <button class="btn btn-outline-secondary btn-sm" onclick="cerrarListaUsuarios()">Cerrar</button>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>Cargo (Rol)</th>
+                </tr>
+            </thead>
+            <tbody id="tablaUsuariosBody">
+                <!-- Aquí se cargarán los datos dinámicamente -->
+                <tr>
+                    <td colspan="2" class="text-center">Cargando...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
     <!-- BOTÓN FLOTANTE REGISTRAR -->
     <div id="footerBtn" class="footer-fixed">
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
