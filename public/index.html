@@ -31,6 +31,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-secondary { background: #64748b; color: white; margin-top: 10px; }
         .btn-purple { background: #7c3aed; color: white; margin-top: 10px; }
+        .btn-warning { background: var(--warning); color: black; }
         
         .section { padding: 20px; display: none; }
         .section.active { display: block; }
@@ -55,6 +56,15 @@
         
         /* Estilos mapa */
         #map { height: 100%; width: 100%; background: #f0f0f0; }
+
+        /* --- NUEVOS ESTILOS PARA LA TABLA DE USUARIOS --- */
+        .table-users { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 15px; }
+        .table-users th, .table-users td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .table-users th { background-color: var(--dark); color: white; font-weight: bold; border-bottom: 2px solid #1e293b; }
+        .table-users tr:hover { background-color: #f1f5f9; }
+        .badge-role { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .badge-owner { background-color: #fbbf24; color: #78350f; } /* Amarillo */
+        .badge-inspector { background-color: #dbeafe; color: #1e40af; } /* Azul */
     </style>
 
     <!-- LIBRERÍAS EXTERNAS -->
@@ -159,37 +169,41 @@
                 </div>
 
                 <button class="btn-success" onclick="guardarUsuario()" style="margin-top:15px;">💾 Guardar Usuario</button>
-                <button class="btn-secondary" onclick="cerrarUsuarios()">Cancelar</button>
-                <button id="btnVerUsuarios" class="btn btn-info w-100 mb-2">📋 Ver Lista de Usuarios</button>
+                <button class="btn-warning" onclick="verListaUsuarios()" style="margin-top:10px; color:black;">📋 Ver Lista de Usuarios</button>
+                <button class="btn-secondary" onclick="cerrarUsuarios()">Volver al Inicio</button>
+                
                 <div id="msgUsuario" style="margin-top:10px; text-align:center; font-weight:bold;"></div>
             </div>
         </div>
 
+        <!-- --- NUEVA SECCIÓN: LISTA DE USUARIOS --- -->
+        <div id="listUsersSection" class="section">
+            <div style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin:0;">👥 Usuarios Registrados</h3>
+                    <button onclick="abrirUsuarios()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table class="table-users">
+                        <thead>
+                            <tr>
+                                <th>Nombre Completo</th>
+                                <th>Cargo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuariosBody">
+                            <tr>
+                                <td colspan="2" style="text-align:center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
-<!-- SECCIÓN LISTA DE USUARIOS -->
-<section id="seccionListaUsuarios" class="card card-body mb-3" style="display: none;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">👥 Usuarios Registrados</h4>
-        <button class="btn btn-outline-secondary btn-sm" onclick="cerrarListaUsuarios()">Cerrar</button>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-hover table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nombre Completo</th>
-                    <th>Cargo (Rol)</th>
-                </tr>
-            </thead>
-            <tbody id="tablaUsuariosBody">
-                <!-- Aquí se cargarán los datos dinámicamente -->
-                <tr>
-                    <td colspan="2" class="text-center">Cargando...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
+
     <!-- BOTÓN FLOTANTE REGISTRAR -->
     <div id="footerBtn" class="footer-fixed">
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
@@ -236,6 +250,17 @@
                 document.getElementById('loginError').classList.remove('hidden');
                 setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
             }
+        }
+
+        // --- FUNCIONES DE NAVEGACIÓN (HELPERS) ---
+        // Oculta todas las secciones principales
+        function ocultarTodasSecciones() {
+            document.getElementById('searchSection').classList.remove('active');
+            document.getElementById('formSection').classList.remove('active');
+            document.getElementById('mapSection').classList.remove('active');
+            document.getElementById('userSection').classList.remove('active');
+            document.getElementById('listUsersSection').classList.remove('active');
+            document.getElementById('footerBtn').style.display = 'none';
         }
 
         // --- FUNCIONES DE VEHÍCULOS ---
@@ -312,11 +337,8 @@
 
         // --- FUNCIONES DE MAPA ---
         async function abrirMapa() {
-            document.getElementById('searchSection').classList.remove('active');
-            document.getElementById('formSection').classList.remove('active');
-            document.getElementById('userSection').classList.remove('active');
+            ocultarTodasSecciones();
             document.getElementById('mapSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'none';
 
             if (map) {
                 map.invalidateSize();
@@ -346,20 +368,20 @@
         function cerrarMapa() {
             document.getElementById('mapSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'block';
         }
 
         // --- FUNCIONES DE USUARIOS ---
         function abrirUsuarios() {
-            document.getElementById('searchSection').classList.remove('active');
-            document.getElementById('mapSection').classList.remove('active');
+            ocultarTodasSecciones();
             document.getElementById('userSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'none';
             document.getElementById('msgUsuario').innerHTML = '';
         }
 
         function cerrarUsuarios() {
             document.getElementById('userSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'block';
         }
 
         async function guardarUsuario() {
@@ -386,6 +408,49 @@
                     document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
                 }
             } catch (err) { alert("Error de conexión"); }
+        }
+
+        // --- NUEVA FUNCIÓN: VER LISTA DE USUARIOS ---
+        async function verListaUsuarios() {
+            ocultarTodasSecciones();
+            document.getElementById('listUsersSection').classList.add('active');
+            
+            const tbody = document.getElementById('tablaUsuariosBody');
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
+
+            try {
+                const res = await fetch('/api/usuarios');
+                const data = await res.json();
+
+                tbody.innerHTML = ''; // Limpiar
+
+                if (data.error) {
+                    tbody.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${data.error}</td></tr>`;
+                    return;
+                }
+
+                if(data.length === 0) {
+                     tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
+                     return;
+                }
+
+                data.forEach(u => {
+                    const tr = document.createElement('tr');
+                    // Iconos y colores según rol
+                    const icono = u.rol === 'OWNER' ? '👑' : '🚔';
+                    const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
+
+                    tr.innerHTML = `
+                        <td>${u.nombre_completo || 'Sin nombre'}</td>
+                        <td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
+            }
         }
 
         // --- REGISTRAR CONTROL ---
