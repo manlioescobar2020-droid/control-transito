@@ -183,7 +183,33 @@ app.get('/api/usuarios', async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+// --- NUEVA RUTA: ESTADÍSTICAS (DASHBOARD) ---
+app.get('/api/estadisticas', async (req, res) => {
+    try {
+        // 1. Total de controles HOY
+        const totalHoyResult = await pool.query(
+            "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date = CURRENT_DATE"
+        );
+        
+        // 2. Controles por Inspector (Para el gráfico)
+        const porInspectorResult = await pool.query(
+            `SELECT u.nombre, COUNT(r.id) as cantidad 
+             FROM usuarios u 
+             LEFT JOIN registros_controles r ON u.id = r.id_inspector 
+             WHERE u.rol = 'INSPECTOR' 
+             GROUP BY u.nombre 
+             ORDER BY cantidad DESC`
+        );
 
+        res.json({
+            totalHoy: totalHoyResult.rows[0].total,
+            porInspector: porInspectorResult.rows
+        });
+    } catch (error) {
+        console.error("Error al obtener estadísticas:", error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
 // --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
