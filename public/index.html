@@ -434,14 +434,15 @@
                      return;
                 }
 
-                data.forEach(u => {
+                                data.forEach(u => {
                     const tr = document.createElement('tr');
                     // Iconos y colores según rol
                     const icono = u.rol === 'OWNER' ? '👑' : '🚔';
                     const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
 
+                    // --- AQUÍ ESTÁ EL CAMBIO EN LA SIGUIENTE LÍNEA ---
                     tr.innerHTML = `
-                        <td>${u.nombre_completo || 'Sin nombre'}</td>
+                        <td>${u.nombre || u.nombre_completo || 'Sin nombre'}</td>
                         <td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td>
                     `;
                     tbody.appendChild(tr);
