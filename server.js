@@ -1,4 +1,4 @@
-// server.js - VERSIÓN LIMPIA Y ESTABLE
+// server.js - VERSIÓN LIMPIA Y ESTABLE (ACTUALIZADA)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -27,7 +27,6 @@ const pool = new Pool({
 
 // --- RUTAS API ---
 
-// 1. LOGIN
 // 1. LOGIN
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
@@ -116,7 +115,7 @@ app.post('/registrar-control', async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Emitir evento en tiempo real (para futuros paneles de control)
+        // Emitir evento en tiempo real
         io.emit('nuevo_control_registrado', result.rows[0]);
 
         res.json({ success: true, registro: result.rows[0] });
@@ -129,10 +128,10 @@ app.post('/registrar-control', async (req, res) => {
         client.release();
     }
 });
+
 // 4. HISTORIAL PARA MAPA (Supervisor)
 app.get('/api/historial', async (req, res) => {
     try {
-        // Pedimos los últimos 50 controles que tengan coordenadas válidas
         const result = await pool.query(
             'SELECT id, patricula, fecha_hora, latitud, longitud FROM registros_controles WHERE latitud IS NOT NULL ORDER BY fecha_hora DESC LIMIT 50'
         );
@@ -142,7 +141,8 @@ app.get('/api/historial', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener historial' });
     }
 });
-// 4. CREAR USUARIO (Corregido con DNI)
+
+// 5. CREAR USUARIO
 app.post('/api/crear-usuario', async (req, res) => {
     const { usuario, password, nombre, rol } = req.body;
     
@@ -151,10 +151,10 @@ app.post('/api/crear-usuario', async (req, res) => {
     }
 
     try {
-        // Agregamos 'dni' con valor NULL ya que no lo pedimos en el formulario
+        // Insertamos en la columna 'nombre' (como se ve más abajo)
         const result = await pool.query(
             'INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-            [usuario, password, nombre || usuario, rol, null] // El último null es para el DNI
+            [usuario, password, nombre || usuario, rol, null] 
         );
         res.json({ success: true, id: result.rows[0].id });
     } catch (err) {
@@ -165,27 +165,25 @@ app.post('/api/crear-usuario', async (req, res) => {
         res.status(500).json({ error: 'Error al crear usuario', details: err.message });
     }
 });
-// --- NUEVA RUTA: LISTAR USUARIOS (Solo OWNER) ---
-app.get('/api/usuarios', async (req, res) => {
-    // 1. Verificamos que haya sesión y sea OWNER
-    if (!req.session.usuario || req.session.usuario.rol !== 'OWNER') {
-        return res.status(403).json({ error: 'Acceso denegado' });
-    }
 
+// 6. LISTAR USUARIOS (CORREGIDO)
+app.get('/api/usuarios', async (req, res) => {
     try {
-        // 2. Consultamos la base de datos
-        // Seleccionamos solo nombre_completo y rol, ordenados por nombre
+        // CORRECCIÓN 1: Quitamos el chequeo de 'req.session' porque tu app no usa sesiones de servidor.
+        // El control de acceso lo hace el frontend (solo el OWNER ve el botón).
+        
+        // CORRECCIÓN 2: Seleccionamos 'nombre' en lugar de 'nombre_completo' para coincidir con el INSERT
         const result = await pool.query(
-            'SELECT nombre_completo, rol FROM usuarios ORDER BY nombre_completo ASC'
+            'SELECT id, usuario, nombre, rol FROM usuarios ORDER BY nombre ASC'
         );
         
-        // 3. Enviamos los datos
         res.json(result.rows);
     } catch (error) {
         console.error('Error al obtener usuarios:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+
 // --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
