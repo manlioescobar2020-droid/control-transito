@@ -79,6 +79,8 @@
     <!-- AGREGAR ESTO: TOASTIFY (Notificaciones) -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+        <!-- CHART.JS (Gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -114,6 +116,12 @@
                 <div id="adminTools" style="display:none; margin-top:10px;">
                     <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 48%; margin-right: 2%;">📍 Mapa</button>
                     <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 48%; background: #7c3aed;">👤 Usuarios</button>
+                                <div id="adminTools" style="display:none; margin-top:10px;">
+                <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
+                <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
+                <!-- NUEVO BOTÓN DASHBOARD -->
+                <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
+            </div>
                 </div>
             </div>
 
