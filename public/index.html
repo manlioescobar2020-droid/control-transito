@@ -952,7 +952,20 @@
         <div style="color:white; margin-bottom:10px; font-weight:bold; position:absolute; top:20px; z-index:2002;">Apunta a la patente</div>
         
         <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+    <!-- MODAL DE CÁMARA (ESCÁNER) -->
+    <div id="cameraModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <div style="color:white; margin-bottom:10px; font-weight:bold; position:absolute; top:20px; z-index:2002;">Apunta a la patente</div>
         
+        <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+        
+        <!-- NUEVO: CUADRO DE MIRA (GUIA VISUAL) -->
+        <div style="position:absolute; top:35%; left:20%; width:60%; height:30%; border: 3px solid #ef4444; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); z-index:2001;"></div>
+
+        <div style="position:absolute; bottom:50px; width:100%; display:flex; justify-content:center; gap:20px; z-index:2002;">
+            <button onclick="cerrarCamara()" class="btn-secondary" style="width:auto; padding:15px 30px; font-size:16px; border-radius:50px;">Cancelar</button>
+            <button onclick="tomarFotoYLeer()" class="btn-success" style="width:auto; padding:15px 30px; font-size:16px; border-radius:50px;">Capturar</button>
+        </div>
+    </div>
         <div style="position:absolute; bottom:50px; width:100%; display:flex; justify-content:center; gap:20px; z-index:2002;">
             <button onclick="cerrarCamara()" class="btn-secondary" style="width:auto; padding:15px 30px; font-size:16px; border-radius:50px;">Cancelar</button>
             <button onclick="tomarFotoYLeer()" class="btn-success" style="width:auto; padding:15px 30px; font-size:16px; border-radius:50px;">Capturar</button>
