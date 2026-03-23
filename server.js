@@ -183,13 +183,103 @@ app.get('/api/usuarios', async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-// --- RUTA: ESTADÍSTICAS (VERSIÓN FINAL CORREGIDA) ---
+// --- RUTA: ESTADÍSTICAS (CON FILTROS DE FECHA) ---
 app.get('/api/estadisticas', async (req, res) => {
     try {
-        // 1. Total de controles HOY (Cuenta todo)
-        const totalHoyResult = await pool.query(
-            "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date = CURRENT_DATE"
+        // Obtenemos fechas de la query, si no vienen, usamos hoy
+        const { desde, hasta } = req.query;
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        const fechaDesde = desde || hoy;
+        const fechaHasta = hasta || hoy;
+
+        // 1. Total de controles en el rango
+        const totalResult = await pool.query(
+            "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2",
+            [fechaDesde, fechaHasta]
         );
+        
+        // 2. Controles por Inspector en el rango
+        const porInspectorResult = await pool.query(
+            `SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad 
+             FROM usuarios u 
+             INNER JOIN registros_controles r ON u.id = r.id_inspector 
+             WHERE r.fecha_hora::date BETWEEN $1 AND $2
+             GROUP BY u.id, u.nombre, u.usuario
+             HAVING COUNT(r.id) > 0
+             ORDER BY cantidad DESC`,
+            [fechaDesde, fechaHasta]
+        );
+
+        res.json({
+            totalHoy: totalResult.rows[0].total,
+            porInspector: porInspectorResult.rows,
+            fechas: { desde: fechaDesde, hasta: fechaHasta } // Devolvemos las fechas usadas
+        });
+    } catch (error) {
+        console.error("Error al obtener estadísticas:", error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
+
+// --- NUEVA RUTA: EXPORTAR A EXCEL (CSV) ---
+app.get('/api/exportar-registros', async (req, res) => {
+    try {
+        const { desde, hasta } = req.query;
+        const hoy = new Date().toISOString().split('T')[0];
+        const fechaDesde = desde || hoy;
+        const fechaHasta = hasta || hoy;
+
+        // Consulta detallada para el reporte
+        const query = `
+            SELECT 
+                r.patricula, 
+                r.modelo, 
+                r.fecha_hora, 
+                u.nombre as inspector,
+                r.tiene_cedula, 
+                r.tiene_licencia, 
+                r.observaciones
+            FROM registros_controles r
+            JOIN usuarios u ON r.id_inspector = u.id
+            WHERE r.fecha_hora::date BETWEEN $1 AND $2
+            ORDER BY r.fecha_hora DESC
+        `;
+        
+        const result = await pool.query(query, [fechaDesde, fechaHasta]);
+        const rows = result.rows;
+
+        // Construir el CSV manualmente
+        // Encabezados
+        let csv = 'Patente,Modelo,Fecha,Hora,Inspector,Cédula,Licencia,Observaciones\n';
+
+        rows.forEach(row => {
+            // Formatear fecha y hora
+            const fechaObj = new Date(row.fecha_hora);
+            const fechaStr = fechaObj.toLocaleDateString();
+            const horaStr = fechaObj.toLocaleTimeString();
+
+            // Manejar comas en observaciones para no romper el CSV
+            const obs = row.observaciones ? `"${row.observaciones.replace(/"/g, '""')}"` : ''; 
+
+            // Datos (0 = No, 1 = Si para que sea legible)
+            const cedula = row.tiene_cedula ? 'Sí' : 'No';
+            const licencia = row.tiene_licencia ? 'Sí' : 'No';
+
+            csv += `${row.patricula},"${row.modelo}",${fechaStr},${horaStr},"${row.inspector}",${cedula},${licencia},${obs}\n`;
+        });
+
+        // Configurar cabeceras para descarga
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=reporte_transito_${fechaDesde}_a_${fechaHasta}.csv`);
+        
+        res.send(csv);
+
+    } catch (error) {
+        console.error("Error al exportar:", error);
+        res.status(500).send("Error al generar reporte");
+    }
+});
         
         // 2. Controles por Inspector (CORREGIDO PARA INCLUIR A TODOS)
         // - Eliminamos el filtro de rol 'INSPECTOR'.
