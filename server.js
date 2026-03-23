@@ -263,7 +263,7 @@ app.get('/api/exportar-registros', async (req, res) => {
     }
 });
 
-// --- INICIAR SERVIDOR ---
+// --- INICIAR SERVIDOR  ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Servidor activo en puerto ${PORT}`);
