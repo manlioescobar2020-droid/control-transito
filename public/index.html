@@ -138,8 +138,7 @@
             <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                 <div class="form-group">
                     <label>DATOS DEL VEHÍCULO</label>
-                    <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)">
-                    <input type="text" id="txtNro08" placeholder="Nro. 08">
+<input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)" oninput="this.value = this.value.toUpperCase()">                    <input type="text" id="txtNro08" placeholder="Nro. 08">
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
                         <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
