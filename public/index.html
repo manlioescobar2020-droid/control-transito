@@ -495,7 +495,7 @@
             }
         }
 
-        // --- FUNCIONES DEL DASHBOARD (NUEVO) ---
+                // --- FUNCIONES DEL DASHBOARD (VERSIÓN DISEÑO PREMIUM) ---
         async function abrirDashboard() {
             ocultarTodasSecciones();
             document.getElementById('dashboardSection').classList.add('active');
@@ -509,18 +509,52 @@
                 // 1. Actualizar número grande
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
 
-                // 2. Preparar datos para el gráfico
-                // Muestra "Nombre (usuario)" para evitar confusiones si hay nombres repetidos
+                // 2. Preparar datos
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
 
-                // 3. Dibujar Gráfico
+                // 3. Configurar el lienzo (Canvas) para los degradados
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
 
+                // --- CONFIGURACIÓN DE COLORES Y DEGRADADOS ---
+                // Paleta de colores vibrantes
+                const coloresBase = [
+                    '#3b82f6', // Azul
+                    '#ef4444', // Rojo
+                    '#10b981', // Verde
+                    '#f59e0b', // Naranja
+                    '#8b5cf6', // Violeta
+                    '#ec4899', // Rosa
+                    '#06b6d4', // Cian
+                    '#84cc16'  // Lima
+                ];
+
+                // Creamos un array de degradados para cada barra
+                const fondosBarras = data.porInspector.map((u, index) => {
+                    // Elegimos un color de la paleta (ciclando si hay muchos inspectores)
+                    const colorHex = coloresBase[index % coloresBase.length];
+                    
+                    // Creamos el degradado vertical (de arriba a abajo)
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    
+                    // Efecto Biselado: Brillo arriba -> Color sólido -> Sombra abajo
+                    gradient.addColorStop(0, adjustColor(colorHex, 40)); // Luz arriba
+                    gradient.addColorStop(0.5, colorHex);               // Color medio
+                    gradient.addColorStop(1, adjustColor(colorHex, -20)); // Sombra abajo
+                    
+                    return gradient;
+                });
+
+                const bordesBarras = data.porInspector.map((u, index) => {
+                    return coloresBase[index % coloresBase.length];
+                });
+
+                // 4. Destruir gráfico anterior si existe
                 if (miGrafico) {
                     miGrafico.destroy();
                 }
 
+                // 5. Crear el nuevo Gráfico con el diseño personalizado
                 miGrafico = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -528,16 +562,38 @@
                         datasets: [{
                             label: 'Controles Realizados',
                             data: cantidades,
-                            backgroundColor: 'rgba(37, 99, 235, 0.6)',
-                            borderColor: 'rgba(37, 99, 235, 1)',
-                            borderWidth: 1
+                            backgroundColor: fondosBarras, // Usamos los degradados
+                            borderColor: bordesBarras,   // Borde sólido del color original
+                            borderWidth: 2,
+                            borderRadius: 5,             // Bordes redondeados en las barras
+                            barPercentage: 0.6           // Ancho de las barras
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }, // Ocultamos la leyenda porque es obvio
+                            tooltip: {
+                                backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                                padding: 12,
+                                titleFont: { size: 14 },
+                                bodyFont: { size: 14 }
+                            }
+                        },
                         scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                            y: { 
+                                beginAtZero: true, 
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#e2e8f0' }
+                            },
+                            x: {
+                                grid: { display: false } // Limpiar líneas verticales
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart' // Animación suave
                         }
                     }
                 });
@@ -548,10 +604,10 @@
             }
         }
 
-        function cerrarDashboard() {
-            document.getElementById('dashboardSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'block';
+        // --- UTILIDAD: Aclarar u Oscurecer Colores Hexadecimales (Para el efecto 3D) ---
+        // amount: positivo para aclarar, negativo para oscurecer
+        function adjustColor(color, amount) {
+            return '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
         }
 
         // --- REGISTRAR CONTROL ---
