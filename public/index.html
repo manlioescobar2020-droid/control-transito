@@ -294,11 +294,13 @@
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
                 document.getElementById('spanRol').innerText = usuarioActual.rol;
 
-                // LÓGICA DE ROLES: Mostrar botones solo si es OWNER
+                                // LÓGICA DE ROLES: Mostrar botones solo si es OWNER
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
+                    document.getElementById('reportTools').style.display = 'block'; // <--- AGREGAR ESTO
                 } else {
                     document.getElementById('adminTools').style.display = 'none';
+                    document.getElementById('reportTools').style.display = 'none'; // <--- Y ESTO POR SEGURIDAD
                 }
 
                 mostrarMainApp();
