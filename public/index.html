@@ -890,62 +890,83 @@
             modal.classList.add('hidden');
         }
 
-        // 3. Capturar y Leer (OCR)
+                // 3. Capturar, Recortar y Leer (OCR) Versión Pro
         async function tomarFotoYLeer() {
             const video = document.getElementById('videoElement');
             
             if (!stream) return;
 
-            mostrarToast("Procesando imagen...", "info");
+            mostrarToast("Capturando y analizando...", "info");
 
-            // Crear un canvas temporal para capturar el frame
+            // Crear canvas del tamaño DEL VIDEO
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // --- AQUÍ ESTÁ EL TRUCO: RECORTAR SOLO EL CENTRO ---
+            // Queremos recortar el 60% del ancho y el 30% del alto, empezando desde el centro
+            const cropX = video.videoWidth * 0.20;  // Empezar al 20%
+            const cropY = video.videoHeight * 0.35; // Empezar al 35%
+            const cropWidth = video.videoWidth * 0.60; // Ancho del recorte
+            const cropHeight = video.videoHeight * 0.30; // Alto del recorte
+
+            // Dibujamos SOLO esa parte del video en el canvas
+            ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
             
             // Convertir a imagen
             const imagenBase64 = canvas.toDataURL('image/png');
 
-            // Apagar cámara y cerrar modal visualmente (procesando en fondo)
+            // Apagar cámara
             cerrarCamara();
 
             try {
-                // Ejecutar Tesseract (Reconocimiento de Texto)
-                // Usamos 'eng' porque las patentes suelen ser letras/números estándar
                 const { data: { text } } = await Tesseract.recognize(
                     imagenBase64,
                     'eng', 
-                    { 
-                        logger: m => console.log(m) // Logs de progreso (opcional)
-                    }
+                    { logger: m => console.log(m) }
                 );
 
-                // LIMPIEZA DEL TEXTO
-                // 1. Mayúsculas
-                // 2. Solo letras y números (quitar espacios, signos, rayas)
-                let patenteDetectada = text.toUpperCase()
-                                           .replace(/[^A-Z0-9]/g, '') 
-                                           .trim();
+                // --- LIMPIEZA Y VALIDACIÓN "ARGENTINA" ---
+                let texto = text.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+                
+                console.log("Texto crudo detectado:", texto);
 
-                console.log("Patente detectada:", patenteDetectada);
+                // Expresiones Regulares para Patentes Argentinas
+                // Formato Viejo: ABC123 o 123ABC
+                const regexVieja = /^([A-Z]{3}\d{3}|\d{3}[A-Z]{3})$/;
+                // Formato Nuevo: AB123CD
+                const regexNueva = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
 
-                // Validar longitud mínima (patente argentina generalmente 6 o 7 caracteres)
-                if (patenteDetectada.length >= 5) {
-                    document.getElementById('txtPatente').value = patenteDetectada;
-                    mostrarToast("Patente detectada: " + patenteDetectada, "success");
-                    // Opcional: Auto-consultar
-                    // buscarVehiculo(); 
+                let patenteValida = null;
+
+                if (texto.length === 6 && regexVieja.test(texto)) {
+                    patenteValida = texto;
+                } else if (texto.length === 7 && regexNueva.test(texto)) {
+                    patenteValida = texto;
                 } else {
-                    mostrarToast("No se pudo leer bien, intenta de nuevo", "warning");
+                    // Si no es perfecto, intentamos buscar un patrón dentro de un texto más largo
+                    // Ej: "BARROXYZAB123CDFONDO" -> Encuentra "AB123CD"
+                    const matchVieja = texto.match(/[A-Z]{3}\d{3}/);
+                    const matchNueva = texto.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
+                    
+                    if (matchNueva) patenteValida = matchNueva[0];
+                    else if (matchVieja) patenteValida = matchVieja[0];
+                }
+
+                if (patenteValida) {
+                    document.getElementById('txtPatente').value = patenteValida;
+                    mostrarToast("Patente: " + patenteValida, "success");
+                } else {
+                    mostrarToast("No se detectó un formato válido de patente", "warning");
                 }
 
             } catch (error) {
                 console.error(error);
-                mostrarToast("Error al leer patente", "error");
+                mostrarToast("Error al leer imagen", "error");
             }
         }
+        
     </script>
         <!-- MODAL DE CÁMARA (ESCÁNER) -->
     <div id="cameraModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
