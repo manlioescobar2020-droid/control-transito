@@ -636,7 +636,106 @@
             // Abrimos la URL en una nueva pestaña/blanco, el navegador descargará el archivo
             window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
         }
+        // --- FUNCIONES DEL DASHBOARD (VERSIÓN DISEÑO PREMIUM) ---
+        
+        async function abrirDashboard() {
+            ocultarTodasSecciones();
+            document.getElementById('dashboardSection').classList.add('active');
 
+            // 1. Setear fechas por defecto (Hoy)
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaDesde').value = hoy;
+            document.getElementById('fechaHasta').value = hoy;
+
+            // 2. Cargar datos iniciales
+            await cargarDatosDashboard(hoy, hoy);
+        }
+
+        // Función auxiliar para cargar datos (Gráfica y Números)
+        async function cargarDatosDashboard(desde, hasta) {
+            mostrarToast("Cargando estadísticas...", "info");
+
+            try {
+                // Pedimos datos con los filtros
+                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+                const data = await res.json();
+
+                // Actualizar número grande
+                document.getElementById('numTotalHoy').innerText = data.totalHoy;
+
+                // Preparar datos para el gráfico
+                const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
+                const cantidades = data.porInspector.map(u => u.cantidad);
+
+                // Configurar Gráfico (Misma lógica Premium de antes)
+                const ctx = document.getElementById('graficoInspectores').getContext('2d');
+                const coloresBase = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
+                const fondosBarras = data.porInspector.map((u, index) => {
+                    const colorHex = coloresBase[index % coloresBase.length];
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, adjustColor(colorHex, 40));
+                    gradient.addColorStop(0.5, colorHex);
+                    gradient.addColorStop(1, adjustColor(colorHex, -20));
+                    return gradient;
+                });
+                const bordesBarras = data.porInspector.map((u, index) => coloresBase[index % coloresBase.length]);
+
+                if (miGrafico) miGrafico.destroy();
+
+                miGrafico = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: nombres,
+                        datasets: [{
+                            label: 'Controles',
+                            data: cantidades,
+                            backgroundColor: fondosBarras,
+                            borderColor: bordesBarras,
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } }, x: { grid: { display: false } } },
+                        animation: { duration: 1500, easing: 'easeOutQuart' }
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                mostrarToast("Error al cargar dashboard", "error");
+            }
+        }
+
+        // Función llamada al botón "Filtrar"
+        function actualizarDashboard() {
+            const desde = document.getElementById('fechaDesde').value;
+            const hasta = document.getElementById('fechaHasta').value;
+            if(!desde || !hasta) return mostrarToast("Selecciona ambas fechas", "warning");
+            cargarDatosDashboard(desde, hasta);
+        }
+
+        // Función para descargar Excel
+        function descargarExcel() {
+            const desde = document.getElementById('fechaDesde').value;
+            const hasta = document.getElementById('fechaHasta').value;
+            if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
+            
+            mostrarToast("Descargando Excel...", "info");
+            window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
+        }
+
+        // --- UTILIDAD: Aclarar u Oscurecer Colores (LA FUNCIÓN QUE FALTABA) ---
+        function adjustColor(color, amount) {
+            return '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+        }
+
+        // --- REGISTRAR CONTROL ---
         // --- REGISTRAR CONTROL ---
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
