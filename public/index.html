@@ -243,6 +243,19 @@
                 </div>
             </div>
         </div>
+                        <!-- Contenedor del Gráfico -->
+                <div class="card" style="margin-top: 20px;">
+                    <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="graficoInspectores"></canvas>
+                    </div>
+                </div>
+
+                <!-- NUEVOS BOTONES DE REPORTE -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+                    <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:16px; padding:12px;">📧 Email</button>
+                    <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:16px; padding:12px; background:#25D366;">💬 WhatsApp</button>
+                </div>
 
     </div>
 
@@ -697,6 +710,62 @@
             setTimeout(() => {
                 location.reload(); 
             }, 1000);
+        }
+                // --- FUNCIONES PARA COMPARTIR REPORTES ---
+
+        // Genera el texto del reporte formateado
+        function generarTextoReporte(data) {
+            const fecha = new Date().toLocaleDateString();
+            let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n`;
+            texto += `📅 Fecha: ${fecha}\n`;
+            texto += `🚗 Total Controles: ${data.totalHoy}\n\n`;
+            texto += `📋 *Detalle por Inspector:*\n`;
+
+            data.porInspector.forEach(insp => {
+                texto += `▪️ ${insp.nombre}: ${insp.cantidad} controles\n`;
+            });
+
+            texto += `\n_Enviado desde App Control de Tránsito_`;
+            return texto;
+        }
+
+        async function compartirPorEmail() {
+            mostrarToast("Preparando correo...", "info");
+            
+            try {
+                // Obtenemos datos frescos
+                const res = await fetch('/api/estadisticas');
+                const data = await res.json();
+                
+                const texto = generarTextoReporte(data);
+                const asunto = encodeURIComponent("Reporte de Control de Tránsito");
+                const cuerpo = encodeURIComponent(texto);
+                
+                // Abrimos el cliente de correo
+                window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+            } catch (error) {
+                mostrarToast("Error al generar reporte", "error");
+            }
+        }
+
+        async function compartirPorWhatsApp() {
+            mostrarToast("Abriendo WhatsApp...", "info");
+            
+            try {
+                // Obtenemos datos frescos
+                const res = await fetch('/api/estadisticas');
+                const data = await res.json();
+                
+                const texto = generarTextoReporte(data);
+                
+                // Codificamos el texto para URL
+                const urlTexto = encodeURIComponent(texto);
+                
+                // Abrimos WhatsApp Web o la App
+                window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
+            } catch (error) {
+                mostrarToast("Error al generar reporte", "error");
+            }
         }
     </script>
 </body>
