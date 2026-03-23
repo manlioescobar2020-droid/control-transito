@@ -218,19 +218,22 @@ app.get('/api/exportar-registros', async (req, res) => {
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
 
+                // Consulta detallada para el reporte (CORREGIDA: Agregado JOIN a vehiculos)
         const query = `
             SELECT 
                 r.patricula, 
-                r.modelo, 
+                v.modelo, 
                 r.fecha_hora, 
                 u.nombre as inspector,
                 r.tiene_cedula, 
                 r.tiene_licencia, 
                 r.observaciones
             FROM registros_controles r
+            LEFT JOIN vehiculos v ON r.patricula = v.patricula  <-- ESTO ES LO NUEVO
             JOIN usuarios u ON r.id_inspector = u.id
             WHERE r.fecha_hora::date BETWEEN $1 AND $2
             ORDER BY r.fecha_hora DESC
+        `;
         `;
         
         const result = await pool.query(query, [fechaDesde, fechaHasta]);
