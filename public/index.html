@@ -220,7 +220,7 @@
             </div>
         </div>
 
-        <!-- --- NUEVA SECCIÓN: DASHBOARD DE ESTADÍSTICAS --- -->
+                <!-- --- NUEVA SECCIÓN: DASHBOARD DE ESTADÍSTICAS (DISEÑO OPTIMIZADO) --- -->
         <div id="dashboardSection" class="section">
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -228,16 +228,26 @@
                     <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
                 </div>
 
-                <!-- Tarjeta de Resumen -->
-                <div class="card" style="background: #f0f9ff; border-color: #bae6fd; text-align: center;">
-                    <p style="margin:0; color:#64748b; font-size:14px;">CONTROLES REGISTRADOS HOY</p>
-                    <h1 id="numTotalHoy" style="margin:10px 0; font-size:48px; color:#0284c7;">-</h1>
+                <!-- GRILLA SUPERIOR: NÚMERO Y BOTONES (Lado a lado) -->
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    
+                    <!-- Tarjeta Número (Izquierda) -->
+                    <div class="card" style="background: #f0f9ff; border-color: #bae6fd; text-align: center; padding: 10px;">
+                        <p style="margin:0; color:#64748b; font-size:12px; font-weight:bold;">CONTROLES HOY</p>
+                        <h1 id="numTotalHoy" style="margin:5px 0 0; font-size:38px; color:#0284c7; line-height:1;">-</h1>
+                    </div>
+
+                    <!-- Tarjeta Botones (Derecha) -->
+                    <div id="reportTools" style="display:none; flex-direction:column; gap:8px; justify-content:center;">
+                        <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:13px; padding:8px;">📧 Email</button>
+                        <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp</button>
+                    </div>
                 </div>
 
-                <!-- Contenedor del Gráfico -->
-                <div class="card" style="margin-top: 20px;">
+                <!-- Contenedor del Gráfico (Abajo) -->
+                <div class="card">
                     <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
-                    <div style="height: 300px; position: relative;">
+                    <div style="height: 260px; position: relative;">
                         <canvas id="graficoInspectores"></canvas>
                     </div>
                 </div>
