@@ -71,15 +71,12 @@
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <!-- LIBRERÍAS EXTERNAS -->
-    <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- AGREGAR ESTO: TOASTIFY (Notificaciones) -->
+    <!-- TOASTIFY (Notificaciones) -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-        <!-- CHART.JS (Gráficos) -->
+
+    <!-- CHART.JS (Gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -105,7 +102,7 @@
     <!-- PANTALLA PRINCIPAL (OCULTA AL PRINCIPIO) -->
     <div id="mainApp" class="container" style="display:none;">
         
-               <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+        <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
             <div>
                 <h1 style="margin:0;">Control Vehicular</h1>
                 <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">
@@ -114,14 +111,10 @@
                 
                 <!-- Botones de Admin (Ocultos por defecto) -->
                 <div id="adminTools" style="display:none; margin-top:10px;">
-                    <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 48%; margin-right: 2%;">📍 Mapa</button>
-                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 48%; background: #7c3aed;">👤 Usuarios</button>
-                                <div id="adminTools" style="display:none; margin-top:10px;">
-                <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
-                <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
-                <!-- NUEVO BOTÓN DASHBOARD -->
-                <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
-            </div>
+                    <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
+                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
+                    <!-- NUEVO BOTÓN DASHBOARD -->
+                    <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
                 </div>
             </div>
 
@@ -227,6 +220,30 @@
             </div>
         </div>
 
+        <!-- --- NUEVA SECCIÓN: DASHBOARD DE ESTADÍSTICAS --- -->
+        <div id="dashboardSection" class="section">
+            <div style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin:0;">📊 Panel de Control</h3>
+                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
+                </div>
+
+                <!-- Tarjeta de Resumen -->
+                <div class="card" style="background: #f0f9ff; border-color: #bae6fd; text-align: center;">
+                    <p style="margin:0; color:#64748b; font-size:14px;">CONTROLES REGISTRADOS HOY</p>
+                    <h1 id="numTotalHoy" style="margin:10px 0; font-size:48px; color:#0284c7;">-</h1>
+                </div>
+
+                <!-- Contenedor del Gráfico -->
+                <div class="card" style="margin-top: 20px;">
+                    <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="graficoInspectores"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- BOTÓN FLOTANTE REGISTRAR -->
@@ -239,6 +256,7 @@
         let usuarioActual = null;
         let vehiculoActual = null;
         let map = null;
+        let miGrafico = null; // Variable para el gráfico
         const socket = io();
 
         // --- INICIO Y PERMISOS ---
@@ -285,6 +303,7 @@
             document.getElementById('mapSection').classList.remove('active');
             document.getElementById('userSection').classList.remove('active');
             document.getElementById('listUsersSection').classList.remove('active');
+            document.getElementById('dashboardSection').classList.remove('active'); // Ocultar Dashboard
             document.getElementById('footerBtn').style.display = 'none';
         }
 
@@ -435,7 +454,6 @@
             } catch (err) { alert("Error de conexión"); }
         }
 
-        // --- NUEVA FUNCIÓN: VER LISTA DE USUARIOS ---
         async function verListaUsuarios() {
             ocultarTodasSecciones();
             document.getElementById('listUsersSection').classList.add('active');
@@ -459,13 +477,11 @@
                      return;
                 }
 
-                                data.forEach(u => {
+                data.forEach(u => {
                     const tr = document.createElement('tr');
-                    // Iconos y colores según rol
                     const icono = u.rol === 'OWNER' ? '👑' : '🚔';
                     const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
 
-                    // --- AQUÍ ESTÁ EL CAMBIO EN LA SIGUIENTE LÍNEA ---
                     tr.innerHTML = `
                         <td>${u.nombre || u.nombre_completo || 'Sin nombre'}</td>
                         <td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td>
@@ -477,6 +493,64 @@
                 console.error('Error:', error);
                 tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
             }
+        }
+
+        // --- FUNCIONES DEL DASHBOARD (NUEVO) ---
+        async function abrirDashboard() {
+            ocultarTodasSecciones();
+            document.getElementById('dashboardSection').classList.add('active');
+
+            mostrarToast("Cargando estadísticas...", "info");
+
+            try {
+                const res = await fetch('/api/estadisticas');
+                const data = await res.json();
+
+                // 1. Actualizar número grande
+                document.getElementById('numTotalHoy').innerText = data.totalHoy;
+
+                // 2. Preparar datos para el gráfico
+                const nombres = data.porInspector.map(u => u.nombre);
+                const cantidades = data.porInspector.map(u => u.cantidad);
+
+                // 3. Dibujar Gráfico
+                const ctx = document.getElementById('graficoInspectores').getContext('2d');
+
+                if (miGrafico) {
+                    miGrafico.destroy();
+                }
+
+                miGrafico = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: nombres,
+                        datasets: [{
+                            label: 'Controles Realizados',
+                            data: cantidades,
+                            backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                mostrarToast("Error al cargar dashboard", "error");
+            }
+        }
+
+        function cerrarDashboard() {
+            document.getElementById('dashboardSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'block';
         }
 
         // --- REGISTRAR CONTROL ---
@@ -524,14 +598,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                                const data = await res.json();
+                const data = await res.json();
                 if (data.success) {
                     mostrarToast("✅ Control registrado con éxito", "success");
                     limpiarPantalla();
                 } else {
                     mostrarToast("Error al guardar control", "error");
                 }
-                       } catch (err) {
+            } catch (err) {
                 console.error(err);
                 mostrarToast("Error de conexión", "error");
             } finally {
@@ -540,20 +614,18 @@
             }
         }
 
-                // --- FUNCIONES DE INTERFAZ Y SESIÓN ---
-
-        // 1. Función Helper para mostrar notificaciones (Reemplaza a 'alert')
+        // --- FUNCIONES DE INTERFAZ Y SESIÓN ---
         function mostrarToast(mensaje, tipo = "success") {
-            let colorFondo = "#16a34a"; // Verde por defecto
-            if (tipo === "error") colorFondo = "#dc2626"; // Rojo
-            if (tipo === "info") colorFondo = "#2563eb"; // Azul
+            let colorFondo = "#16a34a"; 
+            if (tipo === "error") colorFondo = "#dc2626"; 
+            if (tipo === "info") colorFondo = "#2563eb"; 
 
             Toastify({
                 text: mensaje,
                 duration: 3000,
-                gravity: "top", // `top` or `bottom`
-                position: "center", // `left`, `center` or `right`
-                stopOnFocus: true, // Prevents dismissing of toast on hover
+                gravity: "top", 
+                position: "center", 
+                stopOnFocus: true, 
                 style: {
                     background: colorFondo,
                     borderRadius: "8px",
@@ -563,11 +635,8 @@
             }).showToast();
         }
 
-        // 2. Función Cerrar Sesión
         function cerrarSesion() {
             mostrarToast("Cerrando sesión...", "info");
-            
-            // Esperamos 1 segundo para que el usuario vea el mensaje y recargamos
             setTimeout(() => {
                 location.reload(); 
             }, 1000);
