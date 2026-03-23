@@ -854,6 +854,96 @@
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
+                let stream = null; // Variable para guardar la transmisión de video
+
+        // 1. Abrir Cámara
+        async function abrirCamara() {
+            const video = document.getElementById('videoElement');
+            const modal = document.getElementById('cameraModal');
+            
+            try {
+                // Pedir acceso a la cámara (trasera)
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                
+                video.srcObject = stream;
+                modal.style.display = 'flex'; // Mostrar modal
+                modal.classList.remove('hidden');
+                
+            } catch (err) {
+                console.error("Error al acceder a cámara:", err);
+                mostrarToast("No se pudo acceder a la cámara", "error");
+            }
+        }
+
+        // 2. Cerrar Cámara
+        function cerrarCamara() {
+            const modal = document.getElementById('cameraModal');
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop()); // Apagar cámara
+                stream = null;
+            }
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+
+        // 3. Capturar y Leer (OCR)
+        async function tomarFotoYLeer() {
+            const video = document.getElementById('videoElement');
+            
+            if (!stream) return;
+
+            mostrarToast("Procesando imagen...", "info");
+
+            // Crear un canvas temporal para capturar el frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convertir a imagen
+            const imagenBase64 = canvas.toDataURL('image/png');
+
+            // Apagar cámara y cerrar modal visualmente (procesando en fondo)
+            cerrarCamara();
+
+            try {
+                // Ejecutar Tesseract (Reconocimiento de Texto)
+                // Usamos 'eng' porque las patentes suelen ser letras/números estándar
+                const { data: { text } } = await Tesseract.recognize(
+                    imagenBase64,
+                    'eng', 
+                    { 
+                        logger: m => console.log(m) // Logs de progreso (opcional)
+                    }
+                );
+
+                // LIMPIEZA DEL TEXTO
+                // 1. Mayúsculas
+                // 2. Solo letras y números (quitar espacios, signos, rayas)
+                let patenteDetectada = text.toUpperCase()
+                                           .replace(/[^A-Z0-9]/g, '') 
+                                           .trim();
+
+                console.log("Patente detectada:", patenteDetectada);
+
+                // Validar longitud mínima (patente argentina generalmente 6 o 7 caracteres)
+                if (patenteDetectada.length >= 5) {
+                    document.getElementById('txtPatente').value = patenteDetectada;
+                    mostrarToast("Patente detectada: " + patenteDetectada, "success");
+                    // Opcional: Auto-consultar
+                    // buscarVehiculo(); 
+                } else {
+                    mostrarToast("No se pudo leer bien, intenta de nuevo", "warning");
+                }
+
+            } catch (error) {
+                console.error(error);
+                mostrarToast("Error al leer patente", "error");
+            }
+        }
     </script>
         <!-- MODAL DE CÁMARA (ESCÁNER) -->
     <div id="cameraModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
