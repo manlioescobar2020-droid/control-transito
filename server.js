@@ -183,22 +183,24 @@ app.get('/api/usuarios', async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-// --- RUTA: ESTADÍSTICAS (CORREGIDA) ---
+// --- RUTA: ESTADÍSTICAS (VERSIÓN FINAL CORREGIDA) ---
 app.get('/api/estadisticas', async (req, res) => {
     try {
-        // 1. Total de controles HOY
+        // 1. Total de controles HOY (Cuenta todo)
         const totalHoyResult = await pool.query(
             "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date = CURRENT_DATE"
         );
         
-        // 2. Controles por Inspector (CORREGIDO)
-        // Ahora seleccionamos también el 'usuario' (login) y agrupamos por 'id' para evitar confusiones
+        // 2. Controles por Inspector (CORREGIDO PARA INCLUIR A TODOS)
+        // - Eliminamos el filtro de rol 'INSPECTOR'.
+        // - Agregamos HAVING COUNT > 0 para no mostrar inspectores que no trabajaron hoy.
         const porInspectorResult = await pool.query(
             `SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad 
              FROM usuarios u 
-             LEFT JOIN registros_controles r ON u.id = r.id_inspector 
-             WHERE u.rol = 'INSPECTOR' 
+             INNER JOIN registros_controles r ON u.id = r.id_inspector 
+             WHERE r.fecha_hora::date = CURRENT_DATE
              GROUP BY u.id, u.nombre, u.usuario
+             HAVING COUNT(r.id) > 0
              ORDER BY cantidad DESC`
         );
 
