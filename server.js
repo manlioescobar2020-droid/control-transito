@@ -183,7 +183,7 @@ app.get('/api/usuarios', async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-// --- NUEVA RUTA: ESTADÍSTICAS (DASHBOARD) ---
+// --- RUTA: ESTADÍSTICAS (CORREGIDA) ---
 app.get('/api/estadisticas', async (req, res) => {
     try {
         // 1. Total de controles HOY
@@ -191,13 +191,14 @@ app.get('/api/estadisticas', async (req, res) => {
             "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date = CURRENT_DATE"
         );
         
-        // 2. Controles por Inspector (Para el gráfico)
+        // 2. Controles por Inspector (CORREGIDO)
+        // Ahora seleccionamos también el 'usuario' (login) y agrupamos por 'id' para evitar confusiones
         const porInspectorResult = await pool.query(
-            `SELECT u.nombre, COUNT(r.id) as cantidad 
+            `SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad 
              FROM usuarios u 
              LEFT JOIN registros_controles r ON u.id = r.id_inspector 
              WHERE u.rol = 'INSPECTOR' 
-             GROUP BY u.nombre 
+             GROUP BY u.id, u.nombre, u.usuario
              ORDER BY cantidad DESC`
         );
 
