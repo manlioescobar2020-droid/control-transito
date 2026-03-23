@@ -242,15 +242,26 @@ app.get('/api/exportar-registros', async (req, res) => {
         // Generar CSV
         let csv = 'Patente,Modelo,Fecha,Hora,Inspector,Cédula,Licencia,Observaciones\n';
 
-        rows.forEach(row => {
+                rows.forEach(row => {
+            // Formatear fecha y hora
             const fechaObj = new Date(row.fecha_hora);
             const fechaStr = fechaObj.toLocaleDateString();
             const horaStr = fechaObj.toLocaleTimeString();
-            const obs = row.observaciones ? `"${row.observaciones.replace(/"/g, '""')}"` : ''; 
+
+            // MANEJO SEGURO DE COMILLAS (Usando concatenación para evitar errores de sintaxis)
+            let obs = '';
+            if (row.observaciones) {
+                // Escapar comillas dobles dentro del texto para el CSV
+                const obsEscapado = row.observaciones.replace(/"/g, '""');
+                obs = '"' + obsEscapado + '"';
+            } 
+
+            // Datos (0 = No, 1 = Si)
             const cedula = row.tiene_cedula ? 'Sí' : 'No';
             const licencia = row.tiene_licencia ? 'Sí' : 'No';
 
-            csv += `${row.patricula},"${row.modelo}",${fechaStr},${horaStr},"${row.inspector}",${cedula},${licencia},${obs}\n`;
+            // Construir la línea del CSV uniendo con '+'
+            csv += row.patricula + ',"' + (row.modelo || '') + '",' + fechaStr + ',' + horaStr + ',"' + row.inspector + '",' + cedula + ',' + licencia + ',' + obs + '\n';
         });
 
         res.setHeader('Content-Type', 'text/csv');
