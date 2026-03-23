@@ -427,6 +427,16 @@
             document.getElementById('searchSection').classList.add('active');
             document.getElementById('footerBtn').style.display = 'block';
         }
+                function cerrarDashboard() {
+            // 1. Ocultamos el Dashboard
+            document.getElementById('dashboardSection').classList.remove('active');
+            
+            // 2. Mostramos la pantalla principal de búsqueda
+            document.getElementById('searchSection').classList.add('active');
+            
+            // 3. Volvemos a mostrar el botón flotante "REGISTRAR CONTROL"
+            document.getElementById('footerBtn').style.display = 'block';
+        }
 
         // --- FUNCIONES DE USUARIOS ---
         function abrirUsuarios() {
