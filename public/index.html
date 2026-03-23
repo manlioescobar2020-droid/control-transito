@@ -127,8 +127,7 @@
         <div id="searchSection" class="section active">
             <div style="padding: 20px;">
                 <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
-                <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;">
-                
+                <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;" oninput="this.value = this.value.toUpperCase()">                
                 <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
             <div id="divResultado" style="padding: 0 20px;"></div>
