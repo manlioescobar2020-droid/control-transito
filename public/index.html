@@ -65,8 +65,6 @@
         .badge-role { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .badge-owner { background-color: #fbbf24; color: #78350f; } /* Amarillo */
         .badge-inspector { background-color: #dbeafe; color: #1e40af; } /* Azul */
-
-                .hidden { display: none !important; }
     </style>
 
     <!-- LIBRERÍAS EXTERNAS -->
@@ -80,7 +78,6 @@
 
     <!-- CHART.JS (Gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <!-- TESSERACT.JS (Escáner OCR) -->
 </head>
 <body>
 
@@ -116,24 +113,26 @@
                 <div id="adminTools" style="display:none; margin-top:10px;">
                     <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
                     <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
-                    <!-- NUEVO BOTÓN DASHBOARD -->
                     <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
                 </div>
             </div>
 
-            <!-- NUEVO BOTÓN CERRAR SESIÓN -->
+            <!-- BOTÓN CERRAR SESIÓN -->
             <button onclick="cerrarSesion()" class="btn-secondary" style="width: auto; padding: 10px 15px; font-size: 14px; margin-top: 5px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);">
                 Salir ❌
             </button>
         </div>
 
-                    <div style="padding: 20px;">
+        <!-- Sección Buscador (RESTAURADA) -->
+        <div id="searchSection" class="section active">
+            <div style="padding: 20px;">
                 <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
                 <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;">
                 
-                <!-- SOLO ESTE BOTÓN -->
                 <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
+            <div id="divResultado" style="padding: 0 20px;"></div>
+        </div>
 
         <!-- Sección Formulario -->
         <div id="formSection" class="section">
@@ -195,7 +194,7 @@
             </div>
         </div>
 
-        <!-- --- NUEVA SECCIÓN: LISTA DE USUARIOS --- -->
+        <!-- --- SECCIÓN: LISTA DE USUARIOS --- -->
         <div id="listUsersSection" class="section">
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -221,7 +220,7 @@
             </div>
         </div>
 
-                <!-- --- SECCIÓN: DASHBOARD DE ESTADÍSTICAS (CON FILTROS Y EXCEL) --- -->
+        <!-- --- SECCIÓN: DASHBOARD DE ESTADÍSTICAS --- -->
         <div id="dashboardSection" class="section">
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -229,7 +228,7 @@
                     <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
                 </div>
 
-                <!-- NUEVO: FILTROS DE FECHA -->
+                <!-- FILTROS DE FECHA -->
                 <div class="card" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
                     <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;">
                         <div style="flex:1;">
@@ -249,18 +248,14 @@
                 <!-- GRILLA SUPERIOR: NÚMERO Y BOTONES -->
                 <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-bottom: 20px;">
                     
-                    <!-- Tarjeta Número -->
                     <div class="card" style="background: #f0f9ff; border-color: #bae6fd; text-align: center; padding: 10px;">
                         <p style="margin:0; color:#64748b; font-size:12px; font-weight:bold;">CONTROLES EN RANGO</p>
                         <h1 id="numTotalHoy" style="margin:5px 0 0; font-size:38px; color:#0284c7; line-height:1;">-</h1>
                     </div>
 
-                    <!-- Tarjeta Botones -->
                     <div id="reportTools" style="display:none; flex-direction:column; gap:8px; justify-content:center;">
                         <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:13px; padding:8px;">📧 Email (Resumen)</button>
                         <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp (Resumen)</button>
-                        
-                        <!-- NUEVO: BOTÓN DESCARGAR EXCEL -->
                         <button onclick="descargarExcel()" class="btn-secondary" style="font-size:13px; padding:8px; background:#10b981; border:none;">⬇️ Descargar Excel</button>
                     </div>
                 </div>
@@ -274,17 +269,6 @@
                 </div>
             </div>
         </div>
-
-                <!-- Contenedor del Gráfico (Abajo) -->
-                <div class="card">
-                    <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
-                    <div style="height: 260px; position: relative;">
-                        <canvas id="graficoInspectores"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- FIN DASHBOARD -->
 
     </div> <!-- FIN MAINAPP -->
 
@@ -304,7 +288,7 @@
         // --- INICIO Y PERMISOS ---
         function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block'; // CORREGIDO: FALTABA ESTA LÍNEA
+            document.getElementById('mainApp').style.display = 'block';
         }
 
         async function iniciarSesion() {
@@ -323,10 +307,9 @@
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
                 document.getElementById('spanRol').innerText = usuarioActual.rol;
 
-                // LÓGICA DE ROLES
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
-                    document.getElementById('reportTools').style.display = 'flex'; // CORREGIDO: Mostrar para Owner
+                    document.getElementById('reportTools').style.display = 'flex';
                 } else {
                     document.getElementById('adminTools').style.display = 'none';
                     document.getElementById('reportTools').style.display = 'none';
@@ -339,7 +322,7 @@
             }
         }
 
-        // --- FUNCIONES DE NAVEGACIÓN (HELPERS) ---
+        // --- FUNCIONES DE NAVEGACIÓN ---
         function ocultarTodasSecciones() {
             document.getElementById('searchSection').classList.remove('active');
             document.getElementById('formSection').classList.remove('active');
@@ -544,131 +527,30 @@
             }
         }
 
-                async function abrirDashboard() {
-            ocultarTodasSecciones();
-            document.getElementById('dashboardSection').classList.add('active');
-
-            // 1. Setear fechas por defecto (Hoy)
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaDesde').value = hoy;
-            document.getElementById('fechaHasta').value = hoy;
-
-            // 2. Cargar datos iniciales
-            await cargarDatosDashboard(hoy, hoy);
-        }
-                // --- LÓGICA DEL DASHBOARD ---
-
-        // Función auxiliar para cargar datos (Gráfica y Números)
-        async function cargarDatosDashboard(desde, hasta) {
-            mostrarToast("Cargando estadísticas...", "info");
-
-            try {
-                // Pedimos datos con los filtros
-                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-                const data = await res.json();
-
-                // Actualizar número grande
-                document.getElementById('numTotalHoy').innerText = data.totalHoy;
-
-                // Preparar datos para el gráfico
-                const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
-                const cantidades = data.porInspector.map(u => u.cantidad);
-
-                // Configurar Gráfico (Misma lógica Premium de antes)
-                const ctx = document.getElementById('graficoInspectores').getContext('2d');
-                const coloresBase = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-
-                const fondosBarras = data.porInspector.map((u, index) => {
-                    const colorHex = coloresBase[index % coloresBase.length];
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, adjustColor(colorHex, 40));
-                    gradient.addColorStop(0.5, colorHex);
-                    gradient.addColorStop(1, adjustColor(colorHex, -20));
-                    return gradient;
-                });
-                const bordesBarras = data.porInspector.map((u, index) => coloresBase[index % coloresBase.length]);
-
-                if (miGrafico) miGrafico.destroy();
-
-                miGrafico = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: nombres,
-                        datasets: [{
-                            label: 'Controles',
-                            data: cantidades,
-                            backgroundColor: fondosBarras,
-                            borderColor: bordesBarras,
-                            borderWidth: 2,
-                            borderRadius: 5,
-                            barPercentage: 0.6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } }, x: { grid: { display: false } } },
-                        animation: { duration: 1500, easing: 'easeOutQuart' }
-                    }
-                });
-
-            } catch (error) {
-                console.error(error);
-                mostrarToast("Error al cargar dashboard", "error");
-            }
-        }
-
-        // Función llamada al botón "Filtrar"
-        function actualizarDashboard() {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            if(!desde || !hasta) return mostrarToast("Selecciona ambas fechas", "warning");
-            cargarDatosDashboard(desde, hasta);
-        }
-
-        // Función para descargar Excel
-        function descargarExcel() {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
-            
-            mostrarToast("Descargando Excel...", "info");
-            // Abrimos la URL en una nueva pestaña/blanco, el navegador descargará el archivo
-            window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
-        }
-        // --- FUNCIONES DEL DASHBOARD (VERSIÓN DISEÑO PREMIUM) ---
-        
+        // --- FUNCIONES DEL DASHBOARD ---
         async function abrirDashboard() {
             ocultarTodasSecciones();
             document.getElementById('dashboardSection').classList.add('active');
 
-            // 1. Setear fechas por defecto (Hoy)
             const hoy = new Date().toISOString().split('T')[0];
             document.getElementById('fechaDesde').value = hoy;
             document.getElementById('fechaHasta').value = hoy;
 
-            // 2. Cargar datos iniciales
             await cargarDatosDashboard(hoy, hoy);
         }
 
-        // Función auxiliar para cargar datos (Gráfica y Números)
         async function cargarDatosDashboard(desde, hasta) {
             mostrarToast("Cargando estadísticas...", "info");
 
             try {
-                // Pedimos datos con los filtros
                 const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
 
-                // Actualizar número grande
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
 
-                // Preparar datos para el gráfico
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
 
-                // Configurar Gráfico (Misma lógica Premium de antes)
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
                 const coloresBase = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -713,7 +595,6 @@
             }
         }
 
-        // Función llamada al botón "Filtrar"
         function actualizarDashboard() {
             const desde = document.getElementById('fechaDesde').value;
             const hasta = document.getElementById('fechaHasta').value;
@@ -721,7 +602,6 @@
             cargarDatosDashboard(desde, hasta);
         }
 
-        // Función para descargar Excel
         function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
             const hasta = document.getElementById('fechaHasta').value;
@@ -731,12 +611,10 @@
             window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
         }
 
-        // --- UTILIDAD: Aclarar u Oscurecer Colores (LA FUNCIÓN QUE FALTABA) ---
         function adjustColor(color, amount) {
             return '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
         }
 
-        // --- REGISTRAR CONTROL ---
         // --- REGISTRAR CONTROL ---
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
@@ -851,8 +729,6 @@
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-                let stream = null; // Variable para guardar la transmisión de video
-
-        
+    </script>
 </body>
 </html>
