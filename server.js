@@ -1,4 +1,4 @@
-// server.js - VERSIÓN LIMPIA Y ESTABLE (ACTUALIZADA)
+// server.js - VERSIÓN LIMPIA Y ESTABLE (CON DASHBOARD AVANZADO)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -31,7 +31,6 @@ const pool = new Pool({
 app.post('/login', async (req, res) => {
     const { usuario, password } = req.body;
     try {
-        // Agregamos 'rol' a la búsqueda
         const result = await pool.query(
             'SELECT id, usuario, nombre, rol FROM usuarios WHERE LOWER(usuario) = LOWER($1) AND password = $2', 
             [usuario, password]
@@ -52,13 +51,11 @@ app.post('/login', async (req, res) => {
 app.get('/vehiculos/:patricula', async (req, res) => {
     const { patricula } = req.params;
     try {
-        // Buscamos datos del vehículo
         const vehiculoResult = await pool.query(
             'SELECT * FROM vehiculos WHERE patricula = $1', 
             [patricula.toUpperCase()]
         );
         
-        // Buscamos el último control
         const controlResult = await pool.query(
             'SELECT fecha_hora, id_inspector FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
             [patricula.toUpperCase()]
@@ -114,10 +111,7 @@ app.post('/registrar-control', async (req, res) => {
         ]);
 
         await client.query('COMMIT');
-
-        // Emitir evento en tiempo real
         io.emit('nuevo_control_registrado', result.rows[0]);
-
         res.json({ success: true, registro: result.rows[0] });
 
     } catch (err) {
@@ -129,7 +123,7 @@ app.post('/registrar-control', async (req, res) => {
     }
 });
 
-// 4. HISTORIAL PARA MAPA (Supervisor)
+// 4. HISTORIAL PARA MAPA
 app.get('/api/historial', async (req, res) => {
     try {
         const result = await pool.query(
@@ -151,7 +145,6 @@ app.post('/api/crear-usuario', async (req, res) => {
     }
 
     try {
-        // Insertamos en la columna 'nombre' (como se ve más abajo)
         const result = await pool.query(
             'INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id',
             [usuario, password, nombre || usuario, rol, null] 
@@ -166,27 +159,22 @@ app.post('/api/crear-usuario', async (req, res) => {
     }
 });
 
-// 6. LISTAR USUARIOS (CORREGIDO)
+// 6. LISTAR USUARIOS
 app.get('/api/usuarios', async (req, res) => {
     try {
-        // CORRECCIÓN 1: Quitamos el chequeo de 'req.session' porque tu app no usa sesiones de servidor.
-        // El control de acceso lo hace el frontend (solo el OWNER ve el botón).
-        
-        // CORRECCIÓN 2: Seleccionamos 'nombre' en lugar de 'nombre_completo' para coincidir con el INSERT
         const result = await pool.query(
             'SELECT id, usuario, nombre, rol FROM usuarios ORDER BY nombre ASC'
         );
-        
         res.json(result.rows);
     } catch (error) {
         console.error('Error al obtener usuarios:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-// --- RUTA: ESTADÍSTICAS (CON FILTROS DE FECHA) ---
+
+// 7. ESTADÍSTICAS (CON FILTROS DE FECHA)
 app.get('/api/estadisticas', async (req, res) => {
     try {
-        // Obtenemos fechas de la query, si no vienen, usamos hoy
         const { desde, hasta } = req.query;
         const hoy = new Date().toISOString().split('T')[0];
         
@@ -214,7 +202,7 @@ app.get('/api/estadisticas', async (req, res) => {
         res.json({
             totalHoy: totalResult.rows[0].total,
             porInspector: porInspectorResult.rows,
-            fechas: { desde: fechaDesde, hasta: fechaHasta } // Devolvemos las fechas usadas
+            fechas: { desde: fechaDesde, hasta: fechaHasta }
         });
     } catch (error) {
         console.error("Error al obtener estadísticas:", error);
@@ -222,7 +210,7 @@ app.get('/api/estadisticas', async (req, res) => {
     }
 });
 
-// --- NUEVA RUTA: EXPORTAR A EXCEL (CSV) ---
+// 8. EXPORTAR A EXCEL (CSV)
 app.get('/api/exportar-registros', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
@@ -230,7 +218,6 @@ app.get('/api/exportar-registros', async (req, res) => {
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
 
-        // Consulta detallada para el reporte
         const query = `
             SELECT 
                 r.patricula, 
@@ -249,30 +236,22 @@ app.get('/api/exportar-registros', async (req, res) => {
         const result = await pool.query(query, [fechaDesde, fechaHasta]);
         const rows = result.rows;
 
-        // Construir el CSV manualmente
-        // Encabezados
+        // Generar CSV
         let csv = 'Patente,Modelo,Fecha,Hora,Inspector,Cédula,Licencia,Observaciones\n';
 
         rows.forEach(row => {
-            // Formatear fecha y hora
             const fechaObj = new Date(row.fecha_hora);
             const fechaStr = fechaObj.toLocaleDateString();
             const horaStr = fechaObj.toLocaleTimeString();
-
-            // Manejar comas en observaciones para no romper el CSV
             const obs = row.observaciones ? `"${row.observaciones.replace(/"/g, '""')}"` : ''; 
-
-            // Datos (0 = No, 1 = Si para que sea legible)
             const cedula = row.tiene_cedula ? 'Sí' : 'No';
             const licencia = row.tiene_licencia ? 'Sí' : 'No';
 
             csv += `${row.patricula},"${row.modelo}",${fechaStr},${horaStr},"${row.inspector}",${cedula},${licencia},${obs}\n`;
         });
 
-        // Configurar cabeceras para descarga
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=reporte_transito_${fechaDesde}_a_${fechaHasta}.csv`);
-        
         res.send(csv);
 
     } catch (error) {
@@ -280,29 +259,7 @@ app.get('/api/exportar-registros', async (req, res) => {
         res.status(500).send("Error al generar reporte");
     }
 });
-        
-        // 2. Controles por Inspector (CORREGIDO PARA INCLUIR A TODOS)
-        // - Eliminamos el filtro de rol 'INSPECTOR'.
-        // - Agregamos HAVING COUNT > 0 para no mostrar inspectores que no trabajaron hoy.
-        const porInspectorResult = await pool.query(
-            `SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad 
-             FROM usuarios u 
-             INNER JOIN registros_controles r ON u.id = r.id_inspector 
-             WHERE r.fecha_hora::date = CURRENT_DATE
-             GROUP BY u.id, u.nombre, u.usuario
-             HAVING COUNT(r.id) > 0
-             ORDER BY cantidad DESC`
-        );
 
-        res.json({
-            totalHoy: totalHoyResult.rows[0].total,
-            porInspector: porInspectorResult.rows
-        });
-    } catch (error) {
-        console.error("Error al obtener estadísticas:", error);
-        res.status(500).json({ error: 'Error al obtener estadísticas' });
-    }
-});
 // --- INICIAR SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
