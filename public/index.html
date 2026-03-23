@@ -510,7 +510,8 @@
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
 
                 // 2. Preparar datos para el gráfico
-                const nombres = data.porInspector.map(u => u.nombre);
+                // Muestra "Nombre (usuario)" para evitar confusiones si hay nombres repetidos
+                const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
 
                 // 3. Dibujar Gráfico
