@@ -238,8 +238,7 @@ app.get('/api/exportar-registros', async (req, res) => {
         const rows = result.rows;
 
         // Generar CSV
-        let csv = 'Patente,Modelo,Fecha,Hora,Inspector,Cédula,Licencia,Observaciones\n';
-
+let csv = 'Patente;Modelo;Fecha;Hora;Inspector;Cédula;Licencia;Observaciones\n';
         rows.forEach(row => {
             // Formatear fecha y hora
             const fechaObj = new Date(row.fecha_hora);
@@ -256,8 +255,7 @@ app.get('/api/exportar-registros', async (req, res) => {
             const cedula = row.tiene_cedula ? 'Sí' : 'No';
             const licencia = row.tiene_licencia ? 'Sí' : 'No';
 
-            csv += row.patricula + ',"' + (row.modelo || '') + '",' + fechaStr + ',' + horaStr + ',"' + row.inspector + '",' + cedula + ',' + licencia + ',' + obs + '\n';
-        });
+            csv += row.patricula + ';"' + (row.modelo || '') + '";' + fechaStr + ';' + horaStr + ';"' + row.inspector + '";' + cedula + ';' + licencia + ';' + obs + '\n';        });
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=reporte_transito_${fechaDesde}_a_${fechaHasta}.csv`);
