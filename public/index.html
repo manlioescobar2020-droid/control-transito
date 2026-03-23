@@ -890,34 +890,28 @@
             modal.classList.add('hidden');
         }
 
-                // 3. Capturar, Recortar y Leer (OCR) Versión Pro
+                       // 3. Capturar, Recortar y Leer (OCR) Versión Smart Search
         async function tomarFotoYLeer() {
             const video = document.getElementById('videoElement');
             
             if (!stream) return;
 
-            mostrarToast("Capturando y analizando...", "info");
+            mostrarToast("Analizando...", "info");
 
-            // Crear canvas del tamaño DEL VIDEO
+            // Crear canvas y recortar centro (igual que antes)
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             
-            // --- AQUÍ ESTÁ EL TRUCO: RECORTAR SOLO EL CENTRO ---
-            // Queremos recortar el 60% del ancho y el 30% del alto, empezando desde el centro
-            const cropX = video.videoWidth * 0.20;  // Empezar al 20%
-            const cropY = video.videoHeight * 0.35; // Empezar al 35%
-            const cropWidth = video.videoWidth * 0.60; // Ancho del recorte
-            const cropHeight = video.videoHeight * 0.30; // Alto del recorte
+            const cropX = video.videoWidth * 0.20;
+            const cropY = video.videoHeight * 0.35;
+            const cropWidth = video.videoWidth * 0.60;
+            const cropHeight = video.videoHeight * 0.30;
 
-            // Dibujamos SOLO esa parte del video en el canvas
             ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-            
-            // Convertir a imagen
             const imagenBase64 = canvas.toDataURL('image/png');
-
-            // Apagar cámara
+            
             cerrarCamara();
 
             try {
@@ -927,43 +921,50 @@
                     { logger: m => console.log(m) }
                 );
 
-                // --- LIMPIEZA Y VALIDACIÓN "ARGENTINA" ---
-                let texto = text.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-                
+                // 1. Limpiar texto (Mayúsculas y solo alfanuméricos)
+                let texto = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 console.log("Texto crudo detectado:", texto);
 
-                // Expresiones Regulares para Patentes Argentinas
-                // Formato Viejo: ABC123 o 123ABC
-                const regexVieja = /^([A-Z]{3}\d{3}|\d{3}[A-Z]{3})$/;
-                // Formato Nuevo: AB123CD
-                const regexNueva = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
+                // 2. Buscadores de Patrones (Regex)
+                // Vieja: ABC123 o 123ABC
+                const patronViejo = /[A-Z]{3}\d{3}|\d{3}[A-Z]{3}/;
+                // Nueva: AB123CD
+                const patronNuevo = /[A-Z]{2}\d{3}[A-Z]{2}/;
 
-                let patenteValida = null;
+                let patenteEncontrada = null;
 
-                if (texto.length === 6 && regexVieja.test(texto)) {
-                    patenteValida = texto;
-                } else if (texto.length === 7 && regexNueva.test(texto)) {
-                    patenteValida = texto;
-                } else {
-                    // Si no es perfecto, intentamos buscar un patrón dentro de un texto más largo
-                    // Ej: "BARROXYZAB123CDFONDO" -> Encuentra "AB123CD"
-                    const matchVieja = texto.match(/[A-Z]{3}\d{3}/);
-                    const matchNueva = texto.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
+                // 3. Lógica de Búsqueda (Prueba exacta, luego búsqueda parcial)
+                
+                // A. Prueba exacta (Si el texto es limpio y del tamaño correcto)
+                if (texto.length === 6 && patronViejo.test(texto)) {
+                    patenteEncontrada = texto;
+                } else if (texto.length === 7 && patronNuevo.test(texto)) {
+                    patenteEncontrada = texto;
+                } 
+                // B. Búsqueda parcial (Si el texto tiene basura alrededor, buscamos el patrón adentro)
+                else {
+                    const matchViejo = texto.match(patronViejo);
+                    const matchNuevo = texto.match(patronNuevo);
                     
-                    if (matchNueva) patenteValida = matchNueva[0];
-                    else if (matchVieja) patenteValida = matchVieja[0];
+                    if (matchNuevo) {
+                        patenteEncontrada = matchNuevo[0];
+                    } else if (matchViejo) {
+                        patenteEncontrada = matchViejo[0];
+                    }
                 }
 
-                if (patenteValida) {
-                    document.getElementById('txtPatente').value = patenteValida;
-                    mostrarToast("Patente: " + patenteValida, "success");
+                // 4. Si encontramos algo, lo usamos
+                if (patenteEncontrada) {
+                    document.getElementById('txtPatente').value = patenteEncontrada;
+                    mostrarToast("Patente detectada: " + patenteEncontrada, "success");
                 } else {
-                    mostrarToast("No se detectó un formato válido de patente", "warning");
+                    // Si falla todo, mostramos qué leyó para debug
+                    mostrarToast("Formato no reconocido. Leyó: " + texto, "warning");
                 }
 
             } catch (error) {
                 console.error(error);
-                mostrarToast("Error al leer imagen", "error");
+                mostrarToast("Error al leer", "error");
             }
         }
         
