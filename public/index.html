@@ -220,7 +220,7 @@
             </div>
         </div>
 
-                <!-- --- NUEVA SECCIÓN: DASHBOARD DE ESTADÍSTICAS (DISEÑO OPTIMIZADO) --- -->
+        <!-- --- NUEVA SECCIÓN: DASHBOARD DE ESTADÍSTICAS (DISEÑO OPTIMIZADO) --- -->
         <div id="dashboardSection" class="section">
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -253,21 +253,9 @@
                 </div>
             </div>
         </div>
-                        <!-- Contenedor del Gráfico -->
-                <div class="card" style="margin-top: 20px;">
-                    <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
-                    <div style="height: 300px; position: relative;">
-                        <canvas id="graficoInspectores"></canvas>
-                    </div>
-                </div>
+        <!-- FIN DASHBOARD -->
 
-                                <!-- NUEVOS BOTONES DE REPORTE (Solo Owner) -->
-                <div id="reportTools" style="display:none; margin-top:20px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:16px; padding:12px;">📧 Email</button>
-                        <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:16px; padding:12px; background:#25D366;">💬 WhatsApp</button>
-                    </div>
-                </div>
+    </div> <!-- FIN MAINAPP -->
 
     <!-- BOTÓN FLOTANTE REGISTRAR -->
     <div id="footerBtn" class="footer-fixed">
@@ -279,13 +267,14 @@
         let usuarioActual = null;
         let vehiculoActual = null;
         let map = null;
-        let miGrafico = null; // Variable para el gráfico
+        let miGrafico = null; 
         const socket = io();
 
         // --- INICIO Y PERMISOS ---
         function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('reportTools').style.display = 'flex';        }
+            document.getElementById('mainApp').style.display = 'block'; // CORREGIDO: FALTABA ESTA LÍNEA
+        }
 
         async function iniciarSesion() {
             const usuario = document.getElementById('txtUsuario').value;
@@ -303,13 +292,13 @@
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
                 document.getElementById('spanRol').innerText = usuarioActual.rol;
 
-                                // LÓGICA DE ROLES: Mostrar botones solo si es OWNER
+                // LÓGICA DE ROLES
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
-                  // document.getElementById('reportTools').style.display = 'block'; // <--- AGREGAR ESTO
+                    document.getElementById('reportTools').style.display = 'flex'; // CORREGIDO: Mostrar para Owner
                 } else {
                     document.getElementById('adminTools').style.display = 'none';
-                    document.getElementById('reportTools').style.display = 'none'; // <--- Y ESTO POR SEGURIDAD
+                    document.getElementById('reportTools').style.display = 'none';
                 }
 
                 mostrarMainApp();
@@ -320,14 +309,13 @@
         }
 
         // --- FUNCIONES DE NAVEGACIÓN (HELPERS) ---
-        // Oculta todas las secciones principales
         function ocultarTodasSecciones() {
             document.getElementById('searchSection').classList.remove('active');
             document.getElementById('formSection').classList.remove('active');
             document.getElementById('mapSection').classList.remove('active');
             document.getElementById('userSection').classList.remove('active');
             document.getElementById('listUsersSection').classList.remove('active');
-            document.getElementById('dashboardSection').classList.remove('active'); // Ocultar Dashboard
+            document.getElementById('dashboardSection').classList.remove('active');
             document.getElementById('footerBtn').style.display = 'none';
         }
 
@@ -438,14 +426,10 @@
             document.getElementById('searchSection').classList.add('active');
             document.getElementById('footerBtn').style.display = 'block';
         }
-                function cerrarDashboard() {
-            // 1. Ocultamos el Dashboard
+
+        function cerrarDashboard() {
             document.getElementById('dashboardSection').classList.remove('active');
-            
-            // 2. Mostramos la pantalla principal de búsqueda
             document.getElementById('searchSection').classList.add('active');
-            
-            // 3. Volvemos a mostrar el botón flotante "REGISTRAR CONTROL"
             document.getElementById('footerBtn').style.display = 'block';
         }
 
@@ -499,7 +483,7 @@
                 const res = await fetch('/api/usuarios');
                 const data = await res.json();
 
-                tbody.innerHTML = ''; // Limpiar
+                tbody.innerHTML = ''; 
 
                 if (data.error) {
                     tbody.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${data.error}</td></tr>`;
@@ -529,7 +513,7 @@
             }
         }
 
-                // --- FUNCIONES DEL DASHBOARD (VERSIÓN DISEÑO PREMIUM) ---
+        // --- FUNCIONES DEL DASHBOARD (PREMIUM) ---
         async function abrirDashboard() {
             ocultarTodasSecciones();
             document.getElementById('dashboardSection').classList.add('active');
@@ -540,42 +524,21 @@
                 const res = await fetch('/api/estadisticas');
                 const data = await res.json();
 
-                // 1. Actualizar número grande
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
 
-                // 2. Preparar datos
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
 
-                // 3. Configurar el lienzo (Canvas) para los degradados
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
 
-                // --- CONFIGURACIÓN DE COLORES Y DEGRADADOS ---
-                // Paleta de colores vibrantes
-                const coloresBase = [
-                    '#3b82f6', // Azul
-                    '#ef4444', // Rojo
-                    '#10b981', // Verde
-                    '#f59e0b', // Naranja
-                    '#8b5cf6', // Violeta
-                    '#ec4899', // Rosa
-                    '#06b6d4', // Cian
-                    '#84cc16'  // Lima
-                ];
+                const coloresBase = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-                // Creamos un array de degradados para cada barra
                 const fondosBarras = data.porInspector.map((u, index) => {
-                    // Elegimos un color de la paleta (ciclando si hay muchos inspectores)
                     const colorHex = coloresBase[index % coloresBase.length];
-                    
-                    // Creamos el degradado vertical (de arriba a abajo)
                     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    
-                    // Efecto Biselado: Brillo arriba -> Color sólido -> Sombra abajo
-                    gradient.addColorStop(0, adjustColor(colorHex, 40)); // Luz arriba
-                    gradient.addColorStop(0.5, colorHex);               // Color medio
-                    gradient.addColorStop(1, adjustColor(colorHex, -20)); // Sombra abajo
-                    
+                    gradient.addColorStop(0, adjustColor(colorHex, 40));
+                    gradient.addColorStop(0.5, colorHex);
+                    gradient.addColorStop(1, adjustColor(colorHex, -20));
                     return gradient;
                 });
 
@@ -583,12 +546,10 @@
                     return coloresBase[index % coloresBase.length];
                 });
 
-                // 4. Destruir gráfico anterior si existe
                 if (miGrafico) {
                     miGrafico.destroy();
                 }
 
-                // 5. Crear el nuevo Gráfico con el diseño personalizado
                 miGrafico = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -596,39 +557,22 @@
                         datasets: [{
                             label: 'Controles Realizados',
                             data: cantidades,
-                            backgroundColor: fondosBarras, // Usamos los degradados
-                            borderColor: bordesBarras,   // Borde sólido del color original
+                            backgroundColor: fondosBarras,
+                            borderColor: bordesBarras,
                             borderWidth: 2,
-                            borderRadius: 5,             // Bordes redondeados en las barras
-                            barPercentage: 0.6           // Ancho de las barras
+                            borderRadius: 5,
+                            barPercentage: 0.6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }, // Ocultamos la leyenda porque es obvio
-                            tooltip: {
-                                backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                                padding: 12,
-                                titleFont: { size: 14 },
-                                bodyFont: { size: 14 }
-                            }
-                        },
+                        plugins: { legend: { display: false } },
                         scales: {
-                            y: { 
-                                beginAtZero: true, 
-                                ticks: { stepSize: 1 },
-                                grid: { color: '#e2e8f0' }
-                            },
-                            x: {
-                                grid: { display: false } // Limpiar líneas verticales
-                            }
+                            y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } },
+                            x: { grid: { display: false } }
                         },
-                        animation: {
-                            duration: 1500,
-                            easing: 'easeOutQuart' // Animación suave
-                        }
+                        animation: { duration: 1500, easing: 'easeOutQuart' }
                     }
                 });
 
@@ -638,8 +582,6 @@
             }
         }
 
-        // --- UTILIDAD: Aclarar u Oscurecer Colores Hexadecimales (Para el efecto 3D) ---
-        // amount: positivo para aclarar, negativo para oscurecer
         function adjustColor(color, amount) {
             return '#' + color.replace(/^#/, '').replace(/../g, color => ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
         }
@@ -647,7 +589,6 @@
         // --- REGISTRAR CONTROL ---
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
-            
             let lat = null, lon = null;
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -705,7 +646,7 @@
             }
         }
 
-        // --- FUNCIONES DE INTERFAZ Y SESIÓN ---
+        // --- UTILIDADES Y REPORTES ---
         function mostrarToast(mensaje, tipo = "success") {
             let colorFondo = "#16a34a"; 
             if (tipo === "error") colorFondo = "#dc2626"; 
@@ -714,79 +655,50 @@
             Toastify({
                 text: mensaje,
                 duration: 3000,
-                gravity: "top", 
-                position: "center", 
-                stopOnFocus: true, 
-                style: {
-                    background: colorFondo,
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    fontWeight: "bold"
-                },
+                gravity: "top", position: "center", stopOnFocus: true, 
+                style: { background: colorFondo, borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", fontWeight: "bold" },
             }).showToast();
         }
 
         function cerrarSesion() {
             mostrarToast("Cerrando sesión...", "info");
-            setTimeout(() => {
-                location.reload(); 
-            }, 1000);
+            setTimeout(() => { location.reload(); }, 1000);
         }
-                // --- FUNCIONES PARA COMPARTIR REPORTES ---
 
-        // Genera el texto del reporte formateado
         function generarTextoReporte(data) {
             const fecha = new Date().toLocaleDateString();
             let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n`;
             texto += `📅 Fecha: ${fecha}\n`;
             texto += `🚗 Total Controles: ${data.totalHoy}\n\n`;
             texto += `📋 *Detalle por Inspector:*\n`;
-
             data.porInspector.forEach(insp => {
                 texto += `▪️ ${insp.nombre}: ${insp.cantidad} controles\n`;
             });
-
             texto += `\n_Enviado desde App Control de Tránsito_`;
             return texto;
         }
 
         async function compartirPorEmail() {
             mostrarToast("Preparando correo...", "info");
-            
             try {
-                // Obtenemos datos frescos
                 const res = await fetch('/api/estadisticas');
                 const data = await res.json();
-                
                 const texto = generarTextoReporte(data);
                 const asunto = encodeURIComponent("Reporte de Control de Tránsito");
                 const cuerpo = encodeURIComponent(texto);
-                
-                // Abrimos el cliente de correo
                 window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
-            } catch (error) {
-                mostrarToast("Error al generar reporte", "error");
-            }
+            } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
 
         async function compartirPorWhatsApp() {
             mostrarToast("Abriendo WhatsApp...", "info");
-            
             try {
-                // Obtenemos datos frescos
                 const res = await fetch('/api/estadisticas');
                 const data = await res.json();
-                
                 const texto = generarTextoReporte(data);
-                
-                // Codificamos el texto para URL
                 const urlTexto = encodeURIComponent(texto);
-                
-                // Abrimos WhatsApp Web o la App
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
-            } catch (error) {
-                mostrarToast("Error al generar reporte", "error");
-            }
+            } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
     </script>
 </body>
