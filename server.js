@@ -210,7 +210,7 @@ app.get('/api/estadisticas', async (req, res) => {
     }
 });
 
-// 8. EXPORTAR A EXCEL (CSV)
+// --- RUTA: EXPORTAR A EXCEL (CSV) ---
 app.get('/api/exportar-registros', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
@@ -218,7 +218,6 @@ app.get('/api/exportar-registros', async (req, res) => {
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
 
-                // Consulta detallada para el reporte (CORREGIDA: Agregado JOIN a vehiculos)
         const query = `
             SELECT 
                 r.patricula, 
@@ -229,11 +228,10 @@ app.get('/api/exportar-registros', async (req, res) => {
                 r.tiene_licencia, 
                 r.observaciones
             FROM registros_controles r
-            LEFT JOIN vehiculos v ON r.patricula = v.patricula  <-- ESTO ES LO NUEVO
+            LEFT JOIN vehiculos v ON r.patricula = v.patricula
             JOIN usuarios u ON r.id_inspector = u.id
             WHERE r.fecha_hora::date BETWEEN $1 AND $2
             ORDER BY r.fecha_hora DESC
-        `;
         `;
         
         const result = await pool.query(query, [fechaDesde, fechaHasta]);
@@ -242,25 +240,22 @@ app.get('/api/exportar-registros', async (req, res) => {
         // Generar CSV
         let csv = 'Patente,Modelo,Fecha,Hora,Inspector,Cédula,Licencia,Observaciones\n';
 
-                rows.forEach(row => {
+        rows.forEach(row => {
             // Formatear fecha y hora
             const fechaObj = new Date(row.fecha_hora);
             const fechaStr = fechaObj.toLocaleDateString();
             const horaStr = fechaObj.toLocaleTimeString();
 
-            // MANEJO SEGURO DE COMILLAS (Usando concatenación para evitar errores de sintaxis)
+            // MANEJO SEGURO DE COMILLAS (Concatenación)
             let obs = '';
             if (row.observaciones) {
-                // Escapar comillas dobles dentro del texto para el CSV
                 const obsEscapado = row.observaciones.replace(/"/g, '""');
                 obs = '"' + obsEscapado + '"';
             } 
 
-            // Datos (0 = No, 1 = Si)
             const cedula = row.tiene_cedula ? 'Sí' : 'No';
             const licencia = row.tiene_licencia ? 'Sí' : 'No';
 
-            // Construir la línea del CSV uniendo con '+'
             csv += row.patricula + ',"' + (row.modelo || '') + '",' + fechaStr + ',' + horaStr + ',"' + row.inspector + '",' + cedula + ',' + licencia + ',' + obs + '\n';
         });
 
@@ -270,7 +265,7 @@ app.get('/api/exportar-registros', async (req, res) => {
 
     } catch (error) {
         console.error("Error al exportar:", error);
-        res.status(500).send("Error al generar reporte");
+        res.status(500).send("ERROR: " + error.message);
     }
 });
 
