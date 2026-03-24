@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Tránsito</title>
 
-    <!-- ESTILOS CSS -->
     <style>
         :root {
             --bg-body: #e2e8f0;
@@ -61,6 +60,19 @@
         .section { padding: 20px; display: none; }
         .section.active { display: block; }
 
+        /* FIX MAPA: altura correcta cuando está activo */
+        #mapSection { padding: 0; position: relative; }
+        #mapSection.active {
+            display: block;
+            height: calc(100vh - 70px);
+        }
+        #map {
+            height: 100%;
+            min-height: 450px;
+            width: 100%;
+            background: #f0f0f0;
+        }
+
         .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid var(--input-border); background-color: var(--bg-card); color: var(--text-main); }
         .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
         .card-alert { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
@@ -79,8 +91,6 @@
         .hidden { display: none !important; }
         .text-center { text-align: center; }
 
-        #map { height: 100%; width: 100%; background: #f0f0f0; }
-
         .table-users { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 15px; }
         .table-users th, .table-users td { padding: 12px; text-align: left; border-bottom: 1px solid var(--input-border); color: var(--text-main); }
         .table-users th { background-color: var(--dark); color: white; font-weight: bold; border-bottom: 2px solid #1e293b; }
@@ -89,29 +99,15 @@
         .badge-owner { background-color: #fbbf24; color: #78350f; }
         .badge-inspector { background-color: #dbeafe; color: #1e40af; }
 
-        /* FIX: comentario cerrado correctamente */
-        #txtPatente,
-        #txtModelo,
-        #txtNro08 {
-            width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 20px; text-align: center;
-            background-color: var(--input-bg); color: var(--text-main);
-            text-transform: uppercase;
+        #txtPatente, #txtModelo, #txtNro08 {
+            width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border);
+            border-radius: 8px; box-sizing: border-box; font-size: 20px; text-align: center;
+            background-color: var(--input-bg); color: var(--text-main); text-transform: uppercase;
         }
-
-        .dark-mode #txtPatente {
-            color: var(--text-main);
-            background-color: #374151;
-            border-color: #4b5563;
-        }
-
-        .dark-mode input[type="date"],
-        .dark-mode input[type="text"] {
-            color: var(--text-main);
-            color-scheme: light;
-        }
+        .dark-mode #txtPatente { color: var(--text-main); background-color: #374151; border-color: #4b5563; }
+        .dark-mode input[type="date"], .dark-mode input[type="text"] { color: var(--text-main); color-scheme: light; }
     </style>
 
-    <!-- LIBRERÍAS EXTERNAS -->
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -128,14 +124,11 @@
             <h2>Control de Tráquíb</h2>
             <p style="color: #64748b;">Ingresá tus credenciales para iniciar tu turno</p>
         </div>
-
         <input type="text" id="txtUsuario" placeholder="Usuario">
         <input type="password" id="txtPassword" placeholder="Contraseña">
-
         <div id="loginError" class="card card-alert hidden" style="text-align:center;">
             Usuario o contraseña incorrectos
         </div>
-
         <button class="btn-primary" onclick="iniciarSesion()">INICIAR SESIÓN</button>
     </div>
 
@@ -200,8 +193,8 @@
             </div>
         </div>
 
-        <!-- Sección Mapa -->
-        <div id="mapSection" class="section" style="height: 0; padding:0; position:relative;">
+        <!-- Sección Mapa — FIX: sin height:0, sin padding inline, manejado por CSS -->
+        <div id="mapSection" class="section">
             <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
             <div id="map"></div>
         </div>
@@ -237,10 +230,7 @@
                 <div style="overflow-x: auto;">
                     <table class="table-users">
                         <thead>
-                            <tr>
-                                <th>Nombre Completo</th>
-                                <th>Cargo</th>
-                            </tr>
+                            <tr><th>Nombre Completo</th><th>Cargo</th></tr>
                         </thead>
                         <tbody id="tablaUsuariosBody">
                             <tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>
@@ -311,7 +301,6 @@
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
     </div>
 
-    <!-- JAVASCRIPT -->
     <script>
         let infoUltimoControl = null;
         let usuarioActual = null;
@@ -328,19 +317,16 @@
         async function iniciarSesion() {
             const usuario = document.getElementById('txtUsuario').value;
             const pass = document.getElementById('txtPassword').value;
-
             const res = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuario, password: pass })
             });
-
             const data = await res.json();
             if (data.success) {
                 usuarioActual = data.user;
                 document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
                 document.getElementById('spanRol').innerText = usuarioActual.rol;
-
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
                     document.getElementById('reportTools').style.display = 'flex';
@@ -350,7 +336,6 @@
                 }
                 mostrarMainApp();
             } else {
-                // FIX: sintaxis corregida
                 document.getElementById('loginError').classList.remove('hidden');
                 setTimeout(() => { document.getElementById('loginError').classList.add('hidden'); }, 3000);
             }
@@ -369,20 +354,14 @@
         async function buscarVehiculo() {
             const patente = document.getElementById('txtPatente').value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
-
             const res = await fetch(`/vehiculos/${patente}`);
             const data = await res.json();
-
             vehiculoActual = data.vehiculo;
             const ultimoControl = data.ultimoControl;
             infoUltimoControl = ultimoControl;
-
             const divRes = document.getElementById('divResultado');
-            const footerBtn = document.getElementById('footerBtn');
-            footerBtn.style.display = 'block';
-
+            document.getElementById('footerBtn').style.display = 'block';
             let html = "";
-
             if (ultimoControl) {
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
                 const ahora = new Date();
@@ -396,8 +375,6 @@
             } else {
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
-
-            // FIX: variable vehiculoActual (no "vehiculo")
             if (vehiculoActual) {
                 html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
@@ -405,10 +382,8 @@
             } else {
                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
                 document.getElementById('txtModelo').value = '';
-                // FIX: corchete correcto
                 document.getElementById('txtNro08').value = '';
             }
-
             html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos</button>`;
             html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar</button>`;
             divRes.innerHTML = html;
@@ -441,14 +416,22 @@
             document.getElementById('txtObs').value = '';
         }
 
+        // FIX MAPA: delay para que Leaflet encuentre el contenedor con dimensiones
         async function abrirMapa() {
             ocultarTodasSecciones();
             document.getElementById('mapSection').classList.add('active');
 
-            if (map) { map.invalidateSize(); return; }
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            if (map) {
+                map.invalidateSize();
+                return;
+            }
 
             map = L.map('map').setView([-28.5343, -56.0406], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
 
             try {
                 const res = await fetch('/api/historial');
@@ -458,11 +441,20 @@
                         if (ctrl.latitud && ctrl.longitud) {
                             const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
                             const fecha = new Date(ctrl.fecha_hora).toLocaleString();
-                            marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
+                            marker.bindPopup(`
+                                <b>Patente:</b> ${ctrl.patricula}<br>
+                                <b>Fecha:</b> ${fecha}<br>
+                                <a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>
+                            `);
                         }
                     });
-                } else { alert("No hay datos aún."); }
-            } catch (err) { alert("Error al cargar mapa"); }
+                } else {
+                    mostrarToast("No hay controles con GPS registrados aún", "info");
+                }
+            } catch (err) {
+                console.error(err);
+                mostrarToast("Error al cargar datos del mapa", "error");
+            }
         }
 
         function cerrarMapa() {
@@ -494,9 +486,7 @@
             const password = document.getElementById('newPassword').value;
             const nombre = document.getElementById('newNombre').value;
             const rol = document.getElementById('newRol').value;
-
             if(!usuario || !password) return alert("Falta usuario o contraseña");
-
             try {
                 const res = await fetch('/api/crear-usuario', {
                     method: 'POST',
@@ -517,16 +507,12 @@
         async function verListaUsuarios() {
             ocultarTodasSecciones();
             document.getElementById('listUsersSection').classList.add('active');
-
-            // FIX: ID correcto tablaUsuariosBody (no tbodyUsuariosBody)
             const tbody = document.getElementById('tablaUsuariosBody');
             tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
-
             try {
                 const res = await fetch('/api/usuarios');
                 const data = await res.json();
                 tbody.innerHTML = '';
-
                 if (data.error) {
                     tbody.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${data.error}</td></tr>`;
                     return;
@@ -535,10 +521,8 @@
                     tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
                     return;
                 }
-
                 data.forEach(u => {
                     const tr = document.createElement('tr');
-                    // FIX: u.15 no es válido, se usa emoji según rol
                     const icono = u.rol === 'OWNER' ? '👑' : '👮';
                     const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
                     tr.innerHTML = `
@@ -557,7 +541,6 @@
             ocultarTodasSecciones();
             document.getElementById('dashboardSection').classList.add('active');
             const hoy = new Date().toISOString().split('T')[0];
-            // FIX: IDs corregidos (fechaDesde/fechaHasta, no dateDesde/dateHasta)
             document.getElementById('fechaDesde').value = hoy;
             document.getElementById('fechaHasta').value = hoy;
             await cargarDatosDashboard(hoy, hoy);
@@ -569,13 +552,10 @@
                 const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
-
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
-
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
                 const coloresBase = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-
                 const fondosBarras = data.porInspector.map((u, index) => {
                     const colorHex = coloresBase[index % coloresBase.length];
                     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -585,9 +565,7 @@
                     return gradient;
                 });
                 const bordesBarras = data.porInspector.map((u, index) => coloresBase[index % coloresBase.length]);
-
                 if (miGrafico) miGrafico.destroy();
-
                 miGrafico = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -606,7 +584,6 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
-                        // FIX: sintaxis de scales corregida
                         scales: {
                             y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } },
                             x: { grid: { display: false } }
@@ -629,7 +606,6 @@
 
         function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
-            // FIX: ID unificado a fechaHasta
             const hasta = document.getElementById('fechaHasta').value;
             if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
             mostrarToast("Descargando Excel...", "info");
@@ -656,7 +632,6 @@
             const btn = document.querySelector('#footerBtn button');
             btn.disabled = true;
             btn.innerHTML = "⏳ Guardando...";
-
             const payload = {
                 patricula: document.getElementById('txtPatente').value.toUpperCase(),
                 modelo: document.getElementById('txtModelo').value,
@@ -665,10 +640,8 @@
                 fecha_rto_vence: document.getElementById('txtRTO').value,
                 id_inspector: usuarioActual.id,
                 latitud: lat,
-                // FIX: "lon: long" corregido a "lon,"
                 longitud: lon,
                 texto_ubicacion: "Ubicación GPS",
-                // FIX: "chatCedula" corregido a "chkCedula"
                 tiene_cedula: document.getElementById('chkCedula').checked,
                 tiene_licencia: document.getElementById('chkLicencia').checked,
                 tiene_seguro: document.getElementById('chkSeguro').checked,
@@ -676,7 +649,6 @@
                 tiene_rto_habilitada: document.getElementById('chkRTO').checked,
                 observaciones: document.getElementById('txtObs').value
             };
-
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
@@ -717,19 +689,28 @@
 
         function generarTextoReporte(data) {
             const fecha = new Date().toLocaleDateString();
-            let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n`;
-            texto += `📅 Fecha: ${fecha}\n`;
-            texto += `🚗 Total Controles: ${data.totalHoy}\n\n`;
-            texto += `📋 *Detalle por Inspector:*\n`;
-            data.porInspector.forEach(insp => { texto += `▪️ ${insp.nombre}: ${insp.cantidad} controles\n`; });
-            texto += `\n_Enviado desde App Control de Tránsito_`;
+            let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*
+`;
+            texto += `📅 Fecha: ${fecha}
+`;
+            texto += `🚗 Total Controles: ${data.totalHoy}
+
+`;
+            texto += `📋 *Detalle por Inspector:*
+`;
+            data.porInspector.forEach(insp => { texto += `▪️ ${insp.nombre}: ${insp.cantidad} controles
+`; });
+            texto += `
+_Enviado desde App Control de Tránsito_`;
             return texto;
         }
 
         async function compartirPorEmail() {
             mostrarToast("Preparando correo...", "info");
             try {
-                const res = await fetch('/api/estadisticas');
+                const desde = document.getElementById('fechaDesde').value;
+                const hasta = document.getElementById('fechaHasta').value;
+                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
                 const texto = generarTextoReporte(data);
                 window.location.href = `mailto:?subject=${encodeURIComponent("Reporte de Control de Tránsito")}&body=${encodeURIComponent(texto)}`;
@@ -739,7 +720,9 @@
         async function compartirPorWhatsApp() {
             mostrarToast("Abriendo WhatsApp...", "info");
             try {
-                const res = await fetch('/api/estadisticas');
+                const desde = document.getElementById('fechaDesde').value;
+                const hasta = document.getElementById('fechaHasta').value;
+                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
                 window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
@@ -748,64 +731,44 @@
         function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl;
             if (!control) { mostrarToast("No hay datos del control anterior", "warning"); return; }
-
-            // FIX: una sola declaración de modal
             const modal = document.getElementById('modalHistorial');
             const contenido = document.getElementById('contenidoHistorial');
             const fecha = new Date(control.fecha_hora).toLocaleString();
-
             let html = `
                 <p style="color:#94a3b8; font-size:13px;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p>
                 <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Cédula</label>
-                        <div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Licencia</label>
-                        <div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                        <div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">08 Pagado</label>
-                        <div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                        <div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div>
-                    </div>
+                    <div><label style="font-size:12px; color:#94a3b8;">Cédula</label>
+                    <div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
+                    <div><label style="font-size:12px; color:#94a3b8;">Licencia</label>
+                    <div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
+                    <div><label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                    <div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div>
+                    <div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label>
+                    <div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div></div>
+                    <div><label style="font-size:12px; color:#94a3b8;">RTO</label>
+                    <div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div></div>
                 </div>
             `;
-
             if (vehiculo) {
                 html += `
                     <div style="margin-top:20px; background-color: #0f172a; padding:15px; border-radius:8px; border:1px dashed #334155;">
                         <h4 style="margin:0 0 10px; color:#f3f4f6;">🚗 VENCIMIENTOS</h4>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div>
-                                <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                                <div style="font-weight:bold; color:#34d399;">${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}</div>
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                                <div style="font-weight:bold; color:#34d399;">${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}</div>
-                            </div>
+                            <div><label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                            <div style="font-weight:bold; color:#34d399;">${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}</div></div>
+                            <div><label style="font-size:12px; color:#94a3b8;">RTO</label>
+                            <div style="font-weight:bold; color:#34d399;">${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}</div></div>
                         </div>
                     </div>
                 `;
             }
-
             if (control.observaciones) {
                 html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;">
                             <label style="font-size:12px; color:#92400e;">OBSERVACIONES:</label>
                             <p style="margin:5px 0 0; font-style:italic; color:#78350f;">"${control.observaciones}"</p>
                          </div>`;
             }
-
             contenido.innerHTML = html;
             modal.style.zIndex = '9000';
             modal.style.display = 'flex';
@@ -813,7 +776,6 @@
         }
 
         function cerrarModalHistorial() {
-            // FIX: punto final eliminado
             const modal = document.getElementById('modalHistorial');
             modal.style.display = 'none';
             modal.classList.add('hidden');
@@ -823,10 +785,7 @@
             const temaGuardado = localStorage.getItem('tema');
             if (temaGuardado === 'oscuro') {
                 document.body.classList.add('dark-mode');
-                document.getElementById('btnDarkMode').innerText = '☀️';
-            } else {
-                document.body.classList.remove('dark-mode');
-                document.getElementById('btnDarkMode').innerText = '🌙';
+                if(document.getElementById('btnDarkMode')) document.getElementById('btnDarkMode').innerText = '☀️';
             }
         }
 
