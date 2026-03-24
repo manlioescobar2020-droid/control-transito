@@ -874,6 +874,37 @@
             modal.style.display = 'none';
             modal.classList.add('hidden');
         }
+                // --- LÓGICA MODO OSCURO ---
+        
+        // 1. Aplicar el tema al iniciar (persistencia)
+        function aplicarTema() {
+            const temaGuardado = localStorage.getItem('tema');
+            if (temaGuardado === 'oscuro') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('btnDarkMode').innerText = '☀️'; // Icono Sol
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('btnDarkMode').innerText = '🌙'; // Icono Luna
+            }
+        }
+
+        // 2. Función para cambiar modo
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            
+            const esOscuro = document.body.classList.contains('dark-mode');
+            
+            // Guardar preferencia
+            localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
+            
+            // Cambiar ícono
+            document.getElementById('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
+        }
+
+        // 3. Llamar a aplicarTema al cargar la página
+        // Agrega esto dentro de la función `iniciarSesion`, justo antes de `mostrarMainApp();`
+        // O simplemente llámalo al final del script si quieres probar ya:
+        aplicarTema();
     </script>
 </body>
 </html>
