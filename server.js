@@ -47,19 +47,22 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// 2. BUSCAR VEHÍCULO
+// 2. BUSCAR VEHÍCULO (CORREGIDO)
 app.get('/vehiculos/:patricula', async (req, res) => {
-    const { patricula } = req.params;
+    // CORREGIDO: Usamos 'patricula' (con A), que es lo que viene en la URL
+    const { patricula } = req.params; 
+    
     try {
+        // Buscamos datos del vehículo
         const vehiculoResult = await pool.query(
             'SELECT * FROM vehiculos WHERE patricula = $1', 
             [patricula.toUpperCase()]
         );
         
-                // Buscamos el último control (AHORA TRAE TODOS LOS DATOS: CHECKS, OBS, ETC)
+        // Buscamos el último control (TRAEMOS * TODO CON EL ASTERISCO)
         const controlResult = await pool.query(
             'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
-            [patricula.toUpperCase()]  <-- ¡AGREGA LA 'A' AL FINAL!
+            [patricula.toUpperCase()]
         );
 
         res.json({ 
