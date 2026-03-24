@@ -18,15 +18,28 @@
             --input-border: #e2e8f0;  /* Borde input */
         }
 
-        /* --- CLASE MODO OSCURO --- */
-        .dark-mode {
-            --bg-body: #0f172a;       /* Fondo pantalla casi negro */
-            --bg-card: #1e293b;       /* Fondo tarjeta gris oscuro */
-            --text-main: #f3f4f6;      /* Texto principal claro */
-            --text-sec: #94a3b8;       /* Texto secundario */
-            --input-bg: #374151;      /* Fondo input gris oscuro */
-            --input-border: #4b5563;  /* Borde input más oscuro */
+                /* --- APLICACIÓN DE VARIABLES --- */
+        body { background-color: var(--bg-body); color: var(--text-main); }
+        
+        .header { background-color: var(--primary); color: white; }
+        
+        .card { background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--input-border); }
+        
+        input, select, textarea { 
+            background-color: var(--input-bg); 
+            color: var(--text-main); 
+            border-color: var(--input-border);
         }
+        input:focus { border-color: var(--primary); outline: none; }
+
+        .text-center { color: var(--text-sec); }
+        .form-group label { color: var(--text-sec); }
+        
+        /* Ajustes específicos para modo oscuro */
+        .dark-mode .login-box h2 { color: white; }
+        .dark-mode .card-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+        .dark-mode .card-success { background: #064e3b; border-color: #059669; color: #bbf7d0; }
+        .dark-mode .card-warning { background: #854d0e; border-color: #713f12; color: #fde68a; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
         .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
