@@ -819,108 +819,81 @@ _Enviado desde App Control de Tránsito_`;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('Service Worker registrado con éxito:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.log('Error al registrar el Service Worker:', error);
-                    });
+                    .then((registration) => console.log('SW registrado:', registration.scope))
+                    .catch((error) => console.log('Error SW:', error));
             });
         }
 
-        // --- LÓGICA DE SINCRONIZACIÓN OFFLINE ---
-        
-        // Variable para verificar conexión
-        let isOnline = navigator.onLine;
+        // --- FUNCIONES OFFLINE ADAPTADAS A TU PROYECTO ---
 
-        // 1. Función para guardar control localmente si no hay red
-        function guardarControlLocal(datosControl) {
+        // 1. Guardar datos en LocalStorage
+        function guardarControlLocal(datos) {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            datosControl.idTemporal = Date.now(); // ID temporal
-            pendientes.push(datosControl);
+            datos.fecha_hora_local = new Date().toISOString(); // Le ponemos fecha
+            datos.idTemporal = Date.now(); 
+            pendientes.push(datos);
             localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
-            
-            // Actualizar UI (agregar a la tabla visualmente)
-            agregarFilaTabla(datosControl, true); // Pasamos 'true' para indicar que es pendiente
-            
-            Toastify({
-                text: "Sin conexión. Guardado localmente para sincronizar luego.",
-                duration: 3000,
-                backgroundColor: "#f59e0b", // Color advertencia
-                gravity: "bottom"
-            }).showToast();
         }
 
-        // 2. Función para intentar enviar datos pendientes
+        // 2. Sincronizar cuando vuelve la conexión
         async function sincronizarPendientes() {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
             if (pendientes.length === 0) return;
 
-            Toastify({
-                text: `Sincronizando ${pendientes.length} controles pendientes...`,
-                duration: 2000,
-                backgroundColor: "#3b82f6",
-                gravity: "bottom"
-            }).showToast();
+            mostrarToast(`Sincronizando ${pendientes.length} controles...`, "info");
 
             let nuevosPendientes = [];
 
             for (let control of pendientes) {
                 try {
-                    // Ajusta la URL a tu endpoint real
-                    const response = await fetch('/api/controles', {
+                    // Usamos tu misma ruta '/registrar-control'
+                    const res = await fetch('/registrar-control', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(control)
                     });
 
-                    if (response.ok) {
-                        console.log('Control sincronizado:', control.patente);
-                        // Opcional: actualizar la fila en la tabla para quitar el indicador de "pendiente"
-                        marcarComoSincronizado(control.idTemporal);
+                    if (res.ok) {
+                        console.log('Sincronizado:', control.patricula);
                     } else {
-                        nuevosPendientes.push(control); // Falló pero hay servidor, lo reintentamos luego? O lo dejamos.
+                        // Si falla por validación del servidor, lo dejamos en la cola o descartamos?
+                        // Por ahora lo dejamos en la cola si es error de red, pero si es error de datos (400) quizás convenga quitarlo.
+                        nuevosPendientes.push(control); 
                     }
                 } catch (error) {
-                    console.error('Error al sincronizar, volviendo a guardar:', error);
+                    console.error('Fallo sincronización, reintentando luego');
                     nuevosPendientes.push(control);
                 }
             }
 
             localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
+            
+            if(nuevosPendientes.length === 0) {
+                mostrarToast("¡Todo sincronizado!", "success");
+            }
         }
 
-        // 3. Escuchar cambios de conexión
+        // 3. Escuchar eventos de conexión
         window.addEventListener('online', () => {
             console.log('Conexión recuperada');
+            mostrarToast("Conexión recuperada", "success");
             sincronizarPendientes();
         });
 
         window.addEventListener('offline', () => {
             console.log('Conexión perdida');
-            Toastify({
-                text: "Modo Offline activado",
-                duration: 3000,
-                backgroundColor: "#ef4444",
-                gravity: "bottom"
-            }).showToast();
+            mostrarToast("Modo Offline activado", "warning");
         });
 
-        // 4. MODIFICACIÓN DE TU FUNCIÓN DE ENVÍO
-        // Debes encontrar tu función actual que hace el fetch POST y reemplazarla por esta lógica:
-        /*
-        async function enviarControlAlBackend(datos) {
-            if (navigator.onLine) {
-                // Tu lógica normal de fetch POST aquí...
-                const response = await fetch('/api/controles', ...);
-                // ...
-            } else {
-                // Si no hay internet, guardamos local
-                guardarControlLocal(datos);
-            }
-        }
-        */
+        // Intentar sincronizar al cargar la página por si quedaron cosas pendientes de ayer
+        window.addEventListener('load', () => {
+            if(navigator.onLine) sincronizarPendientes();
+        });
+
     </script>
+</body>
+</html>
+    
 </body>
 </html>
 </body>
