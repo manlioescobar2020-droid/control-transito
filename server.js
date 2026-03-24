@@ -58,8 +58,8 @@ app.get('/vehiculos/:patricula', async (req, res) => {
         
                 // Buscamos el último control (AHORA TRAE TODOS LOS DATOS: CHECKS, OBS, ETC)
         const controlResult = await pool.query(
-                        'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
-            [patente.toUpperCase()]
+            'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
+            [patricula.toUpperCase()]  <-- ¡AGREGA LA 'A' AL FINAL!
         );
 
         res.json({ 
