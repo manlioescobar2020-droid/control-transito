@@ -7,8 +7,25 @@
     
     <!-- ESTILOS CSS -->
     <style>
-        :root {
+                :root {
+            /* --- COLORES MODO CLARO (DEFAULT) --- */
             --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; --dark: #1e293b; --light: #f1f5f9;
+            --bg-body: #e2e8f0;       /* Fondo página gris claro */
+            --bg-card: #ffffff;       /* Fondo tarjeta blanco */
+            --text-main: #1e293b;      /* Texto principal oscuro */
+            --text-sec: #64748b;       /* Texto secundario */
+            --input-bg: #ffffff;      /* Fondo input */
+            --input-border: #e2e8f0;  /* Borde input */
+        }
+
+        /* --- CLASE MODO OSCURO --- */
+        .dark-mode {
+            --bg-body: #0f172a;       /* Fondo pantalla casi negro */
+            --bg-card: #1e293b;       /* Fondo tarjeta gris oscuro */
+            --text-main: #f3f4f6;      /* Texto principal claro */
+            --text-sec: #94a3b8;       /* Texto secundario */
+            --input-bg: #374151;      /* Fondo input gris oscuro */
+            --input-border: #4b5563;  /* Borde input más oscuro */
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
