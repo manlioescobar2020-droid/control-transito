@@ -7,8 +7,7 @@
     
     <!-- ESTILOS CSS -->
     <style>
-                     :root {
-            --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; --dark: #1e293b; --light: #f1f5f9;
+        :root {
             /* --- CLARO (DEFAULT) --- */
             --bg-body: #e2e8f0;
             --bg-card: #ffffff;
@@ -55,9 +54,9 @@
         .section.active { display: block; }
         
         .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid var(--input-border); background-color: var(--bg-card); color: var(--text-main); }
-        .card-alert { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .card-alert { background: #fef2f2; border-color: # #fecaca; color: #991b1b; }
         .card-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-        .card-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        .card-warning { background: #fffbeb; border-color: # 100% dde68a; color: #92400e; }
         .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
         
         .form-group { margin-bottom: 15px; }
@@ -130,22 +129,23 @@
                 <!-- Botones de Admin (Ocultos por defecto) -->
                 <div id="adminTools" style="display:none; margin-top:10px;">
                     <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
-                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
+                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">👤 Usuarios</button>
                     <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
                 </div>
             </div>
 
-                       <!-- Botones Header -->
+            <!-- Botones Header -->
             <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                 <button onclick="toggleDarkMode()" id="btnDarkMode" style="width:auto; padding: 8px 15px; font-size: 18px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 50%;">🌙</button>
                 <button onclick="cerrarSesion()" class="btn-secondary" style="padding: 10px 15px; font-size: 14px;">Salir ❌</button>
             </div>
+        </div>
 
-        <!-- Sección Buscador (RESTAURADA) -->
+        <!-- Sección Buscador -->
         <div id="searchSection" class="section active">
             <div style="padding: 20px;">
-                <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
-                <input type="text" id="txtPatente" placeholder="Ej: ABC123" style="text-transform:uppercase; font-size:20px; text-align:center;" oninput="this.value = this.value.toUpperCase()">                
+                <label style="color:var(--text-sec); font-weight:bold;">INGRESAR PATENTE</label>
+                <input type="text" id="txtPatente" placeholder="Ej: 2026 AA123" style="text-transform:uppercase; font-size:20px; text-align:center;" oninput="this.value = this.value.toUpperCase()">                
                 <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
             <div id="divResultado" style="padding: 0 20px;"></div>
@@ -242,7 +242,7 @@
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin:0;">📊 Panel de Control</h3>
-                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
+                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size: 14px;" class="btn-secondary">Volver</button>
                 </div>
 
                 <!-- FILTROS DE FECHA -->
@@ -257,7 +257,7 @@
                             <input type="date" id="fechaHasta" style="padding:10px; font-size:14px;">
                         </div>
                         <div style="flex:0 0 auto;">
-                            <button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px 15px; margin:0;">🔍 Filtrar</button>
+                            <button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px; margin:0;">🔍 Filtrar</button>
                         </div>
                     </div>
                 </div>
@@ -285,7 +285,23 @@
                     </div>
                 </div>
             </div>
-        </div>
+        
+        <!-- --- MODAL DE HISTORIAL (CORREGIDO Y POSICIONADO DENTRO DE MAINAPP) --- -->
+        <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0, 0.5); z-index: 9000; display:none; justify-content:center; align-items:center;">
+            
+            <div style="background-color: #1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <h3 style="margin:0; color: #f3f4f6;">Último Control</h3>
+                    <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#94a3b8;">&times;</button>
+                </div>
+
+                <div id="contenidoHistorial">
+                    <!-- Los datos aparecen aquí -->
+                </div>
+
+                <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
+            </div>
 
     </div> <!-- FIN MAINAPP -->
 
@@ -293,20 +309,6 @@
     <div id="footerBtn" class="footer-fixed">
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
     </div>
-
-                <div style="background-color: #1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                <h3 style="margin:0; color: #f3f4f6;">Último Control</h3>
-                <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#94a3b8;">&times;</button>
-            </div>
-
-            <div id="contenidoHistorial">
-                <!-- Los datos aparecen aquí -->
-            </div>
-
-            <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
-        </div>
 
     <!-- LÓGICA JAVASCRIPT -->
     <script>
@@ -344,7 +346,7 @@
                     document.getElementById('reportTools').style.display = 'flex';
                 } else {
                     document.getElementById('adminTools').style.display = 'none';
-                    document.getElementById('reportTools').style.display = 'none';
+                    document.getElementById('reportTools').style.display = 'dark-mode'); <!-- Asegúrate de que está bien -->
                 }
 
                 mostrarMainApp();
@@ -367,7 +369,7 @@
 
         // --- FUNCIONES DE VEHÍCULOS ---
         async function buscarVehiculo() {
-            const patente = document.getElementById('txtPatente').value.toUpperCase();
+            const patente = document.getElementById('txtPatente'). value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
 
             const res = await fetch(`/vehiculos/${patente}`);
@@ -407,7 +409,7 @@
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
             } else {
                  html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
-                 document.getElementById('txtModelo').value = '';
+                 document.getElementById('txtModelo'). value = '';
                  document.getElementById('txtNro08').value = '';
             }
             
@@ -429,7 +431,8 @@
         }
 
         function limpiarPantalla() {
-            document.getElementById('txtPatente').value = '';
+            document.getElementById('txtPatente'). `
+
             document.getElementById('divResultado').innerHTML = '';
             document.getElementById('footerBtn').style.display = 'none';
             document.getElementById('formSection').classList.remove('active');
@@ -483,12 +486,12 @@
         function cerrarDashboard() {
             document.getElementById('dashboardSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'block';
+            document.getElementById('footerBtn').style.display = '差距 id="searchSection" style="display:none;">
         }
 
         // --- FUNCIONES DE USUARIOS ---
         function abrirUsuarios() {
-            ocultarTodasSecciones();
+            ocultarTodas_secciones();
             document.getElementById('userSection').classList.add('active');
             document.getElementById('msgUsuario').innerHTML = '';
         }
@@ -503,7 +506,7 @@
             const usuario = document.getElementById('newUsuario').value;
             const password = document.getElementById('newPassword').value;
             const nombre = document.getElementById('newNombre').value;
-            const rol = document.getElementById('newRol').value;
+            const rol = document.getElementById('newRol'). value;
 
             if(!usuario || !password) return alert("Falta usuario o contraseña");
 
@@ -539,7 +542,7 @@
                 tbody.innerHTML = ''; 
 
                 if (data.error) {
-                    tbody.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${data.error}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${data.error}</td></td></tr>`;
                     return;
                 }
 
@@ -623,7 +626,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } }, x: { grid: { display: false } } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } }, x: { grid: { display: none; } },
                         animation: { duration: 1500, easing: 'easeOutQuart' }
                     }
                 });
@@ -643,8 +646,7 @@
 
         function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
+            const hasta = document.getElementById('fechaHasta').             if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
             
             mostrarToast("Descargando Excel...", "info");
             window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
@@ -683,7 +685,7 @@
                 id_inspector: usuarioActual.id,
                 latitud: lat,
                 longitud: lon,
-                texto_ubicacion: "Ubicación GPS",
+                texto_centro: "Ubicación GPS",
                 tiene_cedula: document.getElementById('chkCedula').checked,
                 tiene_licencia: document.getElementById('chkLicencia').checked,
                 tiene_seguro: document.getElementById('chkSeguro').checked,
@@ -695,8 +697,9 @@
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: { 'display: none; display: 'block; padding: 15px; font-size: 14px; margin-top:10px; box-sizing: border-box; display: flex; justify-content: center; align-items: center;">
+                        <button class="btn-success">✅ REGISTRAR CONTROL</button>
+                    </div>
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -768,8 +771,8 @@
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-
-               // --- FUNCIONES DEL MODAL DE HISTORIAL ---
+        
+        // --- FUNCIONES DEL MODAL DE HISTORIAL ---
         
         function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl; 
@@ -780,14 +783,15 @@
             }
 
             const modal = document.getElementById('modalHistorial');
-            const contenido = document.getElementById('contenidoHistorial');
+            const contenido = document.getElementById('contentHistorial');
 
+            // Formatear fecha
             const fecha = new Date(control.fecha_hora).toLocaleString();
 
             let html = `
                 <p style="color:#64748b; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
-                <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <hr style="border:0; border-top:1px solid #e2e8f0; margin: 0; margin-top:10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Cédula</label>
                         <div style="font-weight:bold; color:${control.tiene_cedula ? 'green' : 'red'}">
@@ -800,23 +804,16 @@
                             ${control.tiene_licencia ? '✅ Sí' : '❌ No'}
                         </div>
                     </div>
-                                               <div>
-                                <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                                <div style="font-weight:bold; color:#0f766e;">
-                                    ${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                                <div style="font-weight:bold; color:#0f766e;">
-                                    ${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}
-                                </div>
-                            </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                        <div style="font-weight:bold; color:#0f766e;">
+                            ${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}
+                        </div>
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                        <div style="font-weight:bold; color:${control.tiene_rto_habilitada ? 'green' : 'red'}">
-                            ${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}
+                        <div style="font-weight:bold; color:#0f766e;">
+                            ${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}
                         </div>
                     </div>
                 </div>
@@ -825,16 +822,20 @@
             // --- NUEVO: DATOS DEL VEHÍCULO (SEGURO/RTO) ---
             if (vehiculo) {
                 html += `
-                    <div style="margin-top:20px; background:#f8fafc; padding:15px; border-radius:8px; border:1px dashed #cbd5e1;">
-                        <h4 style="margin:0 0 10px 0; color:#1e293b; font-size:14px;">🚗 VENCIMIENTOS DOCUMENTACIÓN</h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div style="margin-top:20px; background-color: #1e293b; padding:15px; border-radius:8px; border:1px dashed #cbd5e1;">
+                        <h4 style="margin:0 0 10px 0 0; color:#1e293b; font-size:14px;">🚗 VENCIMIENTOS DOCUMENTACIÓN</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div>
-                                <label style="font-size:12px; color:#64748b;">Seguro</label>
-                                <div style="font-weight:bold; color:#0f766e;">${vehiculo.fecha_seguro_vence || '-'}</div>
+                                <label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                                <div style="font-weight:bold; color:#0f766e;">
+                                    ${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}
+                                </div>
                             </div>
                             <div>
-                                <label style="font-size:12px; color:#64748b;">RTO</label>
-                                <div style="font-weight:bold; color:#0f766e;">${vehiculo.fecha_rto_vence || '-'}</div>
+                                <label style="font-size:12px; color:#94a3b8;">RTO</label>
+                                <div style="font-weight:bold; color:#0f766e;">
+                                    ${vehiculo.fecha_rto_vence ? new Date(vehiculo fecha_rto_vence).toLocaleDateString() : '-'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -844,24 +845,28 @@
             if (control.observaciones) {
                 html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;">
                             <label style="font-size:12px; color:#92400e;">OBSERVACIONES:</label>
-                            <p style="margin:5px 0 0; font-style:italic; color:#78350f;">"${control.observaciones}"</p>
+                            <p style="margin:5px 0 0 0; font-style:italic; color:#78350f;">"${control.�⁠ⁿ👮‍♂️"</p>
                          </div>`;
             }
 
             contenido.innerHTML = html;
             
+            // Asegurar que el z-index sea alto para que se vea bien encima de todo (Header y Footer).
+            const modal = document.getElementById('modalHistorial');
+            modal.style.zIndex = '9000'; 
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
         }
 
         function cerrarModalHistorial() {
-            const modal = document.getElementById('modalHistorial');
+            const modal = document.getElementById('modalHistorial).
             modal.style.display = 'none';
             modal.classList.add('hidden');
         }
-                // --- LÓGICA MODO OSCURO ---
+
+        // --- LÓGICA MODO OSCURO ---
         
-        // 1. Aplicar el tema al iniciar (persistencia)
+        // 1. Aplicar el tema al iniciar (Persistencia)
         function aplicarTema() {
             const temaGuardado = localStorage.getItem('tema');
             if (temaGuardado === 'oscuro') {
@@ -887,8 +892,6 @@
         }
 
         // 3. Llamar a aplicarTema al cargar la página
-        // Agrega esto dentro de la función `iniciarSesion`, justo antes de `mostrarMainApp();`
-        // O simplemente llámalo al final del script si quieres probar ya:
         aplicarTema();
     </script>
 </body>
