@@ -785,17 +785,18 @@
                             ${control.tiene_licencia ? '✅ Sí' : '❌ No'}
                         </div>
                     </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                        <div style="font-weight:bold; color:${control.tiene_seguro ? 'green' : 'red'}">
-                            ${control.tiene_seguro ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">08 Pagado</label>
-                        <div style="font-weight:bold; color:${control.tiene_08_pago ? 'green' : 'red'}">
-                            ${control.tiene_08_pago ? '✅ Sí' : '❌ No'}
-                        </div>
+                                               <div>
+                                <label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                                <div style="font-weight:bold; color:#0f766e;">
+                                    ${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#94a3b8;">RTO</label>
+                                <div style="font-weight:bold; color:#0f766e;">
+                                    ${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}
+                                </div>
+                            </div>
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">RTO</label>
