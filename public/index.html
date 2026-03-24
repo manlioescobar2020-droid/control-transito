@@ -754,8 +754,9 @@
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
 
-        // --- FUNCIONES DEL MODAL DE HISTORIAL (LIMPIAS Y GLOBALES) ---
-        function abrirModalHistorial() {
+               // --- FUNCIONES DEL MODAL DE HISTORIAL ---
+        
+        function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl; 
             
             if (!control) {
@@ -805,10 +806,29 @@
                 </div>
             `;
 
+            // --- NUEVO: DATOS DEL VEHÍCULO (SEGURO/RTO) ---
+            if (vehiculo) {
+                html += `
+                    <div style="margin-top:20px; background:#f8fafc; padding:15px; border-radius:8px; border:1px dashed #cbd5e1;">
+                        <h4 style="margin:0 0 10px 0; color:#1e293b; font-size:14px;">🚗 VENCIMIENTOS DOCUMENTACIÓN</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:12px; color:#64748b;">Seguro</label>
+                                <div style="font-weight:bold; color:#0f766e;">${vehiculo.fecha_seguro_vence || '-'}</div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#64748b;">RTO</label>
+                                <div style="font-weight:bold; color:#0f766e;">${vehiculo.fecha_rto_vence || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             if (control.observaciones) {
-                html += `<div style="margin-top:15px; background:#f8fafc; padding:10px; border-radius:8px;">
-                            <label style="font-size:12px; color:#64748b;">OBSERVACIONES:</label>
-                            <p style="margin:5px 0 0; font-style:italic;">"${control.observaciones}"</p>
+                html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;">
+                            <label style="font-size:12px; color:#92400e;">OBSERVACIONES:</label>
+                            <p style="margin:5px 0 0; font-style:italic; color:#78350f;">"${control.observaciones}"</p>
                          </div>`;
             }
 
