@@ -916,7 +916,148 @@ _Enviado desde App Control de Tránsito_`;
         window.addEventListener('load', () => {
             if(navigator.onLine) sincronizarPendientes();
         });
+        // ==========================================
+        // BLOQUE DE FUNCIONES OFFLINE Y CACHÉ
+        // ==========================================
 
+        // 1. Login Offline (Fallback)
+        function intentarLoginOffline(usuario, pass) {
+            const userGuardado = localStorage.getItem('usuarioGuardado');
+            if (!userGuardado) {
+                alert("Sin conexión y sin sesión previa guardada. Conéctese a internet al menos una vez.");
+                return;
+            }
+            const user = JSON.parse(userGuardado);
+            if (user.usuario === usuario) {
+                usuarioActual = user;
+                mostrarToast("Modo Offline: Ingresando con sesión guardada", "warning");
+                mostrarMainApp();
+            } else {
+                alert("Usuario incorrecto para modo offline.");
+            }
+        }
+
+        // 2. Guardar búsqueda en Caché Local
+        function guardarEnCacheLocal(data) {
+            if (!data || !data.vehiculo) return;
+            let cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+            let registro = {
+                patente: data.vehiculo.patricula,
+                vehiculo: data.vehiculo,
+                ultimoControl: data.ultimoControl,
+                timestamp: Date.now()
+            };
+            // Actualizar si existe, agregar si no
+            const index = cache.findIndex(c => c.patente === registro.patente);
+            if (index !== -1) {
+                cache[index] = registro;
+            } else {
+                cache.push(registro);
+            }
+            // Limitar tamaño del caché (aprox 1MB equivale a unos 1000 registros)
+            if (cache.length > 1000) cache.shift(); 
+            localStorage.setItem('cache_vehiculos', JSON.stringify(cache));
+        }
+
+        // 3. Buscar en Caché Local
+        function buscarEnCacheLocal(patente) {
+            const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+            const encontrado = cache.find(c => c.patente === patente);
+            if (encontrado) {
+                return { 
+                    vehiculo: encontrado.vehiculo, 
+                    ultimoControl: encontrado.ultimoControl,
+                    esOffline: true 
+                };
+            }
+            return { vehiculo: null, ultimoControl: null, esOffline: true };
+        }
+
+        // 4. Sincronizar datos masivos al iniciar sesión (15 días aprox)
+        async function sincronizarDatosLocales() {
+            try {
+                // Pedimos los últimos 1000 controles
+                const res = await fetch('/api/historial?limit=1000'); 
+                if (!res.ok) return;
+                
+                const controles = await res.json();
+                let nuevoCache = [];
+                
+                controles.forEach(ctrl => {
+                    const patente = ctrl.patricula;
+                    // Evitamos duplicados en la lista nueva
+                    const existe = nuevoCache.find(c => c.patente === patente);
+                    if (!existe && patente) {
+                        nuevoCache.push({
+                            patente: patente,
+                            vehiculo: { patricula: patente, modelo: ctrl.modelo, numero_08: ctrl.numero_08 },
+                            ultimoControl: ctrl,
+                            timestamp: Date.now()
+                        });
+                    }
+                });
+
+                localStorage.setItem('cache_vehiculos', JSON.stringify(nuevoCache));
+                console.log(`Sincronización completada: ${nuevoCache.length} vehículos en caché.`);
+                
+            } catch (err) {
+                console.error("Error al sincronizar datos locales", err);
+            }
+        }
+
+        // 5. Guardar control pendiente cuando no hay red
+        function guardarControlPendiente(datos) {
+            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            datos.fecha_hora_local = new Date().toISOString();
+            datos.idTemporal = Date.now();
+            pendientes.push(datos);
+            localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+        }
+
+        // 6. Intentar subir datos pendientes cuando vuelve la conexión
+        async function sincronizarPendientes() {
+            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            if (pendientes.length === 0) return;
+
+            mostrarToast(`Sincronizando ${pendientes.length} controles...`, "info");
+            let nuevosPendientes = [];
+
+            for (let control of pendientes) {
+                try {
+                    const res = await fetch('/registrar-control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(control)
+                    });
+                    if (res.ok) {
+                        console.log('Sincronizado:', control.patricula);
+                    } else {
+                        nuevosPendientes.push(control);
+                    }
+                } catch (error) {
+                    nuevosPendientes.push(control);
+                }
+            }
+
+            localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
+            if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
+        }
+
+        // 7. Listeners de conexión
+        window.addEventListener('online', () => {
+            mostrarToast("Conexión recuperada", "success");
+            sincronizarPendientes();
+            sincronizarDatosLocales(); // Actualizamos caché también
+        });
+
+        window.addEventListener('offline', () => {
+            mostrarToast("Modo Offline activado", "warning");
+        });
+
+        // Al cargar la página, intentar sincronizar por si quedaron cosas
+        window.addEventListener('load', () => {
+            if(navigator.onLine) sincronizarPendientes();
+        });
     </script>
 </body>
 </html>
