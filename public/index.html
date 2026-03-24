@@ -810,22 +810,81 @@
             modal.style.display = 'none';
             modal.classList.add('hidden');
         }
-    </script>
-        <!-- MODAL DE HISTORIAL DE CONTROL -->
-    <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; display:none; justify-content:center; align-items:center;">
-        <div style="background:white; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                // --- FUNCIONES DEL MODAL DE HISTORIAL ---
+
+        function abrirModalHistorial() {
+            // Usamos la variable global
+            const control = infoUltimoControl; 
             
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                <h3 style="margin:0; color:#1e293b;">Último Control</h3>
-                <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#64748b;">&times;</button>
-            </div>
+            if (!control) {
+                mostrarToast("No hay datos del control anterior", "warning");
+                return;
+            }
 
-            <div id="contenidoHistorial">
-                <!-- Aquí se inyectarán los datos dinámicamente -->
-            </div>
+            const modal = document.getElementById('modalHistorial');
+            const contenido = document.getElementById('contenidoHistorial');
 
-            <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
-        </div>
-    </div>
+            // Formatear fecha
+            const fecha = new Date(control.fecha_hora).toLocaleString();
+
+            // Generar HTML interno
+            let html = `
+                <p style="color:#64748b; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
+                <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Cédula</label>
+                        <div style="font-weight:bold; color:${control.tiene_cedula ? 'green' : 'red'}">
+                            ${control.tiene_cedula ? '✅ Sí' : '❌ No'}
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Licencia</label>
+                        <div style="font-weight:bold; color:${control.tiene_licencia ? 'green' : 'red'}">
+                            ${control.tiene_licencia ? '✅ Sí' : '❌ No'}
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">Seguro</label>
+                        <div style="font-weight:bold; color:${control.tiene_seguro ? 'green' : 'red'}">
+                            ${control.tiene_seguro ? '✅ Sí' : '❌ No'}
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">08 Pagado</label>
+                        <div style="font-weight:bold; color:${control.tiene_08_pago ? 'green' : 'red'}">
+                            ${control.tiene_08_pago ? '✅ Sí' : '❌ No'}
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#94a3b8;">RTO</label>
+                        <div style="font-weight:bold; color:${control.tiene_rto_habilitada ? 'green' : 'red'}">
+                            ${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (control.observaciones) {
+                html += `<div style="margin-top:15px; background:#f8fafc; padding:10px; border-radius:8px;">
+                            <label style="font-size:12px; color:#64748b;">OBSERVACIONES:</label>
+                            <p style="margin:5px 0 0; font-style:italic;">"${control.observaciones}"</p>
+                         </div>`;
+            }
+
+            contenido.innerHTML = html;
+            
+            // Mostrar modal
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarModalHistorial() {
+            const modal = document.getElementById('modalHistorial');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+    </script>
+        
 </body>
 </html>
