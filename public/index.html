@@ -358,30 +358,52 @@
             document.getElementById('footerBtn').style.display = 'none';
         }
 
-        async function buscarVehiculo() {
+               async function buscarVehiculo() {
             const patente = document.getElementById('txtPatente').value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
-            const res = await fetch(`/vehiculos/${patente}`);
-            const data = await res.json();
+            
+            const divRes = document.getElementById('divResultado');
+            document.getElementById('footerBtn').style.display = 'block';
+            let data;
+
+            // Lógica Online vs Offline
+            if (navigator.onLine) {
+                try {
+                    const res = await fetch(`/vehiculos/${patente}`);
+                    data = await res.json();
+                    guardarEnCacheLocal(data); // Guardamos para tenerlo disponible offline
+                } catch (err) {
+                    console.error("Error de red, buscando en caché...", err);
+                    data = buscarEnCacheLocal(patente);
+                }
+            } else {
+                data = buscarEnCacheLocal(patente);
+            }
+
+            // --- RENDERIZADO DE RESULTADOS ---
             vehiculoActual = data.vehiculo;
             const ultimoControl = data.ultimoControl;
             infoUltimoControl = ultimoControl;
-            const divRes = document.getElementById('divResultado');
-            document.getElementById('footerBtn').style.display = 'block';
+            
             let html = "";
             if (ultimoControl) {
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
                 const ahora = new Date();
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
+                
+                const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
+                
                 html += `<div class="card card-alert">
-                            <h3>⚠️ ATENCIÓN</h3>
+                            <h3>⚠️ ATENCIÓN ${etiquetaOffline}</h3>
                             <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
-                            <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:10px; padding:10px;">👁️ Ver Detalles del Control</button>
+                            <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:10px; padding:10px;">👁️ Ver Detalles</button>
                          </div>`;
             } else {
-                html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
+                const msg = data.esOffline ? "Sin registros en este dispositivo." : "Vehículo nuevo. Proceda con el control.";
+                html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>${msg}</p></div>`;
             }
+
             if (vehiculoActual) {
                 html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
