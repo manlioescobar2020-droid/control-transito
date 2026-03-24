@@ -1,5 +1,6 @@
 // sw.js
 const CACHE_NAME = 'transito-st-v1';
+
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -20,7 +21,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// FETCH: estrategia cache-first, red como fallback
+// FETCH: cache-first, red como fallback
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
