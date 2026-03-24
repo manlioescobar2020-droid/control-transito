@@ -355,8 +355,12 @@
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
 
-                html += `<div class="card card-alert"><h3>⚠️ ATENCIÓN</h3><p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p></div>`;
-            } else {
+                // NUEVO BLOQUE CON BOTÓN
+                html += `<div class="card card-alert">
+                            <h3>⚠️ ATENCIÓN</h3>
+                            <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
+                            <button onclick="abrirModalHistorial()" class="btn-warning" style="margin-top:10px; padding:10px;">👁️ Ver Detalles del Control</button>
+                         </div>`;            } else {
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
