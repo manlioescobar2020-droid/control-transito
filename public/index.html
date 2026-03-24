@@ -24,17 +24,23 @@
             --text-main: #f3f4f6;
             --text-sec: #94a3b8;
             --input-bg: #374151;
-            --input-border: #4b5563;
+            --login-box { background: #1e293b; } /* Login oscuro */
+            .login-box h2 { color: white; }
+            
+            .card { border: 1px solid #4b5563; } /* Bordes oscuros */
+            .card-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+            .card-success { background: #064e3b; border-color: #059669; color: #bbf7d0; }
+            .card-warning { background: #854d0e; border-color: #713f12; color: #fde68a; }
         }
 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; transition: background-color 0.3s; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
         .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 24px; }
+        .header h1 { margin: 0; font-size:24px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
         
         .login-box { padding: 40px 20px; }
-        .login-box h2 { text-align: center; color: var(--dark); margin-bottom: 30px; }
+        .login-box h2 { text-align: center; color: var(--text-main); margin-bottom: 30px; }
         
         input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s; background-color: var(--input-bg); color: var(--text-main); }
         input:focus { border-color: var(--primary); outline: none; }
@@ -46,7 +52,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: #64748b; color: white; margin-top: 10px; }
+        .btn-secondary { background: var(--text-sec); color: white; margin-top: 10px; }
         .btn-purple { background: #7c3aed; color: white; margin-top: 10px; }
         .btn-warning { background: var(--warning); color: black; }
         
@@ -54,9 +60,6 @@
         .section.active { display: block; }
         
         .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid var(--input-border); background-color: var(--bg-card); color: var(--text-main); }
-        .card-alert { background: #fef2f2; border-color: # #fecaca; color: #991b1b; }
-        .card-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-        .card-warning { background: #fffbeb; border-color: # 100% dde68a; color: #92400e; }
         .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
         
         .form-group { margin-bottom: 15px; }
@@ -80,8 +83,34 @@
         .table-users th { background-color: var(--dark); color: white; font-weight: bold; border-bottom: 2px solid #1e293b; }
         .table-users tr:hover { background-color: var(--input-bg); }
         .badge-role { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-owner { background-color: #fbbf24; color: #78350f; }
-        .badge-inspector { background-color: #dbeafe; color: #1e40af; }
+        .badge-owner { background-color: #fbbf24; color: #78350f; } /* Amarillo */
+        .badge-inspector { background-color: #dbeafe; color: #1e40af; } /* Azul */
+
+        /* --- ESTILOS VISUALES DE BUSCAR PATENTE (FORMATO BIEN PANTALLA PARA MODO CLARO Y OSCURO) ---
+        #txtPatente { width: 100%; }
+        
+        /* Ajuste para que el texto sea más grande y centrado */
+        #txtPatente, 
+        #txtModelo, 
+        #txtNro08 {
+            width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 20px; text-align:center;
+            background-color: var(--input-bg); color: color: var(--text-main);
+            text-transform: uppercase;
+        }
+        
+        /* Estilo para Modo Oscuro en la patente */
+        .dark-mode #txtPatente {
+            color: var(--text-main);
+            background-color: #374151;
+            border-color: #4b5563;
+        }
+        
+        /* Ajuste para fechas en modo oscuro para usar colores más claros */
+        .dark-mode input[type="date"],
+        .dark-mode input[type="text"] {
+            color: var(--text-main); 
+            color-scheme: light; /* Forzar al selector de fechas nativo */
+        }
     </style>
 
     <!-- LIBRERÍAS EXTERNAS -->
@@ -102,8 +131,8 @@
     <div id="loginScreen" class="container login-box">
         <div class="text-center" style="margin-bottom: 30px;">
             <div style="font-size: 50px;">👮‍♂️</div>
-            <h2>Control de Tránsito</h2>
-            <p style="color:#64748b;">Ingresá tus credenciales para iniciar tu turno</p>
+            <h2>Control de Tráquíb</h2>
+            <p style="color: #64748b;">Ingresá tus credenciales para iniciar tu turno</p>
         </div>
         
         <input type="text" id="txtUsuario" placeholder="Usuario">
@@ -129,7 +158,7 @@
                 <!-- Botones de Admin (Ocultos por defecto) -->
                 <div id="adminTools" style="display:none; margin-top:10px;">
                     <button class="btn-danger" onclick="abrirMapa()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">📍 Mapa</button>
-                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%;">👤 Usuarios</button>
+                    <button class="btn-purple" onclick="abrirUsuarios()" style="padding: 8px; font-size: 14px; width: 32%; margin-right: 1%; background: #7c3aed;">👤 Usuarios</button>
                     <button class="btn-primary" onclick="abrirDashboard()" style="padding: 8px; font-size: 14px; width: 32%; background: #0d9488;">📊 Stats</button>
                 </div>
             </div>
@@ -144,8 +173,11 @@
         <!-- Sección Buscador -->
         <div id="searchSection" class="section active">
             <div style="padding: 20px;">
-                <label style="color:var(--text-sec); font-weight:bold;">INGRESAR PATENTE</label>
-                <input type="text" id="txtPatente" placeholder="Ej: 2026 AA123" style="text-transform:uppercase; font-size:20px; text-align:center;" oninput="this.value = this.value.toUpperCase()">                
+                <label style="color: #64748b; font-weight:bold;">INGRESAR PATENTE</label>
+                
+                <!-- AQUÍ ESTÁ EL INPUT DE PATENTE CON ID -->
+                <input type="text" id="txtPatente" placeholder="Ej: ABC123" id="txtPatente">
+                
                 <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
             </div>
             <div id="divResultado" style="padding: 0 20px;"></div>
@@ -160,7 +192,7 @@
                     <input type="text" id="txtNro08" placeholder="Nro. 08" oninput="this.value = this.value.toUpperCase()">
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
-                        <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
+                        <div style="flex:1;"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -175,14 +207,14 @@
                 </div>
                 <div class="form-group">
                     <label>OBSERVACIONES</label>
-                    <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="this.value = this.value.toUpperCase()"></textarea>
+                    <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..."></textarea>
                 </div>
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
         </div>
 
         <!-- Sección Mapa -->
-        <div id="mapSection" class="section" style="height: 80vh; padding:0; position:relative;">
+        <div id="mapSection" class="section" style="height: 0; padding:0; position:relative;">
             <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
             <div id="map"></div>
         </div>
@@ -193,11 +225,11 @@
                 <h3>Crear Nuevo Usuario</h3>
                 <input type="text" id="newUsuario" placeholder="Nombre de usuario (ej: juan123)">
                 <input type="password" id="newPassword" placeholder="Contraseña">
-                <input type="text" id="newNombre" placeholder="Nombre real (ej: Juan Perez)">
+                <input type="text" id="newNombre" placeholder="nombre real (ej: Juan Perez)">
                 
                 <div class="form-group" style="margin-top:10px;">
                     <label>Rol:</label>
-                    <select id="newRol" style="width:100%; padding:15px; border-radius:8px; border:2px solid #e2e8f0;">
+                    <select id="newRol" style="width:100%; padding: 15px; border-radius:8px; border: 2px solid #e2e8f0;">
                         <option value="INSPECTOR">INSPECTOR</option>
                         <option value="OWNER">OWNER (Administrador)</option>
                     </select>
@@ -242,7 +274,7 @@
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin:0;">📊 Panel de Control</h3>
-                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size: 14px;" class="btn-secondary">Volver</button>
+                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
                 </div>
 
                 <!-- FILTROS DE FECHA -->
@@ -257,7 +289,7 @@
                             <input type="date" id="fechaHasta" style="padding:10px; font-size:14px;">
                         </div>
                         <div style="flex:0 0 auto;">
-                            <button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px; margin:0;">🔍 Filtrar</button>
+                            <button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px 15px; margin:0;">🔍 Filtrar</button>
                         </div>
                     </div>
                 </div>
@@ -272,7 +304,7 @@
 
                     <div id="reportTools" style="display:none; flex-direction:column; gap:8px; justify-content:center;">
                         <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:13px; padding:8px;">📧 Email (Resumen)</button>
-                        <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp (Resumen)</button>
+                        <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp</button>
                         <button onclick="descargarExcel()" class="btn-secondary" style="font-size:13px; padding:8px; background:#10b981; border:none;">⬇️ Descargar Excel</button>
                     </div>
                 </div>
@@ -285,23 +317,25 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+    <!-- MODAL DE HISTORIAL (CORREGIDO Y POSICIONADO DENTRO DE MAINAPP) -->
+    <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 9000; display:none; justify-content:center; align-items: center;">
         
-        <!-- --- MODAL DE HISTORIAL (CORREGIDO Y POSICIONADO DENTRO DE MAINAPP) --- -->
-        <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0, 0.5); z-index: 9000; display:none; justify-content:center; align-items:center;">
+        <!-- Contenedor del Modal -->
+        <div style="background-color: #1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
             
-            <div style="background-color: #1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <h3 style="margin:0; color: #f3f4f6;">Último Control</h3>
-                    <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#94a3b8;">&times;</button>
-                </div>
-
-                <div id="contenidoHistorial">
-                    <!-- Los datos aparecen aquí -->
-                </div>
-
-                <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h3 style="margin:0; color: #f3f4f6;">Último Control</h3>
+                <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#94a3b8;">&times;</button>
             </div>
+
+            <div id="contenidoHistorial">
+                <!-- Los datos aparecen aquí -->
+            </div>
+
+            <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
+        </div>
 
     </div> <!-- FIN MAINAPP -->
 
@@ -346,13 +380,13 @@
                     document.getElementById('reportTools').style.display = 'flex';
                 } else {
                     document.getElementById('adminTools').style.display = 'none';
-                    document.getElementById('reportTools').style.display = 'dark-mode'); <!-- Asegúrate de que está bien -->
+                    document.getElementById('reportTools').style.display = 'none'; // Asegúrate que esté bien oculto
                 }
 
                 mostrarMainApp();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
-                setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
+                setTimeout(() => document.getElementById('loginError').listUsersSection.classList.remove('active'); }, 3000);
             }
         }
 
@@ -369,7 +403,7 @@
 
         // --- FUNCIONES DE VEHÍCULOS ---
         async function buscarVehiculo() {
-            const patente = document.getElementById('txtPatente'). value.toUpperCase();
+            const patente = document.getElementById('txtPatente').value.toUpperCase();
             if(!patente) return alert("Ingrese una patente");
 
             const res = await fetch(`/vehiculos/${patente}`);
@@ -383,7 +417,7 @@
             const footerBtn = document.getElementById('footerBtn');
             
             footerBtn.style.display = 'block'; 
-            document.getElementById('formSection').classList.remove('active'); 
+            document.getElementById('divResultado').classList.remove('active'); 
 
             let html = "";
             
@@ -403,14 +437,14 @@
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
-            if (vehiculoActual) {
+            if (vehiculo) {
                 html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
                 document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
                 document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
             } else {
-                 html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
-                 document.getElementById('txtModelo'). value = '';
-                 document.getElementById('txtNro08').value = '';
+                 html += `<div class=" card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
+                 document.getElementById('txtModelo').value = '';
+                 document.getElementById('txtNro08'].value = '';
             }
             
             html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos</button>`;
@@ -431,8 +465,7 @@
         }
 
         function limpiarPantalla() {
-            document.getElementById('txtPatente'). `
-
+            document.getElementById('txtPatente').value = '';
             document.getElementById('divResultado').innerHTML = '';
             document.getElementById('footerBtn').style.display = 'none';
             document.getElementById('formSection').classList.remove('active');
@@ -486,12 +519,12 @@
         function cerrarDashboard() {
             document.getElementById('dashboardSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = '差距 id="searchSection" style="display:none;">
+            document.getElementById('footerBtn').style.display = 'block';
         }
 
         // --- FUNCIONES DE USUARIOS ---
         function abrirUsuarios() {
-            ocultarTodas_secciones();
+            ocultarTodasSecciones();
             document.getElementById('userSection').classList.add('active');
             document.getElementById('msgUsuario').innerHTML = '';
         }
@@ -505,7 +538,7 @@
         async function guardarUsuario() {
             const usuario = document.getElementById('newUsuario').value;
             const password = document.getElementById('newPassword').value;
-            const nombre = document.getElementById('newNombre').value;
+            const nombre = document.getElementById('newNombre'). value;
             const rol = document.getElementById('newRol'). value;
 
             if(!usuario || !password) return alert("Falta usuario o contraseña");
@@ -532,8 +565,8 @@
             ocultarTodasSecciones();
             document.getElementById('listUsersSection').classList.add('active');
             
-            const tbody = document.getElementById('tablaUsuariosBody');
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
+            const tbody = document.getElementById('tbodyUsuariosBody');
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr></tr>';
 
             try {
                 const res = await fetch('/api/usuarios');
@@ -547,13 +580,13 @@
                 }
 
                 if(data.length === 0) {
-                     tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
+                     tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr></td></div>';
                      return;
                 }
 
                 data.forEach(u => {
                     const tr = document.createElement('tr');
-                    const icono = u.rol === 'OWNER' ? '👑' : '🚔';
+                    const icono = u.15; 
                     const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
 
                     tr.innerHTML = `
@@ -565,7 +598,7 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></td></tr>';
             }
         }
 
@@ -575,8 +608,8 @@
             document.getElementById('dashboardSection').classList.add('active');
 
             const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaDesde').value = hoy;
-            document.getElementById('fechaHasta').value = hoy;
+            document.getElementById('dateDesde').value = hoy;
+            document.getElementById('dateHasta').value = hoy;
 
             await cargarDatosDashboard(hoy, hoy);
         }
@@ -626,7 +659,8 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } }, x: { grid: { display: none; } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0; } },
+                        x: { grid: { display: none; } },
                         animation: { duration: 1500, easing: 'easeOutQuart' }
                     }
                 });
@@ -646,7 +680,8 @@
 
         function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').             if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
+            const hasta = document.getElementById('dateHasta').value;
+            if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
             
             mostrarToast("Descargando Excel...", "info");
             window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
@@ -684,9 +719,9 @@
                 fecha_rto_vence: document.getElementById('txtRTO').value,
                 id_inspector: usuarioActual.id,
                 latitud: lat,
-                longitud: lon,
-                texto_centro: "Ubicación GPS",
-                tiene_cedula: document.getElementById('chkCedula').checked,
+                longitud: lon: long; 
+                texto_ubicacion: "Ubicación GPS",
+                tiene_cedula: document.getElementById('chatCedula').checked,
                 tiene_licencia: document.getElementById('chkLicencia').checked,
                 tiene_seguro: document.getElementById('chkSeguro').checked,
                 tiene_08_pago: document.getElementById('chk08').checked,
@@ -697,9 +732,8 @@
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
-                    headers: { 'display: none; display: 'block; padding: 15px; font-size: 14px; margin-top:10px; box-sizing: border-box; display: flex; justify-content: center; align-items: center;">
-                        <button class="btn-success">✅ REGISTRAR CONTROL</button>
-                    </div>
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -771,7 +805,7 @@
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-        
+
         // --- FUNCIONES DEL MODAL DE HISTORIAL ---
         
         function abrirModalHistorial(vehiculo) {
@@ -783,15 +817,14 @@
             }
 
             const modal = document.getElementById('modalHistorial');
-            const contenido = document.getElementById('contentHistorial');
+            const contenido = contenidoHistorial = document.getElementById('contenidoHistorial');
 
-            // Formatear fecha
             const fecha = new Date(control.fecha_hora).toLocaleString();
 
             let html = `
-                <p style="color:#64748b; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
-                <hr style="border:0; border-top:1px solid #e2e8f0; margin: 0; margin-top:10px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <p style="color:#64748b8; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
+                <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Cédula</label>
                         <div style="font-weight:bold; color:${control.tiene_cedula ? 'green' : 'red'}">
@@ -806,14 +839,8 @@
                     </div>
                     <div>
                         <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                        <div style="font-weight:bold; color:#0f766e;">
+                        <div style="div style="font-weight:bold; color:#0f766e;">
                             ${vehiculo.fecha_seguro_vence ? new Date(vehiculo.fecha_seguro_vence).toLocaleDateString() : '-'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                        <div style="font-weight:bold; color:#0f766e;">
-                            ${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}
                         </div>
                     </div>
                 </div>
@@ -823,8 +850,8 @@
             if (vehiculo) {
                 html += `
                     <div style="margin-top:20px; background-color: #1e293b; padding:15px; border-radius:8px; border:1px dashed #cbd5e1;">
-                        <h4 style="margin:0 0 10px 0 0; color:#1e293b; font-size:14px;">🚗 VENCIMIENTOS DOCUMENTACIÓN</h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <h4 style="margin:0 0 10px 0 0 0 0 0; color:#f3f4f6;">🚗 VENCIMIENTOS DOCUMENTACIÓN</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div>
                                 <label style="font-size:12px; color:#94a3b8;">Seguro</label>
                                 <div style="font-weight:bold; color:#0f766e;">
@@ -834,7 +861,7 @@
                             <div>
                                 <label style="font-size:12px; color:#94a3b8;">RTO</label>
                                 <div style="font-weight:bold; color:#0f766e;">
-                                    ${vehiculo.fecha_rto_vence ? new Date(vehiculo fecha_rto_vence).toLocaleDateString() : '-'}
+                                    ${vehiculo.fecha_rto_vence ? new Date(vehiculo.fecha_rto_vence).toLocaleDateString() : '-'}
                                 </div>
                             </div>
                         </div>
@@ -845,13 +872,13 @@
             if (control.observaciones) {
                 html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;">
                             <label style="font-size:12px; color:#92400e;">OBSERVACIONES:</label>
-                            <p style="margin:5px 0 0 0; font-style:italic; color:#78350f;">"${control.�⁠ⁿ👮‍♂️"</p>
+                            <p style="margin:5px 0 0 0 0 0; font-style:italic; color:#78350f;">"${control.observaciones}"</p>
                          </div>`;
             }
 
             contenido.innerHTML = html;
             
-            // Asegurar que el z-index sea alto para que se vea bien encima de todo (Header y Footer).
+            // Asegúrate que el z-index sea alto para que se vea bien encima de todo (Header y Footer).
             const modal = document.getElementById('modalHistorial');
             modal.style.zIndex = '9000'; 
             modal.style.display = 'flex';
@@ -859,7 +886,7 @@
         }
 
         function cerrarModalHistorial() {
-            const modal = document.getElementById('modalHistorial).
+            const modal = document.getElementById('modalHistorial').
             modal.style.display = 'none';
             modal.classList.add('hidden');
         }
@@ -895,4 +922,4 @@
         aplicarTema();
     </script>
 </body>
-</html>
+html>
