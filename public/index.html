@@ -7,40 +7,28 @@
     
     <!-- ESTILOS CSS -->
     <style>
-                :root {
-            /* --- COLORES MODO CLARO (DEFAULT) --- */
+                     :root {
             --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; --dark: #1e293b; --light: #f1f5f9;
-            --bg-body: #e2e8f0;       /* Fondo página gris claro */
-            --bg-card: #ffffff;       /* Fondo tarjeta blanco */
-            --text-main: #1e293b;      /* Texto principal oscuro */
-            --text-sec: #64748b;       /* Texto secundario */
-            --input-bg: #ffffff;      /* Fondo input */
-            --input-border: #e2e8f0;  /* Borde input */
+            /* --- CLARO (DEFAULT) --- */
+            --bg-body: #e2e8f0;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-sec: #64748b;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
         }
 
-                /* --- APLICACIÓN DE VARIABLES --- */
-        body { background-color: var(--bg-body); color: var(--text-main); }
-        
-        .header { background-color: var(--primary); color: white; }
-        
-        .card { background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--input-border); }
-        
-        input, select, textarea { 
-            background-color: var(--input-bg); 
-            color: var(--text-main); 
-            border-color: var(--input-border);
+        /* --- OSCURO (DARK MODE) --- */
+        .dark-mode {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f3f4f6;
+            --text-sec: #94a3b8;
+            --input-bg: #374151;
+            --input-border: #4b5563;
         }
-        input:focus { border-color: var(--primary); outline: none; }
 
-        .text-center { color: var(--text-sec); }
-        .form-group label { color: var(--text-sec); }
-        
-        /* Ajustes específicos para modo oscuro */
-        .dark-mode .login-box h2 { color: white; }
-        .dark-mode .card-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
-        .dark-mode .card-success { background: #064e3b; border-color: #059669; color: #bbf7d0; }
-        .dark-mode .card-warning { background: #854d0e; border-color: #713f12; color: #fde68a; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; transition: background-color 0.3s; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
         .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
         .header h1 { margin: 0; font-size: 24px; }
@@ -49,7 +37,7 @@
         .login-box { padding: 40px 20px; }
         .login-box h2 { text-align: center; color: var(--dark); margin-bottom: 30px; }
         
-        input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s; }
+        input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s; background-color: var(--input-bg); color: var(--text-main); }
         input:focus { border-color: var(--primary); outline: none; }
         
         button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
@@ -66,17 +54,17 @@
         .section { padding: 20px; display: none; }
         .section.active { display: block; }
         
-        .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid #e2e8f0; }
+        .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid var(--input-border); background-color: var(--bg-card); color: var(--text-main); }
         .card-alert { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .card-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .card-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-        .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
         
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #475569; font-size: 14px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-sec); font-size: 14px; }
         
         .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .check-item { background: #f8fafc; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; }
+        .check-item { background: var(--input-bg); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; }
         .check-item:has(input:checked) { border-color: var(--primary); background: #eff6ff; }
         .check-item input { width: 20px; height: 20px; margin: 0; }
         
@@ -89,12 +77,12 @@
 
         /* --- NUEVOS ESTILOS PARA LA TABLA DE USUARIOS --- */
         .table-users { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 15px; }
-        .table-users th, .table-users td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .table-users th, .table-users td { padding: 12px; text-align: left; border-bottom: 1px solid var(--input-border); color: var(--text-main); }
         .table-users th { background-color: var(--dark); color: white; font-weight: bold; border-bottom: 2px solid #1e293b; }
-        .table-users tr:hover { background-color: #f1f5f9; }
+        .table-users tr:hover { background-color: var(--input-bg); }
         .badge-role { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-owner { background-color: #fbbf24; color: #78350f; } /* Amarillo */
-        .badge-inspector { background-color: #dbeafe; color: #1e40af; } /* Azul */
+        .badge-owner { background-color: #fbbf24; color: #78350f; }
+        .badge-inspector { background-color: #dbeafe; color: #1e40af; }
     </style>
 
     <!-- LIBRERÍAS EXTERNAS -->
