@@ -628,10 +628,12 @@
             }
         }
 
-        async function enviarDatos(lat, lon) {
+                async function enviarDatos(lat, lon) {
             const btn = document.querySelector('#footerBtn button');
             btn.disabled = true;
             btn.innerHTML = "⏳ Guardando...";
+            
+            // Construimos el objeto con todos los datos del formulario
             const payload = {
                 patricula: document.getElementById('txtPatente').value.toUpperCase(),
                 modelo: document.getElementById('txtModelo').value,
@@ -649,6 +651,18 @@
                 tiene_rto_habilitada: document.getElementById('chkRTO').checked,
                 observaciones: document.getElementById('txtObs').value
             };
+
+            // --- LÓGICA OFFLINE ---
+            if (!navigator.onLine) {
+                guardarControlLocal(payload); // Guardamos en localStorage
+                mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
+                limpiarPantalla(); // Limpiamos la pantalla para seguir laburando
+                btn.disabled = false;
+                btn.innerHTML = "✅ REGISTRAR CONTROL";
+                return; // Cortamos la función acá, no intentamos enviar al servidor
+            }
+            // ----------------------
+
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
