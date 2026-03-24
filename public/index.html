@@ -314,30 +314,37 @@
             document.getElementById('mainApp').style.display = 'block';
         }
 
-        async function iniciarSesion() {
+              async function iniciarSesion() {
             const usuario = document.getElementById('txtUsuario').value;
             const pass = document.getElementById('txtPassword').value;
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, password: pass })
-            });
-            const data = await res.json();
-            if (data.success) {
-                usuarioActual = data.user;
-                document.getElementById('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario;
-                document.getElementById('spanRol').innerText = usuarioActual.rol;
-                if (usuarioActual.rol === 'OWNER') {
-                    document.getElementById('adminTools').style.display = 'block';
-                    document.getElementById('reportTools').style.display = 'flex';
-                } else {
-                    document.getElementById('adminTools').style.display = 'none';
-                    document.getElementById('reportTools').style.display = 'none';
+
+            // 1. Intentamos loguear ONLINE
+            if (navigator.onLine) {
+                try {
+                    const res = await fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario, password: pass })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        usuarioActual = data.user;
+                        // CLAVE: Guardamos usuario en localStorage para modo offline
+                        localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
+                        // Sincronizamos datos para tenerlos offline
+                        sincronizarDatosLocales(); 
+                        mostrarMainApp();
+                    } else {
+                        document.getElementById('loginError').classList.remove('hidden');
+                        setTimeout(() => { document.getElementById('loginError').classList.add('hidden'); }, 3000);
+                    }
+                } catch (err) {
+                    console.error("Error de red, intentando offline...", err);
+                    intentarLoginOffline(usuario, pass);
                 }
-                mostrarMainApp();
             } else {
-                document.getElementById('loginError').classList.remove('hidden');
-                setTimeout(() => { document.getElementById('loginError').classList.add('hidden'); }, 3000);
+                // 2. Si estamos OFFLINE, intentamos login local
+                intentarLoginOffline(usuario, pass);
             }
         }
 
