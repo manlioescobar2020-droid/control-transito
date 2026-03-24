@@ -138,7 +138,8 @@
             <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                 <div class="form-group">
                     <label>DATOS DEL VEHÍCULO</label>
-<input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)" oninput="this.value = this.value.toUpperCase()">                    <input type="text" id="txtNro08" placeholder="Nro. 08">
+                    <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)" oninput="this.value = this.value.toUpperCase()">
+                    <input type="text" id="txtNro08" placeholder="Nro. 08" oninput="this.value = this.value.toUpperCase()">
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
                         <div style="flex:1"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
@@ -156,7 +157,7 @@
                 </div>
                 <div class="form-group">
                     <label>OBSERVACIONES</label>
-                <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="this.value = this.value.toUpperCase()"></textarea>
+                    <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="this.value = this.value.toUpperCase()"></textarea>
                 </div>
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
@@ -270,16 +271,31 @@
 
     </div> <!-- FIN MAINAPP -->
 
-        <!-- BOTÓN FLOTANTE REGISTRAR -->
-    <div id="footerBtn" class="footer-fixed">...</div>
+    <!-- BOTÓN FLOTANTE REGISTRAR -->
+    <div id="footerBtn" class="footer-fixed">
+        <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
+    </div>
 
-    <!-- 👇 PEGA AQUÍ EL MODAL 👇 -->
-    <!-- MODAL DE HISTORIAL DE CONTROL -->
-    <div id="modalHistorial" ...> ... </div>
+    <!-- MODAL DE HISTORIAL DE CONTROL (COMPLETO Y CORREGIDO) -->
+    <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; display:none; justify-content:center; align-items:center;">
+        <div style="background:white; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <h3 style="margin:0; color:#1e293b;">Último Control</h3>
+                <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#64748b;">&times;</button>
+            </div>
+
+            <div id="contenidoHistorial">
+                <!-- Los datos aparecen aquí -->
+            </div>
+
+            <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
+        </div>
+    </div>
 
     <!-- LÓGICA JAVASCRIPT -->
     <script>
-        let infoUltimoControl = null; // <--- AGREGAR ESTO
+        let infoUltimoControl = null;
         let usuarioActual = null;
         let vehiculoActual = null;
         let map = null;
@@ -344,8 +360,8 @@
             
             vehiculoActual = data.vehiculo;
             const ultimoControl = data.ultimoControl;
-            // --- NUEVA LÍNEA: Guardamos el control para que el Modal lo pueda leer ---
             infoUltimoControl = ultimoControl;
+            
             const divRes = document.getElementById('divResultado');
             const footerBtn = document.getElementById('footerBtn');
             
@@ -360,12 +376,13 @@
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
 
-                // NUEVO BLOQUE CON BOTÓN
+                // BLOQUE CON BOTÓN
                 html += `<div class="card card-alert">
                             <h3>⚠️ ATENCIÓN</h3>
                             <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
                             <button onclick="abrirModalHistorial()" class="btn-warning" style="margin-top:10px; padding:10px;">👁️ Ver Detalles del Control</button>
-                         </div>`;            } else {
+                         </div>`;
+            } else {
                 html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>Vehículo nuevo. Proceda con el control.</p></div>`;
             }
 
@@ -736,10 +753,9 @@
                 window.open(`https://wa.me/?text=${urlTexto}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-                // --- FUNCIONES DEL MODAL DE HISTORIAL ---
 
+        // --- FUNCIONES DEL MODAL DE HISTORIAL (LIMPIAS Y GLOBALES) ---
         function abrirModalHistorial() {
-            // Usamos la variable global
             const control = infoUltimoControl; 
             
             if (!control) {
@@ -750,10 +766,8 @@
             const modal = document.getElementById('modalHistorial');
             const contenido = document.getElementById('contenidoHistorial');
 
-            // Formatear fecha
             const fecha = new Date(control.fecha_hora).toLocaleString();
 
-            // Generar HTML interno
             let html = `
                 <p style="color:#64748b; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
                 <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
@@ -800,81 +814,6 @@
 
             contenido.innerHTML = html;
             
-            // Mostrar modal
-            modal.style.display = 'flex';
-            modal.classList.remove('hidden');
-        }
-
-        function cerrarModalHistorial() {
-            const modal = document.getElementById('modalHistorial');
-            modal.style.display = 'none';
-            modal.classList.add('hidden');
-        }
-                // --- FUNCIONES DEL MODAL DE HISTORIAL ---
-
-        function abrirModalHistorial() {
-            // Usamos la variable global
-            const control = infoUltimoControl; 
-            
-            if (!control) {
-                mostrarToast("No hay datos del control anterior", "warning");
-                return;
-            }
-
-            const modal = document.getElementById('modalHistorial');
-            const contenido = document.getElementById('contenidoHistorial');
-
-            // Formatear fecha
-            const fecha = new Date(control.fecha_hora).toLocaleString();
-
-            // Generar HTML interno
-            let html = `
-                <p style="color:#64748b; font-size:13px;">FECHA: <strong>${fecha}</strong></p>
-                <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Cédula</label>
-                        <div style="font-weight:bold; color:${control.tiene_cedula ? 'green' : 'red'}">
-                            ${control.tiene_cedula ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Licencia</label>
-                        <div style="font-weight:bold; color:${control.tiene_licencia ? 'green' : 'red'}">
-                            ${control.tiene_licencia ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">Seguro</label>
-                        <div style="font-weight:bold; color:${control.tiene_seguro ? 'green' : 'red'}">
-                            ${control.tiene_seguro ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">08 Pagado</label>
-                        <div style="font-weight:bold; color:${control.tiene_08_pago ? 'green' : 'red'}">
-                            ${control.tiene_08_pago ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:12px; color:#94a3b8;">RTO</label>
-                        <div style="font-weight:bold; color:${control.tiene_rto_habilitada ? 'green' : 'red'}">
-                            ${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            if (control.observaciones) {
-                html += `<div style="margin-top:15px; background:#f8fafc; padding:10px; border-radius:8px;">
-                            <label style="font-size:12px; color:#64748b;">OBSERVACIONES:</label>
-                            <p style="margin:5px 0 0; font-style:italic;">"${control.observaciones}"</p>
-                         </div>`;
-            }
-
-            contenido.innerHTML = html;
-            
-            // Mostrar modal
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
         }
@@ -885,6 +824,5 @@
             modal.classList.add('hidden');
         }
     </script>
-        
 </body>
 </html>
