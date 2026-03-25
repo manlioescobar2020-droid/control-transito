@@ -899,19 +899,14 @@
             if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
         }
 
-        // 6. Listeners
-        window.addEventListener('online', () => {
-            mostrarToast("Conexión recuperada", "success");
-            sincronizarPendientes();
-            sincronizarDatosLocales();
-        });
-
-        window.addEventListener('offline', () => {
-            mostrarToast("Modo Offline activado", "warning");
-        });
-
-        window.addEventListener('load', () => {
-            if(navigator.onLine) sincronizarPendientes();
+                window.addEventListener('load', () => {
+            // Verificamos el estado AL ARRANCAR
+            if(navigator.onLine) {
+                sincronizarPendientes();
+            } else {
+                // Si arranca sin internet, mostramos el aviso
+                mostrarToast("Modo Offline activado", "warning");
+            }
         });
 
         // 7. Service Worker
