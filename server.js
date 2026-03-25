@@ -130,16 +130,25 @@ app.post('/registrar-control', async (req, res) => {
 // 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE
 app.get('/api/historial', async (req, res) => {
     try {
-        // Leemos el límite que viene de la app (si no viene nada, por defecto 100)
         const limite = req.query.limit || 100;
 
-        // IMPORTANTE: Agregamos 'modelo' y 'numero_08' al SELECT
-        // También sacamos el filtro "WHERE latitud IS NOT NULL" para que baje todos los controles,
-        // así el inspector tiene info de autos aunque no tengan GPS cargado.
-        const result = await pool.query(
-            'SELECT id, patricula, fecha_hora, latitud, longitud, modelo, numero_08 FROM registros_controles ORDER BY fecha_hora DESC LIMIT $1',
-            [limite]
-        );
+        // CORRECCIÓN: Hacemos JOIN con la tabla vehiculos para traer modelo y numero_08
+        const queryText = `
+            SELECT 
+                r.id, 
+                r.patricula, 
+                r.fecha_hora, 
+                r.latitud, 
+                r.longitud, 
+                v.modelo, 
+                v.numero_08 
+            FROM registros_controles r
+            LEFT JOIN vehiculos v ON r.patricula = v.patricula
+            ORDER BY r.fecha_hora DESC 
+            LIMIT $1
+        `;
+        
+        const result = await pool.query(queryText, [limite]);
         res.json(result.rows);
     } catch (err) {
         console.error("Error al obtener historial:", err.message);
