@@ -459,7 +459,7 @@
             }
         }
 
-        async function enviarDatos(lat, lon) {
+               async function enviarDatos(lat, lon) {
             const btn = document.querySelector('#footerBtn button');
             btn.disabled = true;
             btn.innerHTML = "⏳ Guardando...";
@@ -482,6 +482,9 @@
                 observaciones: document.getElementById('txtObs').value
             };
 
+            // --- LÓGICA MEJORADA ---
+            
+            // Si estamos claramente offline, guardamos directo
             if (!navigator.onLine) {
                 guardarControlPendiente(payload); 
                 mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
@@ -491,6 +494,7 @@
                 return; 
             }
 
+            // Si creemos que hay internet, intentamos enviar
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
@@ -502,11 +506,15 @@
                     mostrarToast("✅ Control registrado con éxito", "success");
                     limpiarPantalla();
                 } else {
-                    mostrarToast("Error al guardar control", "error");
+                    mostrarToast("Error del servidor al guardar", "error");
                 }
             } catch (err) {
-                console.error(err);
-                mostrarToast("Error de conexión inesperado", "error");
+                // ERROR DE RED: El navegador pensaba que había internet, pero falló.
+                // SOLUCIÓN: Lo guardamos localmente igual para no perder datos.
+                console.error("Fallo de conexión inesperada, guardando local:", err);
+                guardarControlPendiente(payload);
+                mostrarToast("📴 Conexión perdida. Guardado localmente.", "warning");
+                limpiarPantalla();
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = "✅ REGISTRAR CONTROL";
