@@ -1,4 +1,4 @@
-// server.js - VERSIÓN LIMPIA Y ESTABLE (CON DASHBOARD AVANZADO)
+// server.js - VERSIÓN LIMPIA Y ESTABLE (CON DASHBOARD AVANZADO) 
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
