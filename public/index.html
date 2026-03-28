@@ -336,7 +336,7 @@
                         usuarioActual = data.user;
                         localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
                         
-                        // LOGICA BOTONES ADMIN (CORREGIDO)
+                        // LOGICA BOTONES ADMIN
                         if (usuarioActual.rol === 'OWNER') {
                             document.getElementById('adminTools').style.display = 'block';
                             document.getElementById('reportTools').style.display = 'flex';
@@ -370,7 +370,7 @@
             if (user.usuario === usuario) {
                 usuarioActual = user;
                 
-                // LOGICA BOTONES ADMIN (CORREGIDO)
+                // LOGICA BOTONES ADMIN
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
                     document.getElementById('reportTools').style.display = 'flex';
@@ -459,7 +459,7 @@
             }
         }
 
-                       async function enviarDatos(lat, lon) {
+        async function enviarDatos(lat, lon) {
             const btn = document.querySelector('#footerBtn button');
             btn.disabled = true;
             btn.innerHTML = "⏳ Guardando...";
@@ -484,7 +484,6 @@
 
             // --- LÓGICA MEJORADA ---
             
-            // Si estamos claramente offline, guardamos directo
             if (!navigator.onLine) {
                 guardarControlPendiente(payload); 
                 mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
@@ -494,7 +493,6 @@
                 return; 
             }
 
-            // Si creemos que hay internet, intentamos enviar
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
@@ -509,35 +507,6 @@
                     mostrarToast("Error del servidor al guardar", "error");
                 }
             } catch (err) {
-                // ERROR DE RED: El navegador pensaba que había internet, pero falló.
-                // SOLUCIÓN: Lo guardamos localmente igual para no perder datos.
-                console.error("Fallo de conexión inesperada, guardando local:", err);
-                guardarControlPendiente(payload);
-                mostrarToast("📴 Conexión perdida. Guardado localmente.", "warning");
-                limpiarPantalla();
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "✅ REGISTRAR CONTROL";
-            }
-        }
-
-            // Si creemos que hay internet, intentamos enviar
-            try {
-                const res = await fetch('/registrar-control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    mostrarToast("✅ Control registrado con éxito", "success");
-                    limpiarPantalla();
-                } else {
-                    mostrarToast("Error del servidor al guardar", "error");
-                }
-            } catch (err) {
-                // ERROR DE RED: El navegador pensaba que había internet, pero falló.
-                // SOLUCIÓN: Lo guardamos localmente igual para no perder datos.
                 console.error("Fallo de conexión inesperada, guardando local:", err);
                 guardarControlPendiente(payload);
                 mostrarToast("📴 Conexión perdida. Guardado localmente.", "warning");
@@ -934,12 +903,21 @@
             if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
         }
 
-                window.addEventListener('load', () => {
-            // Verificamos el estado AL ARRANCAR
+        // 6. Listeners
+        window.addEventListener('online', () => {
+            mostrarToast("Conexión recuperada", "success");
+            sincronizarPendientes();
+            sincronizarDatosLocales();
+        });
+
+        window.addEventListener('offline', () => {
+            mostrarToast("Modo Offline activado", "warning");
+        });
+
+        window.addEventListener('load', () => {
             if(navigator.onLine) {
                 sincronizarPendientes();
             } else {
-                // Si arranca sin internet, mostramos el aviso
                 mostrarToast("Modo Offline activado", "warning");
             }
         });
