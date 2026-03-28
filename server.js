@@ -1,4 +1,4 @@
-// server.js - VERSIÓN LIMPIA Y ESTABLE (CON DASHBOARD AVANZADO) 
+// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -47,29 +47,13 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// 2. BUSCAR VEHÍCULO (CORREGIDO)
+// 2. BUSCAR VEHÍCULO
 app.get('/vehiculos/:patricula', async (req, res) => {
-    // CORREGIDO: Usamos 'patricula' (con A), que es lo que viene en la URL
     const { patricula } = req.params; 
-    
     try {
-        // Buscamos datos del vehículo
-        const vehiculoResult = await pool.query(
-            'SELECT * FROM vehiculos WHERE patricula = $1', 
-            [patricula.toUpperCase()]
-        );
-        
-        // Buscamos el último control (TRAEMOS * TODO CON EL ASTERISCO)
-        const controlResult = await pool.query(
-            'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', 
-            [patricula.toUpperCase()]
-        );
-
-        res.json({ 
-            vehiculo: vehiculoResult.rows[0] || null, 
-            ultimoControl: controlResult.rows[0] || null 
-        });
-
+        const vehiculoResult = await pool.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
+        const controlResult = await pool.query('SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
+        res.json({ vehiculo: vehiculoResult.rows[0] || null, ultimoControl: controlResult.rows[0] || null });
     } catch (err) {
         console.error("Error al buscar vehículo:", err.message);
         res.status(500).json({ error: 'Error al buscar vehículo' });
@@ -81,43 +65,17 @@ app.post('/registrar-control', async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones } = req.body;
 
-        const {
-            patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence,
-            id_inspector, latitud, longitud, texto_ubicacion,
-            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones
-        } = req.body;
-
-        // A. Guardar/Actualizar Vehículo
-        const upsertVehiculo = `
-            INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (patricula)
-            DO UPDATE SET
-            modelo = EXCLUDED.modelo,
-            numero_08 = EXCLUDED.numero_08,
-            fecha_seguro_vence = EXCLUDED.fecha_seguro_vence,
-            fecha_rto_vence = EXCLUDED.fecha_rto_vence
-        `;
+        const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, fecha_rto_vence = EXCLUDED.fecha_rto_vence`;
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence, fecha_rto_vence]);
 
-        // B. Guardar Registro del Control
-        const insertRegistro = `
-            INSERT INTO registros_controles
-            (patricula, id_inspector, latitud, longitud, texto_ubicacion,
-            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *
-        `;
-        const result = await client.query(insertRegistro, [
-            patricula.toUpperCase(), id_inspector, latitud, longitud, texto_ubicacion,
-            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones
-        ]);
+        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
+        const result = await client.query(insertRegistro, [patricula.toUpperCase(), id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones]);
 
         await client.query('COMMIT');
         io.emit('nuevo_control_registrado', result.rows[0]);
         res.json({ success: true, registro: result.rows[0] });
-
     } catch (err) {
         await client.query('ROLLBACK');
         console.error("Error al registrar control:", err.message);
@@ -127,27 +85,20 @@ app.post('/registrar-control', async (req, res) => {
     }
 });
 
-// 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE
+// 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE (CORREGIDO CON CHECKS)
 app.get('/api/historial', async (req, res) => {
     try {
         const limite = req.query.limit || 100;
-
-        // CORRECCIÓN: Hacemos JOIN con la tabla vehiculos para traer modelo y numero_08
         const queryText = `
             SELECT 
-                r.id, 
-                r.patricula, 
-                r.fecha_hora, 
-                r.latitud, 
-                r.longitud, 
-                v.modelo, 
-                v.numero_08 
+                r.id, r.patricula, r.fecha_hora, r.latitud, r.longitud, 
+                v.modelo, v.numero_08,
+                r.tiene_cedula, r.tiene_licencia, r.tiene_seguro, r.tiene_08_pago, r.tiene_rto_habilitada, r.observaciones
             FROM registros_controles r
             LEFT JOIN vehiculos v ON r.patricula = v.patricula
             ORDER BY r.fecha_hora DESC 
             LIMIT $1
         `;
-        
         const result = await pool.query(queryText, [limite]);
         res.json(result.rows);
     } catch (err) {
@@ -159,136 +110,61 @@ app.get('/api/historial', async (req, res) => {
 // 5. CREAR USUARIO
 app.post('/api/crear-usuario', async (req, res) => {
     const { usuario, password, nombre, rol } = req.body;
-    
-    if (!usuario || !password || !rol) {
-        return res.status(400).json({ error: "Faltan datos obligatorios" });
-    }
-
+    if (!usuario || !password || !rol) return res.status(400).json({ error: "Faltan datos obligatorios" });
     try {
-        const result = await pool.query(
-            'INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-            [usuario, password, nombre || usuario, rol, null] 
-        );
+        const result = await pool.query('INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id', [usuario, password, nombre || usuario, rol, null]);
         res.json({ success: true, id: result.rows[0].id });
     } catch (err) {
-        console.error("Error crear usuario:", err.message);
-        if (err.code === '23505') {
-            return res.status(400).json({ error: "El usuario ya existe" });
-        }
-        res.status(500).json({ error: 'Error al crear usuario', details: err.message });
+        if (err.code === '23505') return res.status(400).json({ error: "El usuario ya existe" });
+        res.status(500).json({ error: 'Error al crear usuario' });
     }
 });
 
 // 6. LISTAR USUARIOS
 app.get('/api/usuarios', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT id, usuario, nombre, rol FROM usuarios ORDER BY nombre ASC'
-        );
+        const result = await pool.query('SELECT id, usuario, nombre, rol FROM usuarios ORDER BY nombre ASC');
         res.json(result.rows);
     } catch (error) {
-        console.error('Error al obtener usuarios:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ error: 'Error interno' });
     }
 });
 
-// 7. ESTADÍSTICAS (CON FILTROS DE FECHA)
+// 7. ESTADÍSTICAS
 app.get('/api/estadisticas', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
         const hoy = new Date().toISOString().split('T')[0];
-        
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
-
-        // 1. Total de controles en el rango
-        const totalResult = await pool.query(
-            "SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2",
-            [fechaDesde, fechaHasta]
-        );
-        
-        // 2. Controles por Inspector en el rango
-        const porInspectorResult = await pool.query(
-            `SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad 
-             FROM usuarios u 
-             INNER JOIN registros_controles r ON u.id = r.id_inspector 
-             WHERE r.fecha_hora::date BETWEEN $1 AND $2
-             GROUP BY u.id, u.nombre, u.usuario
-             HAVING COUNT(r.id) > 0
-             ORDER BY cantidad DESC`,
-            [fechaDesde, fechaHasta]
-        );
-
-        res.json({
-            totalHoy: totalResult.rows[0].total,
-            porInspector: porInspectorResult.rows,
-            fechas: { desde: fechaDesde, hasta: fechaHasta }
-        });
+        const totalResult = await pool.query("SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2", [fechaDesde, fechaHasta]);
+        const porInspectorResult = await pool.query(`SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad FROM usuarios u INNER JOIN registros_controles r ON u.id = r.id_inspector WHERE r.fecha_hora::date BETWEEN $1 AND $2 GROUP BY u.id, u.nombre, u.usuario HAVING COUNT(r.id) > 0 ORDER BY cantidad DESC`, [fechaDesde, fechaHasta]);
+        res.json({ totalHoy: totalResult.rows[0].total, porInspector: porInspectorResult.rows });
     } catch (error) {
-        console.error("Error al obtener estadísticas:", error);
         res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
 });
 
-// --- RUTA: EXPORTAR A EXCEL (CSV) ---
+// 8. EXPORTAR CSV
 app.get('/api/exportar-registros', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
         const hoy = new Date().toISOString().split('T')[0];
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
-
-        const query = `
-            SELECT 
-                r.patricula, 
-                v.modelo, 
-                r.fecha_hora, 
-                u.nombre as inspector,
-                r.tiene_cedula, 
-                r.tiene_licencia, 
-                r.observaciones
-            FROM registros_controles r
-            LEFT JOIN vehiculos v ON r.patricula = v.patricula
-            JOIN usuarios u ON r.id_inspector = u.id
-            WHERE r.fecha_hora::date BETWEEN $1 AND $2
-            ORDER BY r.fecha_hora DESC
-        `;
-        
+        const query = `SELECT r.patricula, v.modelo, r.fecha_hora, u.nombre as inspector, r.tiene_cedula, r.tiene_licencia, r.observaciones FROM registros_controles r LEFT JOIN vehiculos v ON r.patricula = v.patricula JOIN usuarios u ON r.id_inspector = u.id WHERE r.fecha_hora::date BETWEEN $1 AND $2 ORDER BY r.fecha_hora DESC`;
         const result = await pool.query(query, [fechaDesde, fechaHasta]);
-        const rows = result.rows;
-
-        // Generar CSV
-let csv = 'Patente;Modelo;Fecha;Hora;Inspector;Cédula;Licencia;Observaciones\n';
-        rows.forEach(row => {
-            // Formatear fecha y hora
-            const fechaObj = new Date(row.fecha_hora);
-            const fechaStr = fechaObj.toLocaleDateString();
-            const horaStr = fechaObj.toLocaleTimeString();
-
-            // MANEJO SEGURO DE COMILLAS (Concatenación)
-            let obs = '';
-            if (row.observaciones) {
-                const obsEscapado = row.observaciones.replace(/"/g, '""');
-                obs = '"' + obsEscapado + '"';
-            } 
-
-            const cedula = row.tiene_cedula ? 'Sí' : 'No';
-            const licencia = row.tiene_licencia ? 'Sí' : 'No';
-
-            csv += row.patricula + ';"' + (row.modelo || '') + '";' + fechaStr + ';' + horaStr + ';"' + row.inspector + '";' + cedula + ';' + licencia + ';' + obs + '\n';        });
-
+        let csv = 'Patente;Modelo;Fecha;Inspector;Cedula;Licencia;Obs\n';
+        result.rows.forEach(row => {
+            csv += `${row.patricula};${row.modelo || ''};${new Date(row.fecha_hora).toLocaleString()};${row.inspector};${row.tiene_cedula ? 'Si' : 'No'};${row.tiene_licencia ? 'Si' : 'No'};${row.observaciones || ''}\n`;
+        });
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename=reporte_transito_${fechaDesde}_a_${fechaHasta}.csv`);
+        res.setHeader('Content-Disposition', `attachment; filename=reporte.csv`);
         res.send(csv);
-
     } catch (error) {
-        console.error("Error al exportar:", error);
-        res.status(500).send("ERROR: " + error.message);
+        res.status(500).send("Error");
     }
 });
 
-// --- INICIAR SERVIDOR  ---
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 Servidor activo en puerto ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));
