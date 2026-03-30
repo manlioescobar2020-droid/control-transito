@@ -193,6 +193,9 @@
                         <label class="check-item"><input type="checkbox" id="chkSeguro"> Seguro</label>
                         <label class="check-item"><input type="checkbox" id="chk08"> 08 Pagado</label>
                         <label class="check-item"><input type="checkbox" id="chkRTO"> RTO OK</label>
+                        <label class="check-item"><input type="checkbox" id="chkCedula" onchange="actualizarEstadoBtnRegistrar()"> Cédula</label>
+                        <label class="check-item"><input type="checkbox" id="chkLicencia" onchange="actualizarEstadoBtnRegistrar()"> Licencia</label>
+                        <!-- Hacé lo mismo con chkSeguro, chk08 y chkRTO -->
                     </div>
                 </div>
                 <div class="form-group">
@@ -974,6 +977,37 @@
                     .catch(err => console.error('Error SW:', err));
             });
         }
+
+        // NUEVO: Lógica del botón inteligente
+function actualizarEstadoBtnRegistrar() {
+    const btn = document.querySelector('#footerBtn button');
+    if (!btn) return;
+
+    const checks = [
+        document.getElementById('chkCedula').checked,
+        document.getElementById('chkLicencia').checked,
+        document.getElementById('chkSeguro').checked,
+        document.getElementById('chk08').checked,
+        document.getElementById('chkRTO').checked
+    ];
+    
+    const algunosTildados = checks.some(c => c);
+    const todosTildados = checks.every(c => c);
+
+    if (algunosTildados && !todosTildados) {
+        // Hay cosas tildadas pero falta alguna -> ROJO
+        btn.style.background = '#dc2626';
+        btn.innerText = "⚠️ FALTA DOCUMENTACIÓN";
+    } else if (todosTildados) {
+        // Tiene todo -> VERDE
+        btn.style.background = '#16a34a';
+        btn.innerText = "✅ REGISTRAR CONTROL";
+    } else {
+        // No tildó nada (quizás solo va a cargar obs) -> VERDE NORMAL
+        btn.style.background = '#16a34a';
+        btn.innerText = "✅ REGISTRAR CONTROL";
+    }
+}
 
     </script>
 </body>
