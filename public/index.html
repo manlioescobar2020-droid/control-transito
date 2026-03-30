@@ -904,13 +904,17 @@
         }
 
         function guardarControlPendiente(datos) {
-            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            datos.fecha_hora_local = new Date().toISOString();
-            datos.idTemporal = Date.now();
-            pendientes.push(datos);
-            localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
-            actualizarContadorPendientes(); // NUEVO: Actualizamos el badge al guardar
-        }
+    let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+    datos.fecha_hora_local = new Date().toISOString();
+    datos.idTemporal = Date.now();
+    pendientes.push(datos);
+    localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+    
+    // NUEVO: Vibrar 200 milisegundos para confirmar (solo si el celular lo soporta)
+    if (navigator.vibrate) navigator.vibrate(200); 
+    
+    actualizarContadorPendientes(); 
+}
 
         async function sincronizarPendientes() {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
