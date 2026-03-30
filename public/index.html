@@ -40,6 +40,21 @@
         .header h1 { margin: 0; font-size:24px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
 
+        /* NUEVO: Estilos del badge de pendientes */
+        .header-badge-container { position: relative; display: inline-block; }
+        .badge-pendientes {
+            position: absolute; top: -10px; right: -18px; background: #dc2626; color: white;
+            border-radius: 50%; min-width: 22px; height: 22px; font-size: 11px; font-weight: bold;
+            display: none; align-items: center; justify-content: center; 
+            border: 2px solid var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            animation: pulse-badge 2s infinite;
+        }
+        @keyframes pulse-badge {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
         .login-box { padding: 40px 20px; }
         .login-box h2 { text-align: center; color: var(--text-main); margin-bottom: 30px; }
 
@@ -128,7 +143,11 @@
 
         <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
             <div>
-                <h1 style="margin:0;">Control Vehicular</h1>
+                <!-- NUEVO: Contenedor del título con badge -->
+                <div class="header-badge-container">
+                    <h1 style="margin:0;">Control Vehicular</h1>
+                    <span id="badgePendientes" class="badge-pendientes">0</span>
+                </div>
                 <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">
                     Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)
                 </p>
@@ -306,6 +325,7 @@
         function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
+            actualizarContadorPendientes(); // NUEVO: Al entrar, chequeamos si hay pendientes
         }
 
         function ocultarTodasSecciones() {
@@ -336,7 +356,6 @@
                         usuarioActual = data.user;
                         localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
                         
-                        // LOGICA BOTONES ADMIN
                         if (usuarioActual.rol === 'OWNER') {
                             document.getElementById('adminTools').style.display = 'block';
                             document.getElementById('reportTools').style.display = 'flex';
@@ -370,7 +389,6 @@
             if (user.usuario === usuario) {
                 usuarioActual = user;
                 
-                // LOGICA BOTONES ADMIN
                 if (usuarioActual.rol === 'OWNER') {
                     document.getElementById('adminTools').style.display = 'block';
                     document.getElementById('reportTools').style.display = 'flex';
@@ -482,8 +500,6 @@
                 observaciones: document.getElementById('txtObs').value
             };
 
-            // --- LÓGICA MEJORADA ---
-            
             if (!navigator.onLine) {
                 guardarControlPendiente(payload); 
                 mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
@@ -813,7 +829,21 @@
         // BLOQUE ÚNICO DE FUNCIONES OFFLINE Y CACHÉ
         // ==========================================
 
-        // 1. Guardar búsqueda en Caché Local
+        // NUEVO: Función para actualizar el badge de pendientes
+        function actualizarContadorPendientes() {
+            const badge = document.getElementById('badgePendientes');
+            if (!badge) return;
+            const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            const cantidad = pendientes.length;
+            
+            if (cantidad > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = cantidad > 99 ? '99+' : cantidad;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function guardarEnCacheLocal(data) {
             if (!data || !data.vehiculo) return;
             let cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
@@ -830,7 +860,6 @@
             localStorage.setItem('cache_vehiculos', JSON.stringify(cache));
         }
 
-        // 2. Buscar en Caché Local
         function buscarEnCacheLocal(patente) {
             const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
             const encontrado = cache.find(c => c.patente === patente);
@@ -840,7 +869,6 @@
             return { vehiculo: null, ultimoControl: null, esOffline: true };
         }
 
-        // 3. Sincronizar datos masivos al iniciar sesión
         async function sincronizarDatosLocales() {
             try {
                 const res = await fetch('/api/historial?limit=1000'); 
@@ -866,16 +894,15 @@
             }
         }
 
-        // 4. Guardar control pendiente
         function guardarControlPendiente(datos) {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
             datos.fecha_hora_local = new Date().toISOString();
             datos.idTemporal = Date.now();
             pendientes.push(datos);
             localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+            actualizarContadorPendientes(); // NUEVO: Actualizamos el badge al guardar
         }
 
-        // 5. Sincronizar pendientes
         async function sincronizarPendientes() {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
             if (pendientes.length === 0) return;
@@ -892,6 +919,7 @@
                     });
                     if (res.ok) {
                         console.log('Sincronizado:', control.patricula);
+                        actualizarContadorPendientes(); // NUEVO: Actualizamos por cada uno que sale
                     } else {
                         nuevosPendientes.push(control);
                     }
@@ -900,10 +928,13 @@
                 }
             }
             localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
+            actualizarContadorPendientes(); // NUEVO: Actualización final
+            
             if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
+            else mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, "warning");
         }
 
-        // 6. Listeners
+        // Listeners de red
         window.addEventListener('online', () => {
             mostrarToast("Conexión recuperada", "success");
             sincronizarPendientes();
@@ -922,7 +953,7 @@
             }
         });
 
-        // 7. Service Worker
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
