@@ -323,9 +323,16 @@
         // --- FUNCIONES DE INTERFAZ ---
         
         function mostrarMainApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            actualizarContadorPendientes(); // NUEVO: Al entrar, chequeamos si hay pendientes
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    actualizarContadorPendientes(); 
+    notificarConexion();
+    
+    // NUEVO: Abrir teclado en el celular
+    setTimeout(() => {
+        document.getElementById('txtPatente').focus();
+    }, 300); // El timeout de 300ms asegura que en los celulares no haga un zoom raro
+
         }
 
         function ocultarTodasSecciones() {
