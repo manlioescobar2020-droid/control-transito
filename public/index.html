@@ -970,13 +970,15 @@
     actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
 });
 
-        window.addEventListener('load', () => {
-            if(navigator.onLine) {
-                sincronizarPendientes();
-            } else {
-                mostrarToast("Modo Offline activado", "warning");
-            }
-        });
+       window.addEventListener('load', () => {
+    if(navigator.onLine) {
+        sincronizarPendientes();
+        actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
+    } else {
+        mostrarToast("Modo Offline activado", "warning");
+        actualizarEstadoRed(); // <--- Y TAMBIÉN AGREGÁ ESTO ACÁ (por si entra sin internet desde el principio)
+    }
+});
 
         // Service Worker
         if ('serviceWorker' in navigator) {
