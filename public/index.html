@@ -327,11 +327,14 @@
 
         // --- FUNCIONES DE INTERFAZ ---
         
-        function mostrarMainApp() {
+       function mostrarMainApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     actualizarContadorPendientes(); 
     notificarConexion();
+    setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
+    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
+}
     
     // NUEVO: Abrir teclado en el celular
     setTimeout(() => {
