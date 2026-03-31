@@ -983,6 +983,37 @@
                     .catch(err => console.error('Error SW:', err));
             });
         }
+                // NUEVO: Exportar pendientes a TXT por emergencia
+        function exportarPendientes() {
+            const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            if (pendientes.length === 0) {
+                mostrarToast("No hay controles pendientes para respaldar", "info");
+                return;
+            }
+            let texto = "🚨 RESPALDO DE CONTROLES PENDIENTES 🚨\n";
+            texto += "Generado: " + new Date().toLocaleString() + "\n";
+            texto += "Inspector: " + (usuarioActual ? usuarioActual.nombre : "Desconocido") + "\n";
+            texto += "Total a sincronizar: " + pendientes.length + " controles\n";
+            texto += "==========================================\n\n";
+            pendientes.forEach((ctrl, index) => {
+                texto += `--- CONTROL ${index + 1} ---\n`;
+                texto += `Patente: ${ctrl.patricula || 'SIN PATENTE'}\n`;
+                texto += `Modelo: ${ctrl.modelo || '-'}\n`;
+                texto += `Docs: Céd[${ctrl.tiene_cedula ? '✅' : '❌'}] Lic[${ctrl.tiene_licencia ? '✅' : '❌'}] Seg[${ctrl.tiene_seguro ? '✅' : '❌'}] 08[${ctrl.tiene_08_pago ? '✅' : '❌'}] RTO[${ctrl.tiene_rto_habilitada ? '✅' : '❌'}]\n`;
+                if (ctrl.observaciones) texto += `Obs: ${ctrl.observaciones}\n`;
+                texto += `\n`;
+            });
+            const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Respaldo_${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            mostrarToast("📄 Respaldo descargado", "success");
+        }
 
         // NUEVO: Lógica del botón inteligente
 function actualizarEstadoBtnRegistrar() {
