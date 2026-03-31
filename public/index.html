@@ -957,10 +957,12 @@
 
         // Listeners de red
         window.addEventListener('online', () => {
-            mostrarToast("Conexión recuperada", "success");
-            sincronizarPendientes();
-            sincronizarDatosLocales();
-        });
+    mostrarToast("Conexión recuperada", "success");
+    sincronizarPendientes();
+    sincronizarDatosLocales();
+    
+    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
+});
 
         window.addEventListener('offline', () => {
             mostrarToast("Modo Offline activado", "warning");
