@@ -327,20 +327,15 @@
 
         // --- FUNCIONES DE INTERFAZ ---
         
-       function mostrarMainApp() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    actualizarContadorPendientes(); 
-    notificarConexion();
-    setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
-    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
-}
-    
-    // NUEVO: Abrir teclado en el celular
-    setTimeout(() => {
-        document.getElementById('txtPatente').focus();
-    }, 300); // El timeout de 300ms asegura que en los celulares no haga un zoom raro
-
+             // --- FUNCIONES DE INTERFAZ ---
+        
+        function mostrarMainApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            actualizarContadorPendientes(); 
+            // notificarConexion(); // Lo comento temporalmente porque no tenemos el código del server todavía
+            setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
+            actualizarEstadoRed(); 
         }
 
         function ocultarTodasSecciones() {
