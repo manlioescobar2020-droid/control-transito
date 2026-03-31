@@ -447,7 +447,21 @@
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
                 const ahora = new Date();
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
-                const tiempoTexto = minutos < 60 ? `hace ${minutos} minutos` : `hace ${Math.round(minutos/60)} horas`;
+let tiempoTexto = "";
+
+if (minutos < 60) {
+    tiempoTexto = `hace ${minutos} minutos`;
+} else if (minutos < 1440) { // menos de 24 horas (1440 minutos)
+    tiempoTexto = `hace ${Math.round(minutos / 60)} horas`;
+} else { // 1 día o más
+    const dias = Math.floor(minutos / 1440);
+    const horasRestantes = Math.round((minutos % 1440) / 60);
+    if (horasRestantes > 0) {
+        tiempoTexto = `hace ${dias} días y ${horasRestantes} horas`;
+    } else {
+        tiempoTexto = `hace ${dias} días`;
+    }
+}
                 const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
                 
                 html += `<div class="card card-alert">
