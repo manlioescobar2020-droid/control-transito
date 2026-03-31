@@ -1010,7 +1010,20 @@ function actualizarEstadoBtnRegistrar() {
         btn.innerText = "✅ REGISTRAR CONTROL";
     }
 }
-
+// NUEVO: Control visual del estado de la red
+function actualizarEstadoRed() {
+    const btn = document.querySelector('#footerBtn button');
+    if (!btn) return;
+    
+    if (!navigator.onLine) {
+        // Si no hay internet, pongo modo prevención naranja
+        btn.style.background = '#d97706'; // Un naranja fuerte
+        btn.innerText = "📴 GUARDAR LOCALMENTE";
+    } else {
+        // Si hay internet, devuelvo el control a la función de los checks
+        actualizarEstadoBtnRegistrar();
+    }
+}
     </script>
 </body>
 </html>
