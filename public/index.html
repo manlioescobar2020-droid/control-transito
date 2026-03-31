@@ -965,8 +965,10 @@
 });
 
         window.addEventListener('offline', () => {
-            mostrarToast("Modo Offline activado", "warning");
-        });
+    mostrarToast("Modo Offline activado", "warning");
+    
+    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
+});
 
         window.addEventListener('load', () => {
             if(navigator.onLine) {
