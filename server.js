@@ -67,11 +67,29 @@ app.post('/registrar-control', async (req, res) => {
         await client.query('BEGIN');
         const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones } = req.body;
 
+        // 1. Upsert del Vehículo (Esto ya estaba bien)
         const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, fecha_rto_vence = EXCLUDED.fecha_rto_vence`;
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence, fecha_rto_vence]);
 
-        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
-        const result = await client.query(insertRegistro, [patricula.toUpperCase(), id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones]);
+        // 2. CORRECCIÓN: Insertar en el Historial incluyendo las fechas
+        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`;
+        
+        // AQUÍ AGREGAMOS LAS FECHAS AL ARRAY DE VALORES
+        const result = await client.query(insertRegistro, [
+            patricula.toUpperCase(), 
+            id_inspector, 
+            fecha_seguro_vence, // <--- NUEVO
+            fecha_rto_vence,    // <--- NUEVO
+            latitud, 
+            longitud, 
+            texto_ubicacion, 
+            tiene_cedula, 
+            tiene_licencia, 
+            tiene_seguro, 
+            tiene_08_pago, 
+            tiene_rto_habilitada, 
+            observaciones
+        ]);
 
         await client.query('COMMIT');
         io.emit('nuevo_control_registrado', result.rows[0]);
@@ -84,7 +102,6 @@ app.post('/registrar-control', async (req, res) => {
         client.release();
     }
 });
-
 // 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE (CORREGIDO CON CHECKS)
 app.get('/api/historial', async (req, res) => {
     try {
