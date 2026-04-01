@@ -834,7 +834,7 @@
             cargarDatosDashboard(desde, hasta);
         }
 
-        function descargarExcel() {
+                function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
             const hasta = document.getElementById('fechaHasta').value;
             if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
@@ -842,8 +842,6 @@
         }
 
         // --- MODAL HISTORIAL ---
-
-                // --- MODAL HISTORIAL ---
 
         function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl;
