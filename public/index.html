@@ -40,7 +40,7 @@
         .header h1 { margin: 0; font-size:24px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
 
-        /* NUEVO: Estilos del badge de pendientes */
+        /* Estilos del badge de pendientes */
         .header-badge-container { position: relative; display: inline-block; }
         .badge-pendientes {
             position: absolute; top: -10px; right: -18px; background: #dc2626; color: white;
@@ -143,7 +143,7 @@
 
         <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
             <div>
-                <!-- NUEVO: Contenedor del título con badge -->
+                <!-- Contenedor del título con badge -->
                 <div class="header-badge-container">
                     <h1 style="margin:0;">Control Vehicular</h1>
                     <span id="badgePendientes" class="badge-pendientes">0</span>
@@ -158,7 +158,6 @@
                 </div>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-              <!-- NUEVO: Botón de Respaldo de emergencia -->
                 <button onclick="exportarPendientes()" style="width:auto; padding: 8px 12px; font-size: 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 20px;" title="Exportar pendientes por emergencia">📋</button>
                 <button onclick="toggleDarkMode()" id="btnDarkMode" style="width:auto; padding: 8px 15px; font-size: 18px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 50%;">🌙</button>
                 <button onclick="cerrarSesion()" class="btn-secondary" style="padding: 10px 15px; font-size: 14px;">Salir ❌</button>
@@ -189,13 +188,13 @@
                 </div>
                 <div class="form-group">
                     <label>DOCUMENTACIÓN PRESENTADA</label>
-                   <div class="checkbox-grid">
+                    <div class="checkbox-grid">
                         <label class="check-item"><input type="checkbox" id="chkCedula" onchange="actualizarEstadoBtnRegistrar()"> Cédula</label>
                         <label class="check-item"><input type="checkbox" id="chkLicencia" onchange="actualizarEstadoBtnRegistrar()"> Licencia</label>
                         <label class="check-item"><input type="checkbox" id="chkSeguro" onchange="actualizarEstadoBtnRegistrar()"> Seguro</label>
                         <label class="check-item"><input type="checkbox" id="chk08" onchange="actualizarEstadoBtnRegistrar()"> 08 Pagado</label>
                         <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarEstadoBtnRegistrar()"> RTO OK</label>
-                </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>OBSERVACIONES</label>
@@ -252,7 +251,7 @@
             </div>
         </div>
 
-                <!-- Sección Dashboard -->
+        <!-- Sección Dashboard -->
         <div id="dashboardSection" class="section">
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -292,14 +291,13 @@
                     </div>
                 </div>
                 
-                <!-- NUEVO: GRÁFICO DE TORTA DE FALTAS -->
+                <!-- GRÁFICO DE TORTA DE FALTAS -->
                 <div class="card" style="margin-top: 15px;">
                     <h4 style="margin-top:0; text-align:center; color:#475569;">📊 ¿Qué es lo más que falta?</h4>
                     <div style="height: 280px; position: relative; display: flex; justify-content: center;">
                         <canvas id="graficoFaltantes"></canvas>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -329,18 +327,15 @@
         let vehiculoActual = null;
         let map = null;
         let miGrafico = null;
-        let miGraficoTorta = null; // NUEVO: Para el gráfico de faltas
+        let miGraficoTorta = null;
         const socket = io();
 
         // --- FUNCIONES DE INTERFAZ ---
-        
-             // --- FUNCIONES DE INTERFAZ ---
         
         function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             actualizarContadorPendientes(); 
-            // notificarConexion(); // Lo comento temporalmente porque no tenemos el código del server todavía
             setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
             actualizarEstadoRed(); 
         }
@@ -371,7 +366,6 @@
                     const data = await res.json();
                     if (data.success) {
                         usuarioActual = data.user;
-                        // --- ULTIMA LINEA AGREGADA PARA USUARIO ON LINE ---
                         document.getElementById('spanNombre').innerText = usuarioActual.nombre;
                         localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
                         
@@ -451,7 +445,6 @@
             infoUltimoControl = ultimoControl;
             
             let html = "";
-                        // ... (código anterior de la función) ...
 
             if (ultimoControl) {
                 const fechaCtrl = new Date(ultimoControl.fecha_hora);
@@ -473,12 +466,9 @@
                     }
                 }
                 
-                // NUEVO: Extraemos la fecha del seguro y la formateamos (quita la hora si viene con T)
                 const venceSeguro = ultimoControl.fecha_seguro_vence ? ultimoControl.fecha_seguro_vence.split('T')[0] : 'No registrado';
-
                 const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
                 
-                // NUEVO: Agregamos la línea del seguro en el HTML
                 html += `<div class="card card-alert">
                             <h3>⚠️ ATENCIÓN ${etiquetaOffline}</h3>
                             <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
@@ -486,18 +476,6 @@
                                 🛡️ <strong>Vence Seguro:</strong> ${venceSeguro}
                             </p>
                             <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:5px; padding:10px;">👁️ Ver Detalles</button>
-                         </div>`;
-            } else {
-                // ... (resto del código igual) ...
-        tiempoTexto = `hace ${dias} días`;
-    }
-}
-                const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
-                
-                html += `<div class="card card-alert">
-                            <h3>⚠️ ATENCIÓN ${etiquetaOffline}</h3>
-                            <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
-                            <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:10px; padding:10px;">👁️ Ver Detalles</button>
                          </div>`;
             } else {
                 const msg = data.esOffline ? "Sin registros en este dispositivo." : "Vehículo nuevo. Proceda con el control.";
@@ -754,7 +732,7 @@
             await cargarDatosDashboard(hoy, hoy);
         }
 
-                async function cargarDatosDashboard(desde, hasta) {
+        async function cargarDatosDashboard(desde, hasta) {
             mostrarToast("Cargando estadísticas...", "info");
             try {
                 const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
@@ -799,7 +777,7 @@
 
                 if (miGraficoTorta) miGraficoTorta.destroy();
                 miGraficoTorta = new Chart(ctxTorta, {
-                    type: 'doughnut', // Torta agujereada, más moderna
+                    type: 'doughnut',
                     data: {
                         labels: tortaLabels,
                         datasets: [{
@@ -834,7 +812,7 @@
             cargarDatosDashboard(desde, hasta);
         }
 
-                function descargarExcel() {
+        function descargarExcel() {
             const desde = document.getElementById('fechaDesde').value;
             const hasta = document.getElementById('fechaHasta').value;
             if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
@@ -944,7 +922,6 @@
         // BLOQUE ÚNICO DE FUNCIONES OFFLINE Y CACHÉ
         // ==========================================
 
-        // NUEVO: Función para actualizar el badge de pendientes
         function actualizarContadorPendientes() {
             const badge = document.getElementById('badgePendientes');
             if (!badge) return;
@@ -1010,17 +987,15 @@
         }
 
         function guardarControlPendiente(datos) {
-    let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-    datos.fecha_hora_local = new Date().toISOString();
-    datos.idTemporal = Date.now();
-    pendientes.push(datos);
-    localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
-    
-    // NUEVO: Vibrar 200 milisegundos para confirmar (solo si el celular lo soporta)
-    if (navigator.vibrate) navigator.vibrate(200); 
-    
-    actualizarContadorPendientes(); 
-}
+            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            datos.fecha_hora_local = new Date().toISOString();
+            datos.idTemporal = Date.now();
+            pendientes.push(datos);
+            localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+            
+            if (navigator.vibrate) navigator.vibrate(200); 
+            actualizarContadorPendientes(); 
+        }
 
         async function sincronizarPendientes() {
             let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
@@ -1038,7 +1013,7 @@
                     });
                     if (res.ok) {
                         console.log('Sincronizado:', control.patricula);
-                        actualizarContadorPendientes(); // NUEVO: Actualizamos por cada uno que sale
+                        actualizarContadorPendientes();
                     } else {
                         nuevosPendientes.push(control);
                     }
@@ -1047,7 +1022,7 @@
                 }
             }
             localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
-            actualizarContadorPendientes(); // NUEVO: Actualización final
+            actualizarContadorPendientes();
             
             if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
             else mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, "warning");
@@ -1055,28 +1030,26 @@
 
         // Listeners de red
         window.addEventListener('online', () => {
-    mostrarToast("Conexión recuperada", "success");
-    sincronizarPendientes();
-    sincronizarDatosLocales();
-    
-    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
-});
+            mostrarToast("Conexión recuperada", "success");
+            sincronizarPendientes();
+            sincronizarDatosLocales();
+            actualizarEstadoRed();
+        });
 
         window.addEventListener('offline', () => {
-    mostrarToast("Modo Offline activado", "warning");
-    
-    actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
-});
+            mostrarToast("Modo Offline activado", "warning");
+            actualizarEstadoRed();
+        });
 
-       window.addEventListener('load', () => {
-    if(navigator.onLine) {
-        sincronizarPendientes();
-        actualizarEstadoRed(); // <--- AGREGÁ ESTO ACÁ
-    } else {
-        mostrarToast("Modo Offline activado", "warning");
-        actualizarEstadoRed(); // <--- Y TAMBIÉN AGREGÁ ESTO ACÁ (por si entra sin internet desde el principio)
-    }
-});
+        window.addEventListener('load', () => {
+            if(navigator.onLine) {
+                sincronizarPendientes();
+                actualizarEstadoRed();
+            } else {
+                mostrarToast("Modo Offline activado", "warning");
+                actualizarEstadoRed();
+            }
+        });
 
         // Service Worker
         if ('serviceWorker' in navigator) {
@@ -1086,7 +1059,8 @@
                     .catch(err => console.error('Error SW:', err));
             });
         }
-                // NUEVO: Exportar pendientes a TXT por emergencia
+
+        // Exportar pendientes a TXT por emergencia
         function exportarPendientes() {
             const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
             if (pendientes.length === 0) {
@@ -1118,50 +1092,45 @@
             mostrarToast("📄 Respaldo descargado", "success");
         }
 
-        // NUEVO: Lógica del botón inteligente
-function actualizarEstadoBtnRegistrar() {
-    const btn = document.querySelector('#footerBtn button');
-    if (!btn) return;
+        // Lógica del botón inteligente
+        function actualizarEstadoBtnRegistrar() {
+            const btn = document.querySelector('#footerBtn button');
+            if (!btn) return;
 
-    const checks = [
-        document.getElementById('chkCedula').checked,
-        document.getElementById('chkLicencia').checked,
-        document.getElementById('chkSeguro').checked,
-        document.getElementById('chk08').checked,
-        document.getElementById('chkRTO').checked
-    ];
-    
-    const algunosTildados = checks.some(c => c);
-    const todosTildados = checks.every(c => c);
+            const checks = [
+                document.getElementById('chkCedula').checked,
+                document.getElementById('chkLicencia').checked,
+                document.getElementById('chkSeguro').checked,
+                document.getElementById('chk08').checked,
+                document.getElementById('chkRTO').checked
+            ];
+            
+            const algunosTildados = checks.some(c => c);
+            const todosTildados = checks.every(c => c);
 
-    if (algunosTildados && !todosTildados) {
-        // Hay cosas tildadas pero falta alguna -> ROJO
-        btn.style.background = '#dc2626';
-        btn.innerText = "⚠️ FALTA DOCUMENTACIÓN";
-    } else if (todosTildados) {
-        // Tiene todo -> VERDE
-        btn.style.background = '#16a34a';
-        btn.innerText = "✅ REGISTRAR CONTROL";
-    } else {
-        // No tildó nada (quizás solo va a cargar obs) -> VERDE NORMAL
-        btn.style.background = '#16a34a';
-        btn.innerText = "✅ REGISTRAR CONTROL";
-    }
-}
-// NUEVO: Control visual del estado de la red
-function actualizarEstadoRed() {
-    const btn = document.querySelector('#footerBtn button');
-    if (!btn) return;
-    
-    if (!navigator.onLine) {
-        // Si no hay internet, pongo modo prevención naranja
-        btn.style.background = '#d97706'; // Un naranja fuerte
-        btn.innerText = "📴 GUARDAR LOCALMENTE";
-    } else {
-        // Si hay internet, devuelvo el control a la función de los checks
-        actualizarEstadoBtnRegistrar();
-    }
-}
+            if (algunosTildados && !todosTildados) {
+                btn.style.background = '#dc2626';
+                btn.innerText = "⚠️ FALTA DOCUMENTACIÓN";
+            } else if (todosTildados) {
+                btn.style.background = '#16a34a';
+                btn.innerText = "✅ REGISTRAR CONTROL";
+            } else {
+                btn.style.background = '#16a34a';
+                btn.innerText = "✅ REGISTRAR CONTROL";
+            }
+        }
+
+        function actualizarEstadoRed() {
+            const btn = document.querySelector('#footerBtn button');
+            if (!btn) return;
+            
+            if (!navigator.onLine) {
+                btn.style.background = '#d97706';
+                btn.innerText = "📴 GUARDAR LOCALMENTE";
+            } else {
+                actualizarEstadoBtnRegistrar();
+            }
+        }
     </script>
 </body>
 </html>
