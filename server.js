@@ -1,4 +1,4 @@
-// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA
+// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA Y ESTADÍSTICAS DE FALTAS
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -130,16 +130,37 @@ app.get('/api/usuarios', async (req, res) => {
     }
 });
 
-// 7. ESTADÍSTICAS
+// 7. ESTADÍSTICAS (MODIFICADA PARA GRÁFICO DE TORTA)
 app.get('/api/estadisticas', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
         const hoy = new Date().toISOString().split('T')[0];
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
+        
+        // Total de controles
         const totalResult = await pool.query("SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2", [fechaDesde, fechaHasta]);
+        
+        // Controles por inspector
         const porInspectorResult = await pool.query(`SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad FROM usuarios u INNER JOIN registros_controles r ON u.id = r.id_inspector WHERE r.fecha_hora::date BETWEEN $1 AND $2 GROUP BY u.id, u.nombre, u.usuario HAVING COUNT(r.id) > 0 ORDER BY cantidad DESC`, [fechaDesde, fechaHasta]);
-        res.json({ totalHoy: totalResult.rows[0].total, porInspector: porInspectorResult.rows });
+        
+        // NUEVO: Contador de documentos faltantes
+        const faltantesResult = await pool.query(`
+            SELECT 
+                SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END) as falta_cedula,
+                SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END) as falta_licencia,
+                SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END) as falta_seguro,
+                SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END) as falta_08,
+                SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END) as falta_rto
+            FROM registros_controles 
+            WHERE fecha_hora::date BETWEEN $1 AND $2
+        `, [fechaDesde, fechaHasta]);
+
+        res.json({ 
+            totalHoy: totalResult.rows[0].total, 
+            porInspector: porInspectorResult.rows,
+            docsFaltantes: faltantesResult.rows[0] // NUEVO DATO PARA EL FRONT
+        });
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
