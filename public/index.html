@@ -843,7 +843,7 @@
 
         // --- MODAL HISTORIAL ---
 
-                function abrirModalHistorial(vehiculo) {
+        function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl;
             if (!control) { mostrarToast("No hay datos del control anterior", "warning"); return; }
             
@@ -870,6 +870,21 @@
                      </div>`;
 
             html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label><div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">RTO</label><div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div></div>
+            </div>`;
+            
+            if (control.observaciones) {
+                html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;"><label>OBS:</label><p style="margin:0; color:#78350f;">"${control.observaciones}"</p></div>`;
+            }
+            
+            contenido.innerHTML = html;
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }            html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
                 <div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
                 <div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div>
