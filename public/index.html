@@ -735,12 +735,14 @@ if (minutos < 60) {
             await cargarDatosDashboard(hoy, hoy);
         }
 
-        async function cargarDatosDashboard(desde, hasta) {
+                async function cargarDatosDashboard(desde, hasta) {
             mostrarToast("Cargando estadísticas...", "info");
             try {
                 const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
+                
+                // --- GRÁFICO 1: BARRAS (INSPECTORES) ---
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
@@ -763,6 +765,43 @@ if (minutos < 60) {
                         scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
                     }
                 });
+
+                // --- GRÁFICO 2: TORTA (FALTAS) ---
+                const faltas = data.docsFaltantes;
+                const tortaLabels = ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'];
+                const tortaData = [
+                    faltas.falta_cedula || 0, 
+                    faltas.falta_licencia || 0, 
+                    faltas.falta_seguro || 0, 
+                    faltas.falta_08 || 0, 
+                    faltas.falta_rto || 0
+                ];
+                const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
+
+                if (miGraficoTorta) miGraficoTorta.destroy();
+                miGraficoTorta = new Chart(ctxTorta, {
+                    type: 'doughnut', // Torta agujereada, más moderna
+                    data: {
+                        labels: tortaLabels,
+                        datasets: [{
+                            data: tortaData,
+                            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { font: { size: 12, weight: 'bold' }, padding: 15 } 
+                            }
+                        }
+                    }
+                });
+
             } catch (error) {
                 console.error(error);
                 mostrarToast("Error al cargar dashboard", "error");
