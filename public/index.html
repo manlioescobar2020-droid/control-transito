@@ -666,7 +666,19 @@
             document.getElementById('searchSection').classList.remove('active');
             document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
         }
+        function verificarPalabraMulta() {
+            const texto = document.getElementById('txtObs').value.toUpperCase();
+            const seccion = document.getElementById('seccionFoto');
 
+            // Si el texto contiene "MULTA", mostramos la sección
+            if (texto.includes('MULTA')) {
+                seccion.style.display = 'block';
+            } else {
+                // Si borran la palabra, ocultamos la sección y borramos cualquier foto tomada
+                seccion.style.display = 'none';
+                borrarFoto();
+            }
+        }
         function cerrarFormulario() {
             document.getElementById('formSection').classList.remove('active');
             document.getElementById('searchSection').classList.add('active');
