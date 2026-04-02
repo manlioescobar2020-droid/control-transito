@@ -577,10 +577,17 @@
             );
         }
 
-        // --- REGISTRO DE CONTROLES ---
+                // --- REGISTRO DE CONTROLES ---
+        // (Esto va en index.html, NO en server.js)
 
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
+
+            // --- CORRECCIÓN PARA DUPLICADOS (PONER ESTO PRIMERO) ---
+            const btn = document.querySelector('#footerBtn button');
+            btn.disabled = true;
+            btn.innerText = "Obteniendo ubicación...";
+            // -----------------------------------------------------
 
             // NUEVO: Usamos la lógica de GPS inteligente
             obtenerUbicacionConRespaldo((lat, lon, mensaje) => {
