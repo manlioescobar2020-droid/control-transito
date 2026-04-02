@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Control de Tránsito</title>
 
     <style>
@@ -40,7 +40,6 @@
         .header h1 { margin: 0; font-size:24px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
 
-        /* Estilos del badge de pendientes */
         .header-badge-container { position: relative; display: inline-block; }
         .badge-pendientes {
             position: absolute; top: -10px; right: -18px; background: #dc2626; color: white;
@@ -143,7 +142,6 @@
 
         <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
             <div>
-                <!-- Contenedor del título con badge -->
                 <div class="header-badge-container">
                     <h1 style="margin:0;">Control Vehicular</h1>
                     <span id="badgePendientes" class="badge-pendientes">0</span>
@@ -196,7 +194,7 @@
                         <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarEstadoBtnRegistrar()"> RTO OK</label>
                     </div>
                 </div>
-                                <div class="form-group">
+                <div class="form-group">
                     <label>OBSERVACIONES</label>
                     <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..."></textarea>
                     
@@ -211,12 +209,11 @@
                             <button onclick="borrarFoto()" style="position:absolute; top:5px; right:5px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); color:white; border:none; font-weight:bold; cursor:pointer;">✕</button>
                         </div>
 
-                        <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px;">
-                            📷 {document.getElementById('previewFoto').src ? 'CAMBIAR FOTO' : 'TOMAR FOTO DE LA INFRACTORA'}
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px; margin-top:0;">
+                            📷 TOMAR FOTO DE LA INFRACTORA
                         </button>
                     </div>
                 </div>
-                
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
         </div>
@@ -338,7 +335,7 @@
     </div>
 
     <script>
-                // --- VARIABLES GLOBALES ---
+        // --- VARIABLES GLOBALES ---
         let infoUltimoControl = null;
         let usuarioActual = null;
         let vehiculoActual = null;
@@ -346,86 +343,18 @@
         let miGrafico = null;
         let miGraficoTorta = null;
         const socket = io();
-        let fotoBase64 = null; // <--- NUEVO: Aquí guardaremos la foto comprimida
-        
-        // NUEVO: Variable para el intervalo del GPS
-        let intervaloGPS = null; 
-
-        // --- NUEVAS FUNCIONES DE GPS ---
-
-        function iniciarRastreadorGPS() {
-            // 1. Guardar posición AHORA
-            guardarPosicionEnFondo();
-            
-            // 2. Configurar para guardar cada 5 minutos (300,000 ms)
-            if (intervaloGPS) clearInterval(intervaloGPS); // Evitar duplicados si se llama varias veces
-            intervaloGPS = setInterval(guardarPosicionEnFondo, 300000);
-        }
-
-        function guardarPosicionEnFondo() {
-            if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const dato = {
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
-                        tiempo: Date.now() // Guardamos la hora exacta
-                    };
-                    localStorage.setItem('ultima_posicion_gps', JSON.stringify(dato));
-                    console.log("Posición de fondo actualizada:", dato);
-                },
-                (err) => {
-                    console.warn("No se pudo obtener posición de fondo:", err);
-                }
-            );
-        }
-
-        // Función inteligente que intenta obtener GPS actual o usa respaldo
-        function obtenerUbicacionConRespaldo(callback) {
-            if (!navigator.geolocation) {
-                callback(null, null, "GPS no soportado");
-                return;
-            }
-
-            // INTENTO 1: Obtener GPS FRESH (Actual)
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    // ÉXITO: Tenemos GPS real y actual
-                    callback(pos.coords.latitude, pos.coords.longitude, null);
-                },
-                (err) => {
-                    // FALLA: No hay señal ahora. Buscamos respaldo.
-                    console.log("GPS actual falló, buscando respaldo...", err);
-                    const guardadoStr = localStorage.getItem('ultima_posicion_gps');
-
-                    if (!guardadoStr) {
-                        callback(null, null, "Sin GPS y sin historial.");
-                        return;
-                    }
-
-                    const guardado = JSON.parse(guardadoStr);
-                    const minutosPasados = (Date.now() - guardado.tiempo) / 60000; // Convertir ms a minutos
-
-                    if (minutosPasados <= 10) {
-                        // ÉXITO PARCIAL: Usamos el antiguo (menos de 10 min)
-                        callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
-                    } else {
-                        // FALLA TOTAL: El dato es muy viejo (>10 min)
-                        callback(null, null, "GPS desactualizado (más de 10 min).");
-                    }
-                }
-            );
-        }
+        let fotoBase64 = null; // Variable para foto
+        let intervaloGPS = null; // Variable para intervalo GPS
 
         // --- FUNCIONES DE INTERFAZ ---
         
-                function mostrarMainApp() {
+        function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             actualizarContadorPendientes(); 
             
-            // NUEVO: Iniciamos el "guardián" del GPS
-            iniciarRastreadorGPS(); 
+            // NUEVO: Iniciamos el rastreador de GPS
+            iniciarRastreadorGPS();
 
             setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
             actualizarEstadoRed(); 
@@ -587,26 +516,81 @@
             divRes.innerHTML = html;
         }
 
-        // --- REGISTRO DE CONTROLES ---
+        // --- LÓGICA DE GPS OFFLINE (PUNTO 6) ---
 
-                // --- REGISTRO DE CONTROLES ---
+        function iniciarRastreadorGPS() {
+            guardarPosicionEnFondo();
+            if (intervaloGPS) clearInterval(intervaloGPS);
+            // Actualizar cada 5 minutos (300000 ms)
+            intervaloGPS = setInterval(guardarPosicionEnFondo, 300000);
+        }
+
+        function guardarPosicionEnFondo() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const dato = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tiempo: Date.now()
+                    };
+                    localStorage.setItem('ultima_posicion_gps', JSON.stringify(dato));
+                    console.log("Posición de fondo actualizada:", dato);
+                },
+                (err) => {
+                    console.warn("No se pudo obtener posición de fondo:", err);
+                }
+            );
+        }
+
+        function obtenerUbicacionConRespaldo(callback) {
+            if (!navigator.geolocation) {
+                callback(null, null, "GPS no soportado");
+                return;
+            }
+
+            // Intento 1: GPS Actual
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    callback(pos.coords.latitude, pos.coords.longitude, null);
+                },
+                (err) => {
+                    console.log("GPS actual falló, buscando respaldo...", err);
+                    const guardadoStr = localStorage.getItem('ultima_posicion_gps');
+
+                    if (!guardadoStr) {
+                        callback(null, null, "Sin GPS y sin historial.");
+                        return;
+                    }
+
+                    const guardado = JSON.parse(guardadoStr);
+                    const minutosPasados = (Date.now() - guardado.tiempo) / 60000;
+
+                    if (minutosPasados <= 10) {
+                        // Usar respaldo (menos de 10 min)
+                        callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
+                    } else {
+                        // Resaldo muy viejo
+                        callback(null, null, "GPS desactualizado (más de 10 min).");
+                    }
+                }
+            );
+        }
+
+        // --- REGISTRO DE CONTROLES ---
 
         async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
 
-            // NUEVO: Llamamos a nuestra función inteligente
+            // NUEVO: Usamos la lógica de GPS inteligente
             obtenerUbicacionConRespaldo((lat, lon, mensaje) => {
                 if (mensaje) {
-                    // Si hay un mensaje, es porque usamos respaldo o falló.
-                    // Mostramos un aviso sutil (Toast) pero NO detenemos el registro.
                     if (mensaje.includes("GPS no soportado") || mensaje.includes("desactualizado")) {
                         mostrarToast("⚠️ " + mensaje, "warning");
                     } else if (mensaje.includes("Usando GPS")) {
-                        // Es un éxito usando respaldo, mensaje verde o azul
                         mostrarToast("📍 " + mensaje, "info");
                     }
                 }
-                // Ejecutamos el envío con la lat/lon obtenidas (pueden ser null si falló todo)
                 enviarDatos(lat, lon);
             });
         }
@@ -631,8 +615,8 @@
                 tiene_seguro: document.getElementById('chkSeguro').checked,
                 tiene_08_pago: document.getElementById('chk08').checked,
                 tiene_rto_habilitada: document.getElementById('chkRTO').checked,
-                observaciones: document.getElementById('txtObs').value
-                foto_evidencia: fotoBase64 // <--- NUEVO: Adjuntamos la foto comprimida
+                observaciones: document.getElementById('txtObs').value,
+                foto_evidencia: fotoBase64 // NUEVO
             };
 
             if (!navigator.onLine) {
@@ -695,10 +679,28 @@
             document.getElementById('chk08').checked = false;
             document.getElementById('chkRTO').checked = false;
             document.getElementById('txtObs').value = '';
+            // Resetear foto
+            borrarFoto();
         }
-                // --- MANEJO DE FOTOS ---
 
-        let fotoBase64 = null;
+        function mostrarToast(mensaje, tipo = "success") {
+            let colorFondo = "#16a34a";
+            if (tipo === "error") colorFondo = "#dc2626";
+            if (tipo === "info") colorFondo = "#2563eb";
+            if (tipo === "warning") colorFondo = "#f59e0b";
+            Toastify({
+                text: mensaje, duration: 3000, gravity: "top", position: "center", stopOnFocus: true,
+                style: { background: colorFondo, borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", fontWeight: "bold" }
+            }).showToast();
+        }
+
+        function cerrarSesion() {
+            if (intervaloGPS) clearInterval(intervaloGPS); // Detener GPS
+            mostrarToast("Cerrando sesión...", "info");
+            setTimeout(() => { location.reload(); }, 1000);
+        }
+
+        // --- MANEJO DE FOTOS (PUNTO 9) ---
 
         function procesarFoto(input) {
             if (input.files && input.files[0]) {
@@ -708,11 +710,8 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        // Crear canvas para redimensionar
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        
-                        // Definir máximo ancho (ej: 800px) para ahorrar espacio
                         const MAX_WIDTH = 800;
                         let width = img.width;
                         let height = img.height;
@@ -726,11 +725,9 @@
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // Convertir a Base64 (Calidad 0.7 para comprimir más)
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        fotoBase64 = dataUrl; // Guardamos en la variable global
+                        fotoBase64 = dataUrl;
 
-                        // Mostrar preview
                         document.getElementById('previewFoto').src = dataUrl;
                         document.getElementById('contenedorPreview').style.display = 'block';
                         mostrarToast("Foto procesada y lista", "success");
@@ -743,26 +740,10 @@
 
         function borrarFoto() {
             fotoBase64 = null;
-            document.getElementById('cameraInput').value = ""; // Limpiar input
+            document.getElementById('cameraInput').value = "";
             document.getElementById('previewFoto').src = "";
             document.getElementById('contenedorPreview').style.display = 'none';
         }
-        function mostrarToast(mensaje, tipo = "success") {
-            let colorFondo = "#16a34a";
-            if (tipo === "error") colorFondo = "#dc2626";
-            if (tipo === "info") colorFondo = "#2563eb";
-            if (tipo === "warning") colorFondo = "#f59e0b";
-            Toastify({
-                text: mensaje, duration: 3000, gravity: "top", position: "center", stopOnFocus: true,
-                style: { background: colorFondo, borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", fontWeight: "bold" }
-            }).showToast();
-        }
-
-        function cerrarSesion() {
-    if (intervaloGPS) clearInterval(intervaloGPS); // NUEVO: Detener GPS
-    mostrarToast("Cerrando sesión...", "info");
-    setTimeout(() => { location.reload(); }, 1000);
-}
 
         // --- MAPA ---
 
@@ -892,7 +873,6 @@
                 const data = await res.json();
                 document.getElementById('numTotalHoy').innerText = data.totalHoy;
                 
-                // --- GRÁFICO 1: BARRAS (INSPECTORES) ---
                 const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
                 const cantidades = data.porInspector.map(u => u.cantidad);
                 const ctx = document.getElementById('graficoInspectores').getContext('2d');
@@ -916,7 +896,6 @@
                     }
                 });
 
-                // --- GRÁFICO 2: TORTA (FALTAS) ---
                 const faltas = data.docsFaltantes;
                 const tortaLabels = ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'];
                 const tortaData = [
@@ -978,7 +957,6 @@
             const control = infoUltimoControl;
             if (!control) { mostrarToast("No hay datos del control anterior", "warning"); return; }
             
-            // Extraemos fechas
             const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
             const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence.split('T')[0] : '-';
 
@@ -988,7 +966,6 @@
             
             let html = `<p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p><hr style="border-color:#334155;">`;
             
-            // Sección de fechas de vencimiento
             html += `<div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                             <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
@@ -1213,7 +1190,6 @@
             });
         }
 
-        // Exportar pendientes a TXT por emergencia
         function exportarPendientes() {
             const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
             if (pendientes.length === 0) {
@@ -1245,7 +1221,6 @@
             mostrarToast("📄 Respaldo descargado", "success");
         }
 
-        // Lógica del botón inteligente
         function actualizarEstadoBtnRegistrar() {
             const btn = document.querySelector('#footerBtn button');
             if (!btn) return;
