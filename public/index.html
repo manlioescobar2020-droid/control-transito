@@ -680,9 +680,10 @@
         }
 
         function cerrarSesion() {
-            mostrarToast("Cerrando sesión...", "info");
-            setTimeout(() => { location.reload(); }, 1000);
-        }
+    if (intervaloGPS) clearInterval(intervaloGPS); // NUEVO: Detener GPS
+    mostrarToast("Cerrando sesión...", "info");
+    setTimeout(() => { location.reload(); }, 1000);
+}
 
         // --- MAPA ---
 
