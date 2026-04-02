@@ -401,10 +401,14 @@
 
         // --- FUNCIONES DE INTERFAZ ---
         
-        function mostrarMainApp() {
+                function mostrarMainApp() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             actualizarContadorPendientes(); 
+            
+            // NUEVO: Iniciamos el "guardián" del GPS
+            iniciarRastreadorGPS(); 
+
             setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
             actualizarEstadoRed(); 
         }
