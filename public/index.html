@@ -580,11 +580,17 @@
                 // --- REGISTRO DE CONTROLES ---
         // (Esto va en index.html, NO en server.js)
 
-        async function registrarControl() {
+                async function registrarControl() {
             if(!usuarioActual) return alert("Sesión expirada");
 
-            // --- CORRECCIÓN PARA DUPLICADOS (PONER ESTO PRIMERO) ---
             const btn = document.querySelector('#footerBtn button');
+
+            // --- NUEVO: EL GUARDIÁN (LA LÍNEA QUE FALTABA) ---
+            // Si ya está deshabilitado, cortamos la ejecución AHORA MISMO.
+            if (btn.disabled) return; 
+            // -----------------------------------------------------
+
+            // --- CORRECCIÓN PARA DUPLICADOS ---
             btn.disabled = true;
             btn.innerText = "Obteniendo ubicación...";
             // -----------------------------------------------------
