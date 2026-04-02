@@ -71,15 +71,17 @@ app.post('/registrar-control', async (req, res) => {
         const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, fecha_rto_vence = EXCLUDED.fecha_rto_vence`;
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence, fecha_rto_vence]);
 
-        // 2. CORRECCIÓN: Insertar en el Historial incluyendo las fechas
-        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`;
+        // ... (dentro de app.post('/registrar-control', ...)) ...
+
+        // 2. Insertar en el Historial incluyendo la FOTO
+        // Agregamos 'foto_evidencia' en las columnas y en los valores ($14)
+        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`;
         
-        // AQUÍ AGREGAMOS LAS FECHAS AL ARRAY DE VALORES
         const result = await client.query(insertRegistro, [
             patricula.toUpperCase(), 
             id_inspector, 
-            fecha_seguro_vence, // <--- NUEVO
-            fecha_rto_vence,    // <--- NUEVO
+            fecha_seguro_vence, 
+            fecha_rto_vence,
             latitud, 
             longitud, 
             texto_ubicacion, 
@@ -88,7 +90,8 @@ app.post('/registrar-control', async (req, res) => {
             tiene_seguro, 
             tiene_08_pago, 
             tiene_rto_habilitada, 
-            observaciones
+            observaciones,
+            req.body.foto_evidencia || null // <--- NUEVO: Recibe la foto (o null si no hay)
         ]);
 
         await client.query('COMMIT');
