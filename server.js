@@ -1,4 +1,4 @@
-// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA Y ESTADÍSTICAS DE FALTAS
+// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA Y ESTADÍSTICAS DE FALTAS 
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
