@@ -321,7 +321,7 @@
     </div>
 
     <script>
-        // --- VARIABLES GLOBALES ---
+                // --- VARIABLES GLOBALES ---
         let infoUltimoControl = null;
         let usuarioActual = null;
         let vehiculoActual = null;
@@ -329,6 +329,75 @@
         let miGrafico = null;
         let miGraficoTorta = null;
         const socket = io();
+        
+        // NUEVO: Variable para el intervalo del GPS
+        let intervaloGPS = null; 
+
+        // --- NUEVAS FUNCIONES DE GPS ---
+
+        function iniciarRastreadorGPS() {
+            // 1. Guardar posición AHORA
+            guardarPosicionEnFondo();
+            
+            // 2. Configurar para guardar cada 5 minutos (300,000 ms)
+            if (intervaloGPS) clearInterval(intervaloGPS); // Evitar duplicados si se llama varias veces
+            intervaloGPS = setInterval(guardarPosicionEnFondo, 300000);
+        }
+
+        function guardarPosicionEnFondo() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const dato = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        tiempo: Date.now() // Guardamos la hora exacta
+                    };
+                    localStorage.setItem('ultima_posicion_gps', JSON.stringify(dato));
+                    console.log("Posición de fondo actualizada:", dato);
+                },
+                (err) => {
+                    console.warn("No se pudo obtener posición de fondo:", err);
+                }
+            );
+        }
+
+        // Función inteligente que intenta obtener GPS actual o usa respaldo
+        function obtenerUbicacionConRespaldo(callback) {
+            if (!navigator.geolocation) {
+                callback(null, null, "GPS no soportado");
+                return;
+            }
+
+            // INTENTO 1: Obtener GPS FRESH (Actual)
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    // ÉXITO: Tenemos GPS real y actual
+                    callback(pos.coords.latitude, pos.coords.longitude, null);
+                },
+                (err) => {
+                    // FALLA: No hay señal ahora. Buscamos respaldo.
+                    console.log("GPS actual falló, buscando respaldo...", err);
+                    const guardadoStr = localStorage.getItem('ultima_posicion_gps');
+
+                    if (!guardadoStr) {
+                        callback(null, null, "Sin GPS y sin historial.");
+                        return;
+                    }
+
+                    const guardado = JSON.parse(guardadoStr);
+                    const minutosPasados = (Date.now() - guardado.tiempo) / 60000; // Convertir ms a minutos
+
+                    if (minutosPasados <= 10) {
+                        // ÉXITO PARCIAL: Usamos el antiguo (menos de 10 min)
+                        callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
+                    } else {
+                        // FALLA TOTAL: El dato es muy viejo (>10 min)
+                        callback(null, null, "GPS desactualizado (más de 10 min).");
+                    }
+                }
+            );
+        }
 
         // --- FUNCIONES DE INTERFAZ ---
         
