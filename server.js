@@ -65,7 +65,7 @@ app.post('/registrar-control', async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones } = req.body;
+        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, firma_conductor } = req.body;
 
         // --- CORRECCIÓN AQUÍ ---
         // Si la fecha está vacía (" "), la convertimos a NULL para que PostgreSQL la acepte
