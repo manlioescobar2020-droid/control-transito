@@ -737,7 +737,56 @@
                 style: { background: colorFondo, borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", fontWeight: "bold" }
             }).showToast();
         }
+        // --- DICTADO POR VOZ ---
 
+        function iniciarDictado() {
+            // Verificar si el navegador soporta voz
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert("Tu navegador no soporta dictado por voz. Probá con Chrome.");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-AR'; // Español Argentina
+            recognition.continuous = false; // Se detiene al dejar de hablar
+            recognition.interimResults = false; // Solo resultado final
+
+            const btn = document.getElementById('btnMic');
+
+            // Cuando empieza a escuchar
+            recognition.onstart = function() {
+                btn.classList.add('grabando-voz');
+                mostrarToast("🎤 Escuchando...", "info");
+            };
+
+            // Cuando termina (por éxito o error)
+            recognition.onend = function() {
+                btn.classList.remove('grabando-voz');
+            };
+
+            // Cuando obtiene resultado
+            recognition.onresult = function(event) {
+                const texto = event.results[0][0].transcript;
+                const textarea = document.getElementById('txtObs');
+                
+                // Agregamos el texto al existente con un espacio
+                textarea.value += (textarea.value.length > 0 ? ' ' : '') + texto;
+                
+                // IMPORTANTE: Disparamos el evento 'input' manualmente
+                // Esto hace que se active la función "verificarPalabraMulta()"
+                // Así, si decís "Labrar MULTA", la cámara aparece sola.
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Error de voz:", event.error);
+                btn.classList.remove('grabando-voz');
+            };
+
+            recognition.start();
+        }
         function cerrarSesion() {
             if (intervaloGPS) clearInterval(intervaloGPS); // Detener GPS
             mostrarToast("Cerrando sesión...", "info");
