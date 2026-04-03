@@ -78,7 +78,7 @@ app.post('/registrar-control', async (req, res) => {
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fechaSeguro, fechaRTO]);
 
         // 2. Insertar en el Historial (Usamos las variables limpias)
-        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`;
+        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia,firma_conductor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $15) RETURNING *`;
         
         const result = await client.query(insertRegistro, [
             patricula.toUpperCase(), 
