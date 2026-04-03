@@ -6,6 +6,18 @@
     <title>Control de Tránsito</title>
 
     <style>
+                /* ESTILO PARA EL BOTÓN ACTIVO (GRABANDO) */
+        .grabando-voz {
+            background-color: #fee2e2 !important; /* Rojo suave */
+            color: #dc2626 !important; /* Rojo fuerte */
+            animation: pulso-mic 1.5s infinite;
+        }
+
+        @keyframes pulso-mic {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
         :root {
             --bg-body: #e2e8f0;
             --bg-card: #ffffff;
