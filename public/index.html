@@ -794,7 +794,109 @@
             mostrarToast("Cerrando sesión...", "info");
             setTimeout(() => { location.reload(); }, 1000);
         }
+                // --- LÓGICA DE FIRMA DIGITAL ---
 
+        let estaFirmando = false;
+        let canvas, ctx;
+        let ultimaX = 0;
+        let ultimaY = 0;
+
+        function mostrarPadFirma() {
+            document.getElementById('seccionFirma').style.display = 'block';
+            document.getElementById('btnIniciarFirma').style.display = 'none'; // Ocultar botón
+            
+            canvas = document.getElementById('canvasFirma');
+            ctx = canvas.getContext('2d');
+            
+            // Ajustar tamaño real del canvas
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            // Eventos de Ratón (PC)
+            canvas.addEventListener('mousedown', iniciarTrazo);
+            canvas.addEventListener('mousemove', dibujar);
+            canvas.addEventListener('mouseup', terminarTrazo);
+            canvas.addEventListener('mouseout', terminarTrazo);
+
+            // Eventos Táctiles (Celular) - CRUCIAL
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Evitar scroll
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+
+            canvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+        }
+
+        function iniciarTrazo(e) {
+            estaFirmando = true;
+            [ultimaX, ultimaY] = obtenerCoords(e);
+        }
+
+        function dibujar(e) {
+            if (!estaFirmando) return;
+            const [x, y] = obtenerCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(ultimaX, ultimaY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            [ultimaX, ultimaY] = [x, y];
+        }
+
+        function terminarTrazo() {
+            estaFirmando = false;
+        }
+
+        function obtenerCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return [e.clientX - rect.left, e.clientY - rect.top];
+        }
+
+        function limpiarFirma() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Al confirmar, convertimos el dibujo a imagen y lo guardamos en variable global temporal
+        let firmaBase64Actual = null;
+
+        function guardarFirma() {
+            // Verificar si está vacío (básico)
+            // A veces es blanco pero tiene pixeles, esto es una simplificación
+            const pixelBuffer = new Uint32Array(
+                ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+            );
+            if (!pixelBuffer.some(color => color !== 0)) {
+                alert("El canvas está vacío. Por favor firme o cancele.");
+                return;
+            }
+
+            firmaBase64Actual = canvas.toDataURL('image/png');
+            mostrarToast("Firma capturada correctamente", "success");
+            document.getElementById('seccionFirma').style.display = 'none';
+            document.getElementById('btnIniciarFirma').style.display = 'block'; // O podrías mostrar la imagen pequeña
+            document.getElementById('btnIniciarFirma').innerText = "Firma Guardada ✅";
+        }
         // --- MANEJO DE FOTOS (PUNTO 9) ---
 
         function procesarFoto(input) {
