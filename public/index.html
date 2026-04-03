@@ -194,25 +194,32 @@
                         <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarEstadoBtnRegistrar()"> RTO OK</label>
                     </div>
                 </div>
-                <div class="form-group">
+                                <div class="form-group">
                     <label>OBSERVACIONES</label>
-                    <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="verificarPalabraMulta()"></textarea>                    
-                                    <!-- NUEVO: BOTÓN Y PREVIEW DE FOTO -->
-                <!-- AGREGAMOS id="seccionFoto" y style="display:none" -->
-                <div id="seccionFoto" style="display:none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-                    <label style="color:#64748b; font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">EVIDENCIA FOTOGRÁFICA</label>
                     
-                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)">
-                    
-                    <div id="contenedorPreview" style="display:none; position:relative; width:100%; height:200px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:2px solid #e2e8f0; margin-bottom:10px;">
-                        <img id="previewFoto" style="width:100%; height:100%; object-fit:contain; background:black;">
-                        <button onclick="borrarFoto()" style="position:absolute; top:5px; right:5px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); color:white; border:none; font-weight:bold; cursor:pointer;">✕</button>
+                    <!-- CONTENEDOR RELATIVO PARA EL BOTÓN FLOTANTE -->
+                    <div style="position: relative;">
+                        <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="verificarPalabraMulta()"></textarea>
+                        
+                        <!-- BOTÓN DE MICRÓFONO -->
+                        <button type="button" id="btnMic" onclick="iniciarDictado()" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; font-size: 20px; cursor: pointer; z-index: 10; padding: 5px; border-radius: 50%;">
+                            🎤
+                        </button>
                     </div>
 
-                    <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px; margin-top:0;">
-                        📷 TOMAR FOTO DE LA INFRACTORA
-                    </button>
-                </div>
+                    <!-- EL RESTO DEL CÓDIGO (FOTO) SIGUE IGUAL ABAJO -->
+                    <div id="seccionFoto" style="display:none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                        <!-- ... (código de la foto sigue igual) ... -->
+                        <label style="color:#64748b; font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">EVIDENCIA FOTOGRÁFICA</label>
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)">
+                        <div id="contenedorPreview" style="display:none; position:relative; width:100%; height:200px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:2px solid #e2e8f0; margin-bottom:10px;">
+                            <img id="previewFoto" style="width:100%; height:100%; object-fit:contain; background:black;">
+                            <button onclick="borrarFoto()" style="position:absolute; top:5px; right:5px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); color:white; border:none; font-weight:bold; cursor:pointer;">✕</button>
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px; margin-top:0;">
+                            📷 TOMAR FOTO DE LA INFRACTORA
+                        </button>
+                    </div>
                 </div>
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
