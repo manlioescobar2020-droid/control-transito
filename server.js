@@ -94,7 +94,8 @@ app.post('/registrar-control', async (req, res) => {
             tiene_08_pago, 
             tiene_rto_habilitada, 
             observaciones,
-            req.body.foto_evidencia || null
+            req.body.foto_evidencia || null,
+            firma_conductor || null
         ]);
 
         await client.query('COMMIT');
