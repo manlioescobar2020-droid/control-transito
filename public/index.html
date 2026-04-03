@@ -976,7 +976,7 @@
             window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
         }
 
-        // --- MODAL HISTORIAL ---
+               // --- MODAL HISTORIAL ---
 
         function abrirModalHistorial(vehiculo) {
             const control = infoUltimoControl;
@@ -991,6 +991,7 @@
             
             let html = `<p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p><hr style="border-color:#334155;">`;
             
+            // Sección de fechas de vencimiento
             html += `<div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                             <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
@@ -1014,6 +1015,15 @@
                 html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;"><label>OBS:</label><p style="margin:0; color:#78350f;">"${control.observaciones}"</p></div>`;
             }
             
+            // --- NUEVO: BLOQUE DE FOTO ---
+            if (control.foto_evidencia) {
+                html += `<div style="margin-top:20px; text-align:center; border-top:1px dashed #475569; padding-top:15px;">
+                            <label style="font-size:12px; color:#94a3b8; font-weight:bold;">📸 EVIDENCIA FOTOGRÁFICA</label>
+                            <img src="${control.foto_evidencia}" style="max-width:100%; border-radius:8px; border:2px solid #475569; margin-top:5px; background:black;">
+                         </div>`;
+            }
+            // ----------------------------------
+
             contenido.innerHTML = html;
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
