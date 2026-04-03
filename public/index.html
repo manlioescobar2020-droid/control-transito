@@ -634,7 +634,7 @@
             btn.disabled = true;
             btn.innerHTML = "⏳ Guardando...";
             
-            const payload = {
+                        const payload = {
                 patricula: document.getElementById('txtPatente').value.toUpperCase(),
                 modelo: document.getElementById('txtModelo').value,
                 numero_08: document.getElementById('txtNro08').value,
@@ -650,7 +650,8 @@
                 tiene_08_pago: document.getElementById('chk08').checked,
                 tiene_rto_habilitada: document.getElementById('chkRTO').checked,
                 observaciones: document.getElementById('txtObs').value,
-                foto_evidencia: fotoBase64 // NUEVO
+                foto_evidencia: fotoBase64,
+                firma_conductor: firmaBase64Actual  // <--- ESTA LÍNEA FALTABA
             };
 
             if (!navigator.onLine) {
