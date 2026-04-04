@@ -750,6 +750,10 @@
             document.getElementById('txtObs').value = '';
             // Resetear foto
             borrarFoto();
+            // AGREGAR ESTO AL FINAL:
+            firmaBase64Actual = null; 
+            document.getElementById('btnIniciarFirma').innerText = "✍️ Firmar Acta"; 
+            document.getElementById('btnIniciarFirma').style.display = 'none';
         }
 
         function mostrarToast(mensaje, tipo = "success") {
