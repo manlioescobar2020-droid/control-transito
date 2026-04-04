@@ -1370,21 +1370,26 @@
             let nuevosPendientes = [];
 
             for (let control of pendientes) {
-                try {
-                    const res = await fetch('/registrar-control', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(control)
-                    });
-                    if (res.ok) {
-                        console.log('Sincronizado:', control.patricula);
-                        actualizarContadorPendientes();
-                    } else {
-                        nuevosPendientes.push(control);
-                    }
-                } catch (error) {
-                    nuevosPendientes.push(control);
+                            try {
+                const res = await fetch('/registrar-control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    mostrarToast("✅ Control registrado con éxito", "success");
+                    
+                    // --- NUEVO: GENERAR QR ANTES DE LIMPIAR ---
+                    generarYMostrarQR(data.registro);
+                    // -----------------------------------------
+
+                    limpiarPantalla();
+                } else {
+                    mostrarToast("Error del servidor al guardar", "error");
                 }
+            } catch (err) {
+                // ... el resto sigue igual ...
             }
             localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
             actualizarContadorPendientes();
