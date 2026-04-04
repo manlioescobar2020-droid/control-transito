@@ -904,12 +904,15 @@
             return [e.clientX - rect.left, e.clientY - rect.top];
         }
 
-        function limpiarFirma() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                function limpiarFirma() {
+            const canvas = document.getElementById('canvasFirma');
+            if (canvas) { // Si el canvas existe, lo borro
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            // También reseteamos la variable
+            firmaBase64Actual = null; 
         }
-
-        // Al confirmar, convertimos el dibujo a imagen y lo guardamos en variable global temporal
-        let firmaBase64Actual = null;
 
         function guardarFirma() {
             // Verificar si está vacío (básico)
