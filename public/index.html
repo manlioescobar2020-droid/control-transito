@@ -712,17 +712,21 @@
             document.getElementById('searchSection').classList.remove('active');
             document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
         }
-        function verificarPalabraMulta() {
+                function verificarPalabraMulta() {
             const texto = document.getElementById('txtObs').value.toUpperCase();
-            const seccion = document.getElementById('seccionFoto');
+            const seccionFoto = document.getElementById('seccionFoto');
+            const seccionFirma = document.getElementById('seccionFirma');
 
-            // Si el texto contiene "MULTA", mostramos la sección
+            // Si el texto contiene "MULTA", mostramos ambas secciones
             if (texto.includes('MULTA')) {
-                seccion.style.display = 'block';
+                seccionFoto.style.display = 'block';
+                seccionFirma.style.display = 'block';
             } else {
-                // Si borran la palabra, ocultamos la sección y borramos cualquier foto tomada
-                seccion.style.display = 'none';
-                borrarFoto();
+                // Si borran la palabra, ocultamos todo y reseteamos
+                seccionFoto.style.display = 'none';
+                seccionFirma.style.display = 'none';
+                borrarFoto(); // Limpia foto
+                limpiarFirma(); // Limpia firma
             }
         }
         function cerrarFormulario() {
