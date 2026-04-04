@@ -186,7 +186,7 @@
             <div id="divResultado" style="padding: 0 20px;"></div>
         </div>
 
-        <!-- Sección Formulario -->
+                <!-- Sección Formulario -->
         <div id="formSection" class="section">
             <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                 <div class="form-group">
@@ -208,7 +208,7 @@
                         <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarEstadoBtnRegistrar()"> RTO OK</label>
                     </div>
                 </div>
-                                <div class="form-group">
+                <div class="form-group">
                     <label>OBSERVACIONES</label>
                     
                     <!-- CONTENEDOR RELATIVO PARA EL BOTÓN FLOTANTE -->
@@ -221,9 +221,8 @@
                         </button>
                     </div>
 
-                    <!-- EL RESTO DEL CÓDIGO (FOTO) SIGUE IGUAL ABAJO -->
+                    <!-- SECCIÓN FOTO -->
                     <div id="seccionFoto" style="display:none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-                        <!-- ... (código de la foto sigue igual) ... -->
                         <label style="color:#64748b; font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">EVIDENCIA FOTOGRÁFICA</label>
                         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)">
                         <div id="contenedorPreview" style="display:none; position:relative; width:100%; height:200px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:2px solid #e2e8f0; margin-bottom:10px;">
@@ -234,28 +233,28 @@
                             📷 TOMAR FOTO DE LA INFRACTORA
                         </button>
                     </div>
-                                                    <!-- SECCIÓN DE FIRMA DIGITAL (MOVIDA AQUÍ) -->
-                <div id="seccionFirma" style="display:none; margin-top: 20px; border-top: 2px dashed #94a3b8; padding-top: 15px; background: #f8fafc; border-radius: 8px;">
-                    <label style="font-size: 12px; color: #475569; font-weight: bold; display:block; margin-bottom: 10px;">✍️ FIRMA DEL CONDUCTOR (Dedo sobre pantalla)</label>
-                    
-                    <div style="background: white; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; height: 200px; width: 100%; touch-action: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
-                        <canvas id="canvasFirma" style="width:100%; height:100%;"></canvas>
+
+                    <!-- SECCIÓN DE FIRMA DIGITAL -->
+                    <div id="seccionFirma" style="display:none; margin-top: 20px; border-top: 2px dashed #94a3b8; padding-top: 15px; background: #f8fafc; border-radius: 8px;">
+                        <label style="font-size: 12px; color: #475569; font-weight: bold; display:block; margin-bottom: 10px;">✍️ FIRMA DEL CONDUCTOR (Dedo sobre pantalla)</label>
+                        
+                        <div style="background: white; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; height: 200px; width: 100%; touch-action: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                            <canvas id="canvasFirma" style="width:100%; height:100%;"></canvas>
+                        </div>
+                        
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button onclick="limpiarFirma()" style="flex: 1; background: #e2e8f0; color: #1e293b; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
+                                🗑️ Borrar
+                            </button>
+                            <button onclick="guardarFirma()" style="flex: 1; background: #3b82f6; color: white; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
+                                ✅ Confirmar Firma
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div style="margin-top: 10px; display: flex; gap: 10px;">
-                        <button onclick="limpiarFirma()" style="flex: 1; background: #e2e8f0; color: #1e293b; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
-                            🗑️ Borrar
-                        </button>
-                        <button onclick="guardarFirma()" style="flex: 1; background: #3b82f6; color: white; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
-                            ✅ Confirmar Firma
-                        </button>
-                    </div>
-                </div>
-                <!-- FIN SECCIÓN FIRMA -->
                 </div>
                 <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
             </div>
-                            <!-- FIN SECCIÓN FIRMA -->
+        </div>                            <!-- FIN SECCIÓN FIRMA -->
                 
                 <!-- BOTÓN PARA INICIAR LA FIRMA (MOVIDO AQUÍ) -->
                 <button id="btnIniciarFirma" onclick="mostrarPadFirma()" class="btn-primary" style="margin-top:10px; font-size:14px; background: #475569;">✍️ Firmar Acta</button>
