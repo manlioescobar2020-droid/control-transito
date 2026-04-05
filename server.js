@@ -301,141 +301,235 @@ app.get('/acta/:id', async (req, res) => {
 
     const siNo = (valor) => valor ? 'Sí' : 'No';
     const claseEstado = (valor) => valor ? 'ok' : 'bad';
+res.send(`
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acta #${acta.id}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        margin: 0;
+        padding: 20px;
+      }
+      .contenedor {
+        max-width: 820px;
+        margin: 0 auto;
+      }
+      .card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      }
+      h1 {
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 12px;
+        font-size: 20px;
+      }
+      p {
+        margin: 8px 0;
+        line-height: 1.45;
+      }
+      .acciones {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: #2563eb;
+        color: white;
+      }
+      .btn-secondary {
+        background: #0f766e;
+        color: white;
+      }
+      .btn-light {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .item {
+        background: #f1f5f9;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .ok {
+        color: #15803d;
+        font-weight: bold;
+      }
+      .bad {
+        color: #b91c1c;
+        font-weight: bold;
+      }
+      .bloque-img {
+        margin-top: 20px;
+      }
+      img {
+        max-width: 100%;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        margin-top: 8px;
+        background: white;
+      }
+      .obs {
+        background: #fff7ed;
+        border-left: 4px solid #f97316;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .nota {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #475569;
+      }
 
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Acta #${acta.id}</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
-            margin: 0;
-            padding: 20px;
-          }
-          .contenedor {
-            max-width: 820px;
-            margin: 0 auto;
-          }
-          .card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-          }
-          h1 {
-            margin-top: 0;
-            margin-bottom: 10px;
-          }
-          h2 {
-            margin-top: 28px;
-            margin-bottom: 12px;
-            font-size: 20px;
-          }
-          p {
-            margin: 8px 0;
-            line-height: 1.45;
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-          }
-          .item {
-            background: #f1f5f9;
-            border-radius: 12px;
-            padding: 12px;
-          }
-          .ok {
-            color: #15803d;
-            font-weight: bold;
-          }
-          .bad {
-            color: #b91c1c;
-            font-weight: bold;
-          }
-          .bloque-img {
-            margin-top: 20px;
-          }
-          img {
-            max-width: 100%;
-            border-radius: 12px;
-            border: 1px solid #cbd5e1;
-            margin-top: 8px;
-            background: white;
-          }
-          .obs {
-            background: #fff7ed;
-            border-left: 4px solid #f97316;
-            padding: 12px;
-            border-radius: 10px;
-          }
-          @media (max-width: 640px) {
-            .grid {
-              grid-template-columns: 1fr;
-            }
-            body {
-              padding: 12px;
-            }
-            .card {
-              padding: 18px;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="contenedor">
-          <div class="card">
-            <h1>Acta de Infracción #${acta.id}</h1>
+      @media (max-width: 640px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        body {
+          padding: 12px;
+        }
+        .card {
+          padding: 18px;
+        }
+        .acciones {
+          flex-direction: column;
+        }
+        .btn {
+          width: 100%;
+        }
+      }
 
-            <p><strong>Patente:</strong> ${acta.patricula || '-'}</p>
-            <p><strong>Modelo:</strong> ${acta.modelo || '-'}</p>
-            <p><strong>Número 08:</strong> ${acta.numero_08 || '-'}</p>
-            <p><strong>Fecha del control:</strong> ${fechaControl}</p>
-            <p><strong>Inspector:</strong> ${acta.inspector_nombre || acta.inspector_usuario || '-'}</p>
-            <p><strong>Ubicación:</strong> ${acta.texto_ubicacion || '-'}</p>
-
-            <h2>Documentación</h2>
-            <div class="grid">
-              <div class="item">Cédula: <span class="${claseEstado(acta.tiene_cedula)}">${siNo(acta.tiene_cedula)}</span></div>
-              <div class="item">Licencia: <span class="${claseEstado(acta.tiene_licencia)}">${siNo(acta.tiene_licencia)}</span></div>
-              <div class="item">Seguro: <span class="${claseEstado(acta.tiene_seguro)}">${siNo(acta.tiene_seguro)}</span></div>
-              <div class="item">08 pago: <span class="${claseEstado(acta.tiene_08_pago)}">${siNo(acta.tiene_08_pago)}</span></div>
-              <div class="item">RTO habilitada: <span class="${claseEstado(acta.tiene_rto_habilitada)}">${siNo(acta.tiene_rto_habilitada)}</span></div>
-            </div>
-
-            <h2>Vencimientos</h2>
-            <p><strong>Seguro vence:</strong> ${fechaSeguro}</p>
-            <p><strong>RTO vence:</strong> ${fechaRTO}</p>
-
-            <h2>Observaciones</h2>
-            <div class="obs">
-              ${acta.observaciones ? acta.observaciones : 'Sin observaciones'}
-            </div>
-
-            ${acta.foto_evidencia ? `
-              <div class="bloque-img">
-                <h2>Foto evidencia</h2>
-                <img src="${acta.foto_evidencia}" alt="Foto evidencia del control">
-              </div>
-            ` : ''}
-
-            ${acta.firma_conductor ? `
-              <div class="bloque-img">
-                <h2>Firma del conductor</h2>
-                <img src="${acta.firma_conductor}" alt="Firma del conductor">
-              </div>
-            ` : ''}
-          </div>
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .acciones,
+        .nota {
+          display: none !important;
+        }
+        .card {
+          box-shadow: none;
+          border-radius: 0;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="contenedor">
+      <div class="card">
+        <div class="acciones">
+          <button class="btn btn-primary" onclick="descargarPDF()">📄 Descargar / Guardar PDF</button>
+          <button class="btn btn-secondary" onclick="compartirActa()">📤 Compartir</button>
+          <button class="btn btn-light" onclick="window.location.reload()">🔄 Recargar</button>
         </div>
-      </body>
-      </html>
-    `);
-  } catch (error) {
+
+        <h1>Acta de Infracción #${acta.id}</h1>
+
+        <p><strong>Patente:</strong> ${acta.patricula || '-'}</p>
+        <p><strong>Modelo:</strong> ${acta.modelo || '-'}</p>
+        <p><strong>Número 08:</strong> ${acta.numero_08 || '-'}</p>
+        <p><strong>Fecha del control:</strong> ${fechaControl}</p>
+        <p><strong>Inspector:</strong> ${acta.inspector_nombre || acta.inspector_usuario || '-'}</p>
+        <p><strong>Ubicación:</strong> ${acta.texto_ubicacion || '-'}</p>
+
+        <h2>Documentación</h2>
+        <div class="grid">
+          <div class="item">Cédula: <span class="${claseEstado(acta.tiene_cedula)}">${siNo(acta.tiene_cedula)}</span></div>
+          <div class="item">Licencia: <span class="${claseEstado(acta.tiene_licencia)}">${siNo(acta.tiene_licencia)}</span></div>
+          <div class="item">Seguro: <span class="${claseEstado(acta.tiene_seguro)}">${siNo(acta.tiene_seguro)}</span></div>
+          <div class="item">08 pago: <span class="${claseEstado(acta.tiene_08_pago)}">${siNo(acta.tiene_08_pago)}</span></div>
+          <div class="item">RTO habilitada: <span class="${claseEstado(acta.tiene_rto_habilitada)}">${siNo(acta.tiene_rto_habilitada)}</span></div>
+        </div>
+
+        <h2>Vencimientos</h2>
+        <p><strong>Seguro vence:</strong> ${fechaSeguro}</p>
+        <p><strong>RTO vence:</strong> ${fechaRTO}</p>
+
+        <h2>Observaciones</h2>
+        <div class="obs">
+          ${acta.observaciones ? acta.observaciones : 'Sin observaciones'}
+        </div>
+
+        ${acta.foto_evidencia ? `
+          <div class="bloque-img">
+            <h2>Foto evidencia</h2>
+            <img src="${acta.foto_evidencia}" alt="Foto evidencia del control">
+          </div>
+        ` : ''}
+
+        ${acta.firma_conductor ? `
+          <div class="bloque-img">
+            <h2>Firma del conductor</h2>
+            <img src="${acta.firma_conductor}" alt="Firma del conductor">
+          </div>
+        ` : ''}
+
+        <div class="nota">
+          Consejo: en Android, al tocar “Descargar / Guardar PDF”, se abre la vista de impresión y desde ahí podés elegir “Guardar como PDF”.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function descargarPDF() {
+        window.print();
+      }
+
+      async function compartirActa() {
+        const url = window.location.href;
+        const titulo = document.title;
+        const texto = 'Acta de infracción ' + titulo;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: titulo,
+              text: texto,
+              url: url
+            });
+          } catch (e) {
+            console.log('Compartir cancelado', e);
+          }
+        } else {
+          try {
+            await navigator.clipboard.writeText(url);
+            alert('Enlace copiado al portapapeles');
+          } catch (e) {
+            prompt('Copiá este enlace:', url);
+          }
+        }
+      }
+    </script>
+  </body>
+  </html>
+`);
+      } catch (error) {
     console.error('Error al abrir acta:', error.message);
     res.status(500).send('Error interno al generar el acta');
   }
