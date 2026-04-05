@@ -93,9 +93,20 @@ app.get('/api/vehiculos/:patricula', async (req, res) => {
       [patricula]
     );
 
+    const vehiculo = vehiculoResult.rows[0] || null;
+    const control = controlResult.rows[0] || null;
+
+    let ultimoControl = control
+      ? {
+          ...control,
+          fecha_seguro_vence: control.fecha_seguro_vence || vehiculo?.fecha_seguro_vence || null,
+          fecha_rto_vence: control.fecha_rto_vence || vehiculo?.fecha_rto_vence || null
+        }
+      : null;
+
     res.json({
-      vehiculo: vehiculoResult.rows[0] || null,
-      ultimoControl: controlResult.rows[0] || null
+      vehiculo,
+      ultimoControl
     });
   } catch (err) {
     console.error('Error en /api/vehiculos/:patricula:', err);
