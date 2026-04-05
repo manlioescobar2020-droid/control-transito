@@ -485,7 +485,7 @@
 
             if (navigator.onLine) {
                 try {
-                    const res = await fetch(`/vehiculos/${patente}`);
+                    const res = await fetch('/api/vehiculos/' + patente);
                     data = await res.json();
                     guardarEnCacheLocal(data); 
                 } catch (err) {
