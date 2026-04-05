@@ -737,20 +737,31 @@
     }
 
     function verificarPalabraMulta() {
-        const texto = document.getElementById('txtObs').value.toUpperCase();
-        const seccionFoto = document.getElementById('seccionFoto');
-        const seccionFirma = document.getElementById('seccionFirma');
+    const texto = document.getElementById('txtObs').value.toUpperCase();
+    const seccionFoto = document.getElementById('seccionFoto');
+    const seccionFirma = document.getElementById('seccionFirma');
+    const btnIniciarFirma = document.getElementById('btnIniciarFirma');
 
-        if (texto.includes('MULTA')) {
-            if (seccionFoto) seccionFoto.style.display = 'block';
-            if (seccionFirma) seccionFirma.style.display = 'block';
-        } else {
-            if (seccionFoto) seccionFoto.style.display = 'none';
-            if (seccionFirma) seccionFirma.style.display = 'none';
-            borrarFoto();
-            limpiarFirma();
+    if (texto.includes('MULTA')) {
+        if (seccionFoto) seccionFoto.style.display = 'block';
+        if (btnIniciarFirma) {
+            btnIniciarFirma.style.display = 'block';
+            btnIniciarFirma.innerText = '✍️ FIRMAR ACTA';
+            btnIniciarFirma.style.background = '#475569';
         }
+        if (seccionFirma) seccionFirma.style.display = 'none';
+    } else {
+        if (seccionFoto) seccionFoto.style.display = 'none';
+        if (seccionFirma) seccionFirma.style.display = 'none';
+        if (btnIniciarFirma) {
+            btnIniciarFirma.style.display = 'none';
+            btnIniciarFirma.innerText = '✍️ FIRMAR ACTA';
+            btnIniciarFirma.style.background = '#475569';
+        }
+        borrarFoto();
+        limpiarFirma();
     }
+}
 
     function cerrarFormulario() {
         document.getElementById('formSection').classList.remove('active');
