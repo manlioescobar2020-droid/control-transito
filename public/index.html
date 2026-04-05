@@ -1044,12 +1044,12 @@
         }
 
         function cerrarUsuarios() {
-            document.getElementById('userSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-            document.getElementById('btnIniciarFirma').style.display = 'none'; // <--- Eliminé el duplicado ocultar tardasSecciones(); // Aún así evitamos bugs visuales que puedan haber quedado.
-            document.getElementById('listUsersSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'block';
-        }
+    document.getElementById('userSection').classList.remove('active');
+    document.getElementById('listUsersSection').classList.remove('active'); // Corregido: antes decía .add
+    document.getElementById('searchSection').classList.add('active');
+    document.getElementById('btnIniciarFirma').style.display = 'none'; 
+    document.getElementById('footerBtn').style.display = 'block';
+}
 
         async function guardarUsuario() {
             const usuario = document.getElementById('newUsuario').value;
