@@ -1252,28 +1252,31 @@
         function generarTextoReporte(data) {
             const fecha = new Date().toLocaleDateString();
             let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n📅 Fecha: ${fecha}\n🚗 Total: ${data.totalHoy}\n\n📋 *Por Inspector:*\n`;
-            data.porInspector.forEach(insp => { texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`; });
+            if (data.porInspector) {
+                data.porInspector.forEach(insp => { 
+                    texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`; 
+                });
+            }
             return texto;
         }
 
-       async function compartirPorWhatsApp() {
-    try {
-        const desde = document.getElementById('fechaDesde').value;
-        const hasta = document.getElementById('fechaHasta').value;
-        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-        const data = await res.json();
-        
-        // Aquí estaba el error: faltaba cerrar la llave } al final del texto
-        const textoReporte = generarTextoReporte(data);
-        const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(textoReporte)}`;
-        
-        window.open(urlWhatsApp, '_blank');
-    } catch (error) { 
-        console.error(error);
-        mostrarToast("Error al generar reporte", "error"); 
-    }
-}
+        async function compartirPorWhatsApp() {
+            try {
+                const desde = document.getElementById('fechaDesde').value;
+                const hasta = document.getElementById('fechaHasta').value;
+                if(!desde || !hasta) return mostrarToast("Selecciona fechas", "warning");
 
+                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+                const data = await res.json();
+                const texto = generarTextoReporte(data);
+                
+                // Esta es la línea que suele romperse, aquí está corregida:
+                window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+            } catch (error) { 
+                console.error(error);
+                mostrarToast("Error al conectar con el servidor", "error"); 
+            }
+        }
         
         // --- TEMA ---
 
