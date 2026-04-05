@@ -210,6 +210,235 @@ app.get('/api/exportar-registros', async (req, res) => {
         res.status(500).send("Error");
     }
 });
+// 9. VER ACTA / MULTA DESDE QR
+app.get('/acta/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const query = `
+      SELECT
+        r.id,
+        r.patricula,
+        r.fecha_hora,
+        r.fecha_seguro_vence,
+        r.fecha_rto_vence,
+        r.texto_ubicacion,
+        r.tiene_cedula,
+        r.tiene_licencia,
+        r.tiene_seguro,
+        r.tiene_08_pago,
+        r.tiene_rto_habilitada,
+        r.observaciones,
+        r.foto_evidencia,
+        r.firma_conductor,
+        v.modelo,
+        v.numero_08,
+        u.nombre AS inspector_nombre,
+        u.usuario AS inspector_usuario
+      FROM registros_controles r
+      LEFT JOIN vehiculos v ON r.patricula = v.patricula
+      LEFT JOIN usuarios u ON r.id_inspector = u.id
+      WHERE r.id = $1
+      LIMIT 1
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Acta no encontrada</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #f8fafc;
+              color: #0f172a;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+            }
+            .card {
+              background: white;
+              padding: 24px;
+              border-radius: 14px;
+              box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+              max-width: 520px;
+              width: 100%;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>Acta no encontrada</h1>
+            <p>No existe un acta con ID ${id}</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    const acta = result.rows[0];
+
+    const fechaControl = acta.fecha_hora
+      ? new Date(acta.fecha_hora).toLocaleString('es-AR')
+      : '-';
+
+    const fechaSeguro = acta.fecha_seguro_vence
+      ? new Date(acta.fecha_seguro_vence).toISOString().split('T')[0]
+      : '-';
+
+    const fechaRTO = acta.fecha_rto_vence
+      ? new Date(acta.fecha_rto_vence).toISOString().split('T')[0]
+      : '-';
+
+    const siNo = (valor) => valor ? 'Sí' : 'No';
+    const claseEstado = (valor) => valor ? 'ok' : 'bad';
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Acta #${acta.id}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding: 20px;
+          }
+          .contenedor {
+            max-width: 820px;
+            margin: 0 auto;
+          }
+          .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+          }
+          h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+          }
+          h2 {
+            margin-top: 28px;
+            margin-bottom: 12px;
+            font-size: 20px;
+          }
+          p {
+            margin: 8px 0;
+            line-height: 1.45;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+          .item {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 12px;
+          }
+          .ok {
+            color: #15803d;
+            font-weight: bold;
+          }
+          .bad {
+            color: #b91c1c;
+            font-weight: bold;
+          }
+          .bloque-img {
+            margin-top: 20px;
+          }
+          img {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            margin-top: 8px;
+            background: white;
+          }
+          .obs {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 12px;
+            border-radius: 10px;
+          }
+          @media (max-width: 640px) {
+            .grid {
+              grid-template-columns: 1fr;
+            }
+            body {
+              padding: 12px;
+            }
+            .card {
+              padding: 18px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="contenedor">
+          <div class="card">
+            <h1>Acta de Infracción #${acta.id}</h1>
+
+            <p><strong>Patente:</strong> ${acta.patricula || '-'}</p>
+            <p><strong>Modelo:</strong> ${acta.modelo || '-'}</p>
+            <p><strong>Número 08:</strong> ${acta.numero_08 || '-'}</p>
+            <p><strong>Fecha del control:</strong> ${fechaControl}</p>
+            <p><strong>Inspector:</strong> ${acta.inspector_nombre || acta.inspector_usuario || '-'}</p>
+            <p><strong>Ubicación:</strong> ${acta.texto_ubicacion || '-'}</p>
+
+            <h2>Documentación</h2>
+            <div class="grid">
+              <div class="item">Cédula: <span class="${claseEstado(acta.tiene_cedula)}">${siNo(acta.tiene_cedula)}</span></div>
+              <div class="item">Licencia: <span class="${claseEstado(acta.tiene_licencia)}">${siNo(acta.tiene_licencia)}</span></div>
+              <div class="item">Seguro: <span class="${claseEstado(acta.tiene_seguro)}">${siNo(acta.tiene_seguro)}</span></div>
+              <div class="item">08 pago: <span class="${claseEstado(acta.tiene_08_pago)}">${siNo(acta.tiene_08_pago)}</span></div>
+              <div class="item">RTO habilitada: <span class="${claseEstado(acta.tiene_rto_habilitada)}">${siNo(acta.tiene_rto_habilitada)}</span></div>
+            </div>
+
+            <h2>Vencimientos</h2>
+            <p><strong>Seguro vence:</strong> ${fechaSeguro}</p>
+            <p><strong>RTO vence:</strong> ${fechaRTO}</p>
+
+            <h2>Observaciones</h2>
+            <div class="obs">
+              ${acta.observaciones ? acta.observaciones : 'Sin observaciones'}
+            </div>
+
+            ${acta.foto_evidencia ? `
+              <div class="bloque-img">
+                <h2>Foto evidencia</h2>
+                <img src="${acta.foto_evidencia}" alt="Foto evidencia del control">
+              </div>
+            ` : ''}
+
+            ${acta.firma_conductor ? `
+              <div class="bloque-img">
+                <h2>Firma del conductor</h2>
+                <img src="${acta.firma_conductor}" alt="Firma del conductor">
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Error al abrir acta:', error.message);
+    res.status(500).send('Error interno al generar el acta');
+  }
+});
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));
