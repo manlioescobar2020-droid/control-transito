@@ -409,48 +409,91 @@
     <div id="footerBtn" class="footer-fixed">
         <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
     </div>
-
-   
 <script>
-    // --- VARIABLES GLOBALES ---
     let infoUltimoControl = null;
     let usuarioActual = null;
     let vehiculoActual = null;
     let map = null;
     let miGrafico = null;
     let miGraficoTorta = null;
-    const socket = io();
     let fotoBase64 = null;
     let intervaloGPS = null;
     let firmaBase64Actual = null;
+    let estaFirmando = false;
+    let canvasFirma = null;
+    let ctxFirma = null;
+    let ultimaX = 0;
+    let ultimaY = 0;
+    let eventosFirmaInicializados = false;
 
-    // --- FUNCIONES DE INTERFAZ ---
+    const socket = typeof io !== 'undefined' ? io() : null;
+
+    function $(id) {
+        return document.getElementById(id);
+    }
+
+    function mostrarToast(mensaje, tipo = 'success') {
+        let colorFondo = '#16a34a';
+        if (tipo === 'error') colorFondo = '#dc2626';
+        if (tipo === 'info') colorFondo = '#2563eb';
+        if (tipo === 'warning') colorFondo = '#f59e0b';
+
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: mensaje,
+                duration: 3000,
+                gravity: 'top',
+                position: 'center',
+                stopOnFocus: true,
+                style: {
+                    background: colorFondo,
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    fontWeight: 'bold'
+                }
+            }).showToast();
+        } else {
+            console.log(`[${tipo}] ${mensaje}`);
+        }
+    }
+
     function mostrarMainApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
+        $('loginScreen').style.display = 'none';
+        $('mainApp').style.display = 'block';
         actualizarContadorPendientes();
         iniciarRastreadorGPS();
         setTimeout(() => {
-            const patente = document.getElementById('txtPatente');
-            if (patente) patente.focus();
+            if ($('txtPatente')) $('txtPatente').focus();
         }, 300);
         actualizarEstadoRed();
     }
 
     function ocultarTodasSecciones() {
-        document.getElementById('searchSection').classList.remove('active');
-        document.getElementById('formSection').classList.remove('active');
-        document.getElementById('mapSection').classList.remove('active');
-        document.getElementById('userSection').classList.remove('active');
-        document.getElementById('listUsersSection').classList.remove('active');
-        document.getElementById('dashboardSection').classList.remove('active');
-        document.getElementById('footerBtn').style.display = 'none';
+        const ids = [
+            'searchSection',
+            'formSection',
+            'mapSection',
+            'userSection',
+            'listUsersSection',
+            'dashboardSection'
+        ];
+
+        ids.forEach(id => {
+            const el = $(id);
+            if (el) el.classList.remove('active');
+        });
+
+        if ($('footerBtn')) $('footerBtn').style.display = 'none';
     }
 
-    // --- LÓGICA DE LOGIN (ONLINE Y OFFLINE) ---
     async function iniciarSesion() {
-        const usuario = document.getElementById('txtUsuario').value;
-        const pass = document.getElementById('txtPassword').value;
+        const usuario = $('txtUsuario')?.value?.trim() || '';
+        const pass = $('txtPassword')?.value || '';
+
+        if (!usuario || !pass) {
+            mostrarToast('Completá usuario y contraseña', 'warning');
+            return;
+        }
 
         if (navigator.onLine) {
             try {
@@ -464,10 +507,10 @@
 
                 if (data.success) {
                     usuarioActual = data.user;
-                    document.getElementById('spanNombre').innerText = usuarioActual.nombre;
+                    if ($('spanNombre')) $('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario || 'Usuario';
                     localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
 
-                    const reportTools = document.getElementById('reportTools');
+                    const reportTools = $('reportTools');
                     if (reportTools) {
                         reportTools.style.display = usuarioActual.rol === 'OWNER' ? 'flex' : 'none';
                     }
@@ -475,24 +518,22 @@
                     sincronizarDatosLocales();
                     mostrarMainApp();
                 } else {
-                    document.getElementById('loginError').classList.remove('hidden');
-                    setTimeout(() => {
-                        document.getElementById('loginError').classList.add('hidden');
-                    }, 3000);
+                    $('loginError')?.classList.remove('hidden');
+                    setTimeout(() => $('loginError')?.classList.add('hidden'), 3000);
                 }
             } catch (err) {
-                console.error("Error de red, intentando offline...", err);
-                intentarLoginOffline(usuario, pass);
+                console.error('Error de red, intentando offline...', err);
+                intentarLoginOffline(usuario);
             }
         } else {
-            intentarLoginOffline(usuario, pass);
+            intentarLoginOffline(usuario);
         }
     }
 
-    function intentarLoginOffline(usuario, pass) {
+    function intentarLoginOffline(usuario) {
         const userGuardado = localStorage.getItem('usuarioGuardado');
         if (!userGuardado) {
-            alert("⚠️ Sin conexión y sin sesión previa. Conéctese a internet una vez.");
+            alert('⚠️ Sin conexión y sin sesión previa. Conectate a internet una vez.');
             return;
         }
 
@@ -500,52 +541,55 @@
         if (user.usuario === usuario) {
             usuarioActual = user;
 
-            const reportTools = document.getElementById('reportTools');
+            const reportTools = $('reportTools');
             if (reportTools) {
-                reportTools.style.display = usuarioActual.rol === 'OWNER' ? 'block' : 'none';
+                reportTools.style.display = usuarioActual.rol === 'OWNER' ? 'flex' : 'none';
             }
 
-            mostrarToast("Modo Offline: Ingresando con sesión guardada", "warning");
+            if ($('spanNombre')) $('spanNombre').innerText = usuarioActual.nombre || usuarioActual.usuario || 'Usuario';
+            mostrarToast('Modo Offline: ingresando con sesión guardada', 'warning');
             mostrarMainApp();
         } else {
-            alert("Usuario incorrecto para modo offline.");
+            alert('Usuario incorrecto para modo offline.');
         }
     }
 
-    // --- BUSCAR VEHÍCULO (ONLINE Y OFFLINE) ---
     async function buscarVehiculo() {
-        const patente = document.getElementById('txtPatente').value.toUpperCase();
-        if (!patente) return alert("Ingrese una patente");
+        const patente = ($('txtPatente')?.value || '').trim().toUpperCase();
+        if (!patente) {
+            alert('Ingrese una patente');
+            return;
+        }
 
-        const divRes = document.getElementById('divResultado');
-        document.getElementById('footerBtn').style.display = 'block';
+        const divRes = $('divResultado');
+        if ($('footerBtn')) $('footerBtn').style.display = 'block';
+
         let data;
 
         if (navigator.onLine) {
             try {
-                const res = await fetch(`/vehiculos/${patente}`);
+                const res = await fetch(`/vehiculos/${encodeURIComponent(patente)}`);
                 data = await res.json();
                 guardarEnCacheLocal(data);
             } catch (err) {
-                console.error("Error de red, buscando en caché...", err);
+                console.error('Error de red, buscando en caché...', err);
                 data = buscarEnCacheLocal(patente);
             }
         } else {
             data = buscarEnCacheLocal(patente);
         }
 
-        vehiculoActual = data.vehiculo;
-        const ultimoControl = data.ultimoControl;
-        infoUltimoControl = ultimoControl;
+        vehiculoActual = data?.vehiculo || null;
+        infoUltimoControl = data?.ultimoControl || null;
 
-        let html = "";
+        let html = '';
 
-        if (ultimoControl) {
-            const fechaCtrl = new Date(ultimoControl.fecha_hora);
+        if (infoUltimoControl) {
+            const fechaCtrl = new Date(infoUltimoControl.fecha_hora);
             const ahora = new Date();
             const minutos = Math.round((ahora - fechaCtrl) / 60000);
 
-            let tiempoTexto = "";
+            let tiempoTexto = '';
             if (minutos < 60) {
                 tiempoTexto = `hace ${minutos} minutos`;
             } else if (minutos < 1440) {
@@ -553,45 +597,57 @@
             } else {
                 const dias = Math.floor(minutos / 1440);
                 const horasRestantes = Math.round((minutos % 1440) / 60);
-                if (horasRestantes > 0) {
-                    tiempoTexto = `hace ${dias} días y ${horasRestantes} horas`;
-                } else {
-                    tiempoTexto = `hace ${dias} días`;
-                }
+                tiempoTexto = horasRestantes > 0
+                    ? `hace ${dias} días y ${horasRestantes} horas`
+                    : `hace ${dias} días`;
             }
 
-            const venceSeguro = ultimoControl.fecha_seguro_vence ? ultimoControl.fecha_seguro_vence.split('T')[0] : 'No registrado';
-            const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
+            const venceSeguro = infoUltimoControl.fecha_seguro_vence
+                ? infoUltimoControl.fecha_seguro_vence.split('T')[0]
+                : 'No registrado';
 
-            html += `<div class="card card-alert">
-                        <h3>⚠️ ATENCIÓN ${etiquetaOffline}</h3>
-                        <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
-                        <p style="margin-top:8px; margin-bottom:8px; font-size:15px;">
-                            🛡️ <strong>Vence Seguro:</strong> ${venceSeguro}
-                        </p>
-                        <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:5px; padding:10px;">👁️ Ver Detalles</button>
-                     </div>`;
+            const etiquetaOffline = data?.esOffline ? ' (Datos locales)' : '';
+
+            html += `
+                <div class="card card-alert">
+                    <h3>⚠️ ATENCIÓN${etiquetaOffline}</h3>
+                    <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
+                    <p style="margin-top:8px; margin-bottom:8px; font-size:15px;">
+                        🛡️ <strong>Vence Seguro:</strong> ${venceSeguro}
+                    </p>
+                    <button onclick="abrirModalHistorial()" class="btn-warning" style="margin-top:5px; padding:10px;">
+                        👁️ Ver Detalles
+                    </button>
+                </div>
+            `;
         } else {
-            const msg = data.esOffline ? "Sin registros en este dispositivo." : "Vehículo nuevo. Proceda con el control.";
+            const msg = data?.esOffline
+                ? 'Sin registros en este dispositivo.'
+                : 'Vehículo nuevo. Proceda con el control.';
             html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>${msg}</p></div>`;
         }
 
         if (vehiculoActual) {
-            html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
-            document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
-            document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
+            html += `
+                <div class="card" style="background:#f8fafc;">
+                    <h3>ℹ️ Datos</h3>
+                    <p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p>
+                </div>
+            `;
+            if ($('txtModelo')) $('txtModelo').value = vehiculoActual.modelo || '';
+            if ($('txtNro08')) $('txtNro08').value = vehiculoActual.numero_08 || '';
         } else {
             html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
-            document.getElementById('txtModelo').value = '';
-            document.getElementById('txtNro08').value = '';
+            if ($('txtModelo')) $('txtModelo').value = '';
+            if ($('txtNro08')) $('txtNro08').value = '';
         }
 
         html += `<button class="btn-secondary" onclick="mostrarFormulario()" style="margin-top:10px;">📝 Editar Datos</button>`;
         html += `<button class="btn-danger" onclick="limpiarPantalla()" style="margin-top:10px;">❌ Cancelar</button>`;
-        divRes.innerHTML = html;
+
+        if (divRes) divRes.innerHTML = html;
     }
 
-    // --- LÓGICA DE GPS OFFLINE ---
     function iniciarRastreadorGPS() {
         guardarPosicionEnFondo();
         if (intervaloGPS) clearInterval(intervaloGPS);
@@ -600,8 +656,9 @@
 
     function guardarPosicionEnFondo() {
         if (!navigator.geolocation) return;
+
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
+            pos => {
                 const dato = {
                     lat: pos.coords.latitude,
                     lon: pos.coords.longitude,
@@ -609,27 +666,24 @@
                 };
                 localStorage.setItem('ultima_posicion_gps', JSON.stringify(dato));
             },
-            (err) => {
-                console.warn("No se pudo obtener posición de fondo:", err);
-            }
+            err => console.warn('No se pudo obtener posición de fondo:', err)
         );
     }
 
     function obtenerUbicacionConRespaldo(callback) {
         if (!navigator.geolocation) {
-            callback(null, null, "GPS no soportado");
+            callback(null, null, 'GPS no soportado');
             return;
         }
 
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                callback(pos.coords.latitude, pos.coords.longitude, null);
-            },
-            (err) => {
-                console.log("GPS actual falló, buscando respaldo...", err);
+            pos => callback(pos.coords.latitude, pos.coords.longitude, null),
+            err => {
+                console.log('GPS actual falló, buscando respaldo...', err);
                 const guardadoStr = localStorage.getItem('ultima_posicion_gps');
+
                 if (!guardadoStr) {
-                    callback(null, null, "Sin GPS y sin historial.");
+                    callback(null, null, 'Sin GPS y sin historial.');
                     return;
                 }
 
@@ -639,28 +693,30 @@
                 if (minutosPasados <= 10) {
                     callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
                 } else {
-                    callback(null, null, "GPS desactualizado (más de 10 min).");
+                    callback(null, null, 'GPS desactualizado (más de 10 min).');
                 }
             }
         );
     }
 
-    // --- REGISTRO DE CONTROLES ---
     async function registrarControl() {
-        if (!usuarioActual) return alert("Sesión expirada");
+        if (!usuarioActual) {
+            alert('Sesión expirada');
+            return;
+        }
 
         const btn = document.querySelector('#footerBtn button');
         if (!btn || btn.disabled) return;
 
         btn.disabled = true;
-        btn.innerText = "Obteniendo ubicación...";
+        btn.innerText = 'Obteniendo ubicación...';
 
         obtenerUbicacionConRespaldo((lat, lon, mensaje) => {
             if (mensaje) {
-                if (mensaje.includes("GPS no soportado") || mensaje.includes("desactualizado")) {
-                    mostrarToast("⚠️ " + mensaje, "warning");
-                } else if (mensaje.includes("Usando GPS")) {
-                    mostrarToast("📍 " + mensaje, "info");
+                if (mensaje.includes('GPS no soportado') || mensaje.includes('desactualizado')) {
+                    mostrarToast(`⚠️ ${mensaje}`, 'warning');
+                } else if (mensaje.includes('Usando GPS')) {
+                    mostrarToast(`📍 ${mensaje}`, 'info');
                 }
             }
             enviarDatos(lat, lon);
@@ -672,34 +728,34 @@
         if (!btn) return;
 
         btn.disabled = true;
-        btn.innerHTML = "⏳ Guardando...";
+        btn.innerHTML = '⏳ Guardando...';
 
         const payload = {
-            patricula: document.getElementById('txtPatente').value.toUpperCase(),
-            modelo: document.getElementById('txtModelo').value,
-            numero_08: document.getElementById('txtNro08').value,
-            fecha_seguro_vence: document.getElementById('txtSeguro').value,
-            fecha_rto_vence: document.getElementById('txtRTO').value,
-            id_inspector: usuarioActual.id,
+            patricula: ($('txtPatente')?.value || '').toUpperCase(),
+            modelo: $('txtModelo')?.value || '',
+            numero_08: $('txtNro08')?.value || '',
+            fecha_seguro_vence: $('txtSeguro')?.value || '',
+            fecha_rto_vence: $('txtRTO')?.value || '',
+            id_inspector: usuarioActual?.id || null,
             latitud: lat,
             longitud: lon,
-            texto_ubicacion: "Ubicación GPS",
-            tiene_cedula: document.getElementById('chkCedula').checked,
-            tiene_licencia: document.getElementById('chkLicencia').checked,
-            tiene_seguro: document.getElementById('chkSeguro').checked,
-            tiene_08_pago: document.getElementById('chk08').checked,
-            tiene_rto_habilitada: document.getElementById('chkRTO').checked,
-            observaciones: document.getElementById('txtObs').value,
+            texto_ubicacion: 'Ubicación GPS',
+            tiene_cedula: $('chkCedula')?.checked || false,
+            tiene_licencia: $('chkLicencia')?.checked || false,
+            tiene_seguro: $('chkSeguro')?.checked || false,
+            tiene_08_pago: $('chk08')?.checked || false,
+            tiene_rto_habilitada: $('chkRTO')?.checked || false,
+            observaciones: $('txtObs')?.value || '',
             foto_evidencia: fotoBase64,
             firma_conductor: firmaBase64Actual
         };
 
         if (!navigator.onLine) {
             guardarControlPendiente(payload);
-            mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
+            mostrarToast('📴 Sin conexión. Guardado localmente.', 'warning');
             limpiarPantalla();
             btn.disabled = false;
-            btn.innerHTML = "✅ REGISTRAR CONTROL";
+            btn.innerHTML = '✅ REGISTRAR CONTROL';
             return;
         }
 
@@ -711,130 +767,108 @@
             });
 
             const data = await res.json();
+
             if (data.success) {
-                mostrarToast("✅ Control registrado con éxito", "success");
-                generarYMostrarQR(data.registro);
+                mostrarToast('✅ Control registrado con éxito', 'success');
+                if (data.registro) generarYMostrarQR(data.registro);
                 limpiarPantalla();
             } else {
-                mostrarToast("Error del servidor al guardar", "error");
+                mostrarToast('Error del servidor al guardar', 'error');
             }
         } catch (err) {
-            console.error("Fallo de conexión inesperada, guardando local:", err);
+            console.error('Fallo de conexión inesperada, guardando local:', err);
             guardarControlPendiente(payload);
-            mostrarToast("📴 Conexión perdida. Guardado localmente.", "warning");
+            mostrarToast('📴 Conexión perdida. Guardado localmente.', 'warning');
             limpiarPantalla();
         } finally {
             btn.disabled = false;
-            btn.innerHTML = "✅ REGISTRAR CONTROL";
+            btn.innerHTML = '✅ REGISTRAR CONTROL';
         }
     }
 
-    // --- FUNCIONES AUXILIARES UI ---
     function mostrarFormulario() {
-        document.getElementById('formSection').classList.add('active');
-        document.getElementById('searchSection').classList.remove('active');
-        document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
+        $('formSection')?.classList.add('active');
+        $('searchSection')?.classList.remove('active');
+        const btn = document.querySelector('#footerBtn button');
+        if (btn) btn.innerText = '✅ GUARDAR CONTROL';
     }
 
     function verificarPalabraMulta() {
-    const texto = document.getElementById('txtObs').value.toUpperCase();
-    const seccionFoto = document.getElementById('seccionFoto');
-    const seccionFirma = document.getElementById('seccionFirma');
-    const btnIniciarFirma = document.getElementById('btnIniciarFirma');
+        const texto = ($('txtObs')?.value || '').toUpperCase();
+        const seccionFoto = $('seccionFoto');
+        const seccionFirma = $('seccionFirma');
+        const btnFirma = $('btnIniciarFirma');
 
-    if (texto.includes('MULTA')) {
-        if (seccionFoto) seccionFoto.style.display = 'block';
-        if (btnIniciarFirma) {
-            btnIniciarFirma.style.display = 'block';
-            btnIniciarFirma.innerText = '✍️ FIRMAR ACTA';
-            btnIniciarFirma.style.background = '#475569';
+        if (texto.includes('MULTA')) {
+            if (seccionFoto) seccionFoto.style.display = 'block';
+            if (btnFirma) {
+                btnFirma.style.display = 'inline-block';
+                btnFirma.innerText = firmaBase64Actual ? 'Firma Guardada ✅' : '✍️ Firmar Acta';
+                btnFirma.style.background = firmaBase64Actual ? '#10b981' : '#475569';
+            }
+            if (seccionFirma) seccionFirma.style.display = 'none';
+        } else {
+            if (seccionFoto) seccionFoto.style.display = 'none';
+            if (seccionFirma) seccionFirma.style.display = 'none';
+            if (btnFirma) {
+                btnFirma.style.display = 'none';
+                btnFirma.innerText = '✍️ Firmar Acta';
+                btnFirma.style.background = '#475569';
+            }
+            borrarFoto();
+            limpiarFirma();
         }
-        if (seccionFirma) seccionFirma.style.display = 'none';
-    } else {
-        if (seccionFoto) seccionFoto.style.display = 'none';
-        if (seccionFirma) seccionFirma.style.display = 'none';
-        if (btnIniciarFirma) {
-            btnIniciarFirma.style.display = 'none';
-            btnIniciarFirma.innerText = '✍️ FIRMAR ACTA';
-            btnIniciarFirma.style.background = '#475569';
-        }
-        borrarFoto();
-        limpiarFirma();
     }
-}
 
     function cerrarFormulario() {
-        document.getElementById('formSection').classList.remove('active');
-        document.getElementById('searchSection').classList.add('active');
+        $('formSection')?.classList.remove('active');
+        $('searchSection')?.classList.add('active');
     }
 
     function limpiarPantalla() {
-    document.getElementById('txtPatente').value = '';
-    document.getElementById('divResultado').innerHTML = '';
-    document.getElementById('footerBtn').style.display = 'none';
-    document.getElementById('formSection').classList.remove('active');
-    document.getElementById('searchSection').classList.add('active');
-    document.getElementById('txtModelo').value = '';
-    document.getElementById('txtNro08').value = '';
-    document.getElementById('chkCedula').checked = false;
-    document.getElementById('chkLicencia').checked = false;
-    document.getElementById('chkSeguro').checked = false;
-    document.getElementById('chk08').checked = false;
-    document.getElementById('chkRTO').checked = false;
-    document.getElementById('txtObs').value = '';
+        if ($('txtPatente')) $('txtPatente').value = '';
+        if ($('divResultado')) $('divResultado').innerHTML = '';
+        if ($('footerBtn')) $('footerBtn').style.display = 'none';
+        $('formSection')?.classList.remove('active');
+        $('searchSection')?.classList.add('active');
 
-    borrarFoto();
-    limpiarFirma();
-    firmaBase64Actual = null;
+        if ($('txtModelo')) $('txtModelo').value = '';
+        if ($('txtNro08')) $('txtNro08').value = '';
+        if ($('txtSeguro')) $('txtSeguro').value = '';
+        if ($('txtRTO')) $('txtRTO').value = '';
+        if ($('chkCedula')) $('chkCedula').checked = false;
+        if ($('chkLicencia')) $('chkLicencia').checked = false;
+        if ($('chkSeguro')) $('chkSeguro').checked = false;
+        if ($('chk08')) $('chk08').checked = false;
+        if ($('chkRTO')) $('chkRTO').checked = false;
+        if ($('txtObs')) $('txtObs').value = '';
 
-    const btnIniciar = document.getElementById('btnIniciarFirma');
-    if (btnIniciar) {
-        btnIniciar.style.display = 'none';
-        btnIniciar.innerText = '✍️ FIRMAR ACTA';
-        btnIniciar.style.background = '#475569';
-    }
+        vehiculoActual = null;
+        infoUltimoControl = null;
+        borrarFoto();
+        limpiarFirma();
 
-    const seccionFoto = document.getElementById('seccionFoto');
-    if (seccionFoto) seccionFoto.style.display = 'none';
+        const btnFirma = $('btnIniciarFirma');
+        if (btnFirma) {
+            btnFirma.style.display = 'none';
+            btnFirma.innerText = '✍️ Firmar Acta';
+            btnFirma.style.background = '#475569';
+        }
 
-    const seccionFirma = document.getElementById('seccionFirma');
-    if (seccionFirma) seccionFirma.style.display = 'none';
-}
-
-    function mostrarToast(mensaje, tipo = "success") {
-        let colorFondo = "#16a34a";
-        if (tipo === "error") colorFondo = "#dc2626";
-        if (tipo === "info") colorFondo = "#2563eb";
-        if (tipo === "warning") colorFondo = "#f59e0b";
-
-        Toastify({
-            text: mensaje,
-            duration: 3000,
-            gravity: "top",
-            position: "center",
-            stopOnFocus: true,
-            style: {
-                background: colorFondo,
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                fontWeight: "bold"
-            }
-        }).showToast();
+        if ($('seccionFoto')) $('seccionFoto').style.display = 'none';
+        if ($('seccionFirma')) $('seccionFirma').style.display = 'none';
     }
 
     function cerrarSesion() {
         if (intervaloGPS) clearInterval(intervaloGPS);
-        mostrarToast("Cerrando sesión...", "info");
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
+        mostrarToast('Cerrando sesión...', 'info');
+        setTimeout(() => location.reload(), 1000);
     }
 
-    // --- DICTADO POR VOZ ---
     function iniciarDictado() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            alert("Tu navegador no soporta dictado por voz. Probá con Chrome.");
+            alert('Tu navegador no soporta dictado por voz. Probá con Chrome.');
             return;
         }
 
@@ -843,11 +877,11 @@
         recognition.continuous = false;
         recognition.interimResults = false;
 
-        const btn = document.getElementById('btnMic');
+        const btn = $('btnMic');
 
         recognition.onstart = function () {
             if (btn) btn.classList.add('grabando-voz');
-            mostrarToast("🎤 Escuchando...", "info");
+            mostrarToast('🎤 Escuchando...', 'info');
         };
 
         recognition.onend = function () {
@@ -856,218 +890,187 @@
 
         recognition.onresult = function (event) {
             const texto = event.results[0][0].transcript;
-            const textarea = document.getElementById('txtObs');
+            const textarea = $('txtObs');
+            if (!textarea) return;
             textarea.value += (textarea.value.length > 0 ? ' ' : '') + texto;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
         };
 
         recognition.onerror = function (event) {
-            console.error("Error de voz:", event.error);
+            console.error('Error de voz:', event.error);
             if (btn) btn.classList.remove('grabando-voz');
         };
 
         recognition.start();
     }
 
-    // --- LÓGICA DE FIRMA DIGITAL ---
-    let estaFirmando = false;
-    let canvas, ctx;
-    let ultimaX = 0;
-    let ultimaY = 0;
+    function inicializarEventosFirma() {
+        if (eventosFirmaInicializados || !canvasFirma) return;
+
+        canvasFirma.addEventListener('mousedown', iniciarTrazo);
+        canvasFirma.addEventListener('mousemove', dibujar);
+        canvasFirma.addEventListener('mouseup', terminarTrazo);
+        canvasFirma.addEventListener('mouseout', terminarTrazo);
+
+        canvasFirma.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvasFirma.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvasFirma.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvasFirma.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvasFirma.addEventListener('touchend', () => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvasFirma.dispatchEvent(mouseEvent);
+        });
+
+        eventosFirmaInicializados = true;
+    }
+
     function mostrarPadFirma() {
-    const seccionFirma = document.getElementById('seccionFirma');
-    const btn = document.getElementById('btnIniciarFirma');
+        const btn = $('btnIniciarFirma');
+        if (btn) btn.style.display = 'none';
 
-    if (seccionFirma) {
-        seccionFirma.style.display = 'block';
+        const seccionFirma = $('seccionFirma');
+        if (seccionFirma) seccionFirma.style.display = 'block';
+
+        canvasFirma = $('canvasFirma');
+        if (!canvasFirma) return;
+
+        ctxFirma = canvasFirma.getContext('2d');
+        canvasFirma.width = canvasFirma.offsetWidth || 300;
+        canvasFirma.height = canvasFirma.offsetHeight || 160;
+
+        ctxFirma.lineWidth = 2;
+        ctxFirma.lineCap = 'round';
+        ctxFirma.strokeStyle = '#000000';
+
+        inicializarEventosFirma();
     }
 
-    if (btn) {
-        btn.style.display = 'none';
+    function iniciarTrazo(e) {
+        estaFirmando = true;
+        [ultimaX, ultimaY] = obtenerCoords(e);
     }
 
-    canvas = document.getElementById('canvasFirma');
-    if (!canvas) {
-        mostrarToast("No se encontró el área de firma", "error");
-        return;
+    function dibujar(e) {
+        if (!estaFirmando || !ctxFirma) return;
+        const [x, y] = obtenerCoords(e);
+        ctxFirma.beginPath();
+        ctxFirma.moveTo(ultimaX, ultimaY);
+        ctxFirma.lineTo(x, y);
+        ctxFirma.stroke();
+        [ultimaX, ultimaY] = [x, y];
     }
 
-    ctx = canvas.getContext('2d');
-
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.max(rect.width, 300);
-    canvas.height = Math.max(rect.height, 180);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#000000';
-
-    canvas.onmousedown = iniciarTrazo;
-    canvas.onmousemove = dibujar;
-    canvas.onmouseup = terminarTrazo;
-    canvas.onmouseleave = terminarTrazo;
-
-    canvas.ontouchstart = function (e) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        iniciarTrazo({
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-    };
-
-    canvas.ontouchmove = function (e) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        dibujar({
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-    };
-
-    canvas.ontouchend = function (e) {
-        e.preventDefault();
-        terminarTrazo();
-    };
-}
-
-function iniciarTrazo(e) {
-    if (!canvas) return;
-    estaFirmando = true;
-    [ultimaX, ultimaY] = obtenerCoords(e);
-}
-
-function dibujar(e) {
-    if (!estaFirmando || !ctx) return;
-
-    const [x, y] = obtenerCoords(e);
-    ctx.beginPath();
-    ctx.moveTo(ultimaX, ultimaY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    [ultimaX, ultimaY] = [x, y];
-}
-
-function terminarTrazo() {
-    estaFirmando = false;
-}
-
-function obtenerCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    return [
-        e.clientX - rect.left,
-        e.clientY - rect.top
-    ];
-}
-
-function limpiarFirma() {
-    const c = document.getElementById('canvasFirma');
-    if (c) {
-        const x = c.getContext('2d');
-        x.clearRect(0, 0, c.width, c.height);
-        x.fillStyle = '#ffffff';
-        x.fillRect(0, 0, c.width, c.height);
-    }
-    firmaBase64Actual = null;
-}
-
-function guardarFirma() {
-    if (!canvas || !ctx) {
-        mostrarToast("Primero debes abrir el cuadro de firma", "warning");
-        return;
+    function terminarTrazo() {
+        estaFirmando = false;
     }
 
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let hayTrazo = false;
+    function obtenerCoords(e) {
+        const rect = canvasFirma.getBoundingClientRect();
+        return [e.clientX - rect.left, e.clientY - rect.top];
+    }
 
-    for (let i = 0; i < imageData.length; i += 4) {
-        const r = imageData[i];
-        const g = imageData[i + 1];
-        const b = imageData[i + 2];
-        const a = imageData[i + 3];
+    function limpiarFirma() {
+        const c = $('canvasFirma');
+        if (c) {
+            const x = c.getContext('2d');
+            x.clearRect(0, 0, c.width, c.height);
+        }
+        firmaBase64Actual = null;
+    }
 
-        if (!(r === 255 && g === 255 && b === 255 && a === 255)) {
-            hayTrazo = true;
-            break;
+    function guardarFirma() {
+        if (!canvasFirma || !ctxFirma) {
+            canvasFirma = $('canvasFirma');
+            if (!canvasFirma) return;
+            ctxFirma = canvasFirma.getContext('2d');
+        }
+
+        const pixelBuffer = new Uint32Array(
+            ctxFirma.getImageData(0, 0, canvasFirma.width, canvasFirma.height).data.buffer
+        );
+
+        if (!pixelBuffer.some(color => color !== 0)) {
+            alert('El canvas está vacío. Por favor firme o cancele.');
+            return;
+        }
+
+        firmaBase64Actual = canvasFirma.toDataURL('image/png');
+        mostrarToast('Firma capturada correctamente', 'success');
+
+        if ($('seccionFirma')) $('seccionFirma').style.display = 'none';
+
+        const btn = $('btnIniciarFirma');
+        if (btn) {
+            btn.style.display = 'inline-block';
+            btn.innerText = 'Firma Guardada ✅';
+            btn.style.background = '#10b981';
         }
     }
 
-    if (!hayTrazo) {
-        mostrarToast("El canvas está vacío. Firma primero.", "warning");
-        return;
-    }
-
-    firmaBase64Actual = canvas.toDataURL('image/png');
-    mostrarToast("Firma capturada correctamente", "success");
-
-    const seccionFirma = document.getElementById('seccionFirma');
-    if (seccionFirma) {
-        seccionFirma.style.display = 'none';
-    }
-
-    const btn = document.getElementById('btnIniciarFirma');
-    if (btn) {
-        btn.style.display = 'block';
-        btn.innerText = "Firma Guardada ✅";
-        btn.style.background = "#10b981";
-    }
-}
-    
-    }
-
-    // --- MANEJO DE FOTOS ---
     function procesarFoto(input) {
-        if (input.files && input.files[0]) {
-            const archivo = input.files[0];
-            const reader = new FileReader();
+        if (!(input.files && input.files[0])) return;
 
-            reader.onload = function (e) {
-                const img = new Image();
-                img.onload = function () {
-                    const canvasTmp = document.createElement('canvas');
-                    const ctxTmp = canvasTmp.getContext('2d');
-                    const MAX_WIDTH = 800;
-                    let width = img.width;
-                    let height = img.height;
+        const archivo = input.files[0];
+        const reader = new FileReader();
 
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 800;
+                let width = img.width;
+                let height = img.height;
 
-                    canvasTmp.width = width;
-                    canvasTmp.height = height;
-                    ctxTmp.drawImage(img, 0, 0, width, height);
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
 
-                    const dataUrl = canvasTmp.toDataURL('image/jpeg', 0.7);
-                    fotoBase64 = dataUrl;
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
 
-                    document.getElementById('previewFoto').src = dataUrl;
-                    document.getElementById('contenedorPreview').style.display = 'block';
-                    mostrarToast("Foto procesada y lista", "success");
-                };
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                fotoBase64 = dataUrl;
 
-                img.src = e.target.result;
+                if ($('previewFoto')) $('previewFoto').src = dataUrl;
+                if ($('contenedorPreview')) $('contenedorPreview').style.display = 'block';
+                mostrarToast('Foto procesada y lista', 'success');
             };
+            img.src = e.target.result;
+        };
 
-            reader.readAsDataURL(archivo);
-        }
+        reader.readAsDataURL(archivo);
     }
 
     function borrarFoto() {
         fotoBase64 = null;
-        document.getElementById('cameraInput').value = "";
-        document.getElementById('previewFoto').src = "";
-        document.getElementById('contenedorPreview').style.display = 'none';
+        if ($('cameraInput')) $('cameraInput').value = '';
+        if ($('previewFoto')) $('previewFoto').src = '';
+        if ($('contenedorPreview')) $('contenedorPreview').style.display = 'none';
     }
 
-    // --- MAPA ---
     async function abrirMapa() {
         ocultarTodasSecciones();
-        document.getElementById('mapSection').classList.add('active');
+        $('mapSection')?.classList.add('active');
+
         await new Promise(resolve => setTimeout(resolve, 150));
 
         if (map) {
@@ -1075,7 +1078,13 @@ function guardarFirma() {
             return;
         }
 
+        if (typeof L === 'undefined') {
+            mostrarToast('Leaflet no está cargado', 'error');
+            return;
+        }
+
         map = L.map('map').setView([-28.5343, -56.0406], 14);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
@@ -1084,49 +1093,55 @@ function guardarFirma() {
             const res = await fetch('/api/historial');
             const data = await res.json();
 
-            if (data.length > 0) {
+            if (Array.isArray(data) && data.length > 0) {
                 data.forEach(ctrl => {
                     if (ctrl.latitud && ctrl.longitud) {
                         const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
                         const fecha = new Date(ctrl.fecha_hora).toLocaleString();
-                        marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
+                        marker.bindPopup(
+                            `<b>Patente:</b> ${ctrl.patricula}<br>
+                             <b>Fecha:</b> ${fecha}<br>
+                             <a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a>`
+                        );
                     }
                 });
             } else {
-                mostrarToast("No hay controles con GPS registrados aún", "info");
+                mostrarToast('No hay controles con GPS registrados aún', 'info');
             }
         } catch (err) {
             console.error(err);
-            mostrarToast("Error al cargar datos del mapa", "error");
+            mostrarToast('Error al cargar datos del mapa', 'error');
         }
     }
 
     function cerrarMapa() {
-        document.getElementById('mapSection').classList.remove('active');
-        document.getElementById('searchSection').classList.add('active');
-        document.getElementById('footerBtn').style.display = 'block';
+        $('mapSection')?.classList.remove('active');
+        $('searchSection')?.classList.add('active');
+        if ($('footerBtn')) $('footerBtn').style.display = 'block';
     }
 
-    // --- USUARIOS ---
     function abrirUsuarios() {
         ocultarTodasSecciones();
-        document.getElementById('userSection').classList.add('active');
-        document.getElementById('msgUsuario').innerHTML = '';
+        $('userSection')?.classList.add('active');
+        if ($('msgUsuario')) $('msgUsuario').innerHTML = '';
     }
 
     function cerrarUsuarios() {
-        document.getElementById('userSection').classList.remove('active');
-        document.getElementById('searchSection').classList.add('active');
-        document.getElementById('footerBtn').style.display = 'block';
+        $('userSection')?.classList.remove('active');
+        $('searchSection')?.classList.add('active');
+        if ($('footerBtn')) $('footerBtn').style.display = 'block';
     }
 
     async function guardarUsuario() {
-        const usuario = document.getElementById('newUsuario').value;
-        const password = document.getElementById('newPassword').value;
-        const nombre = document.getElementById('newNombre').value;
-        const rol = document.getElementById('newRol').value;
+        const usuario = $('newUsuario')?.value?.trim() || '';
+        const password = $('newPassword')?.value || '';
+        const nombre = $('newNombre')?.value || '';
+        const rol = $('newRol')?.value || '';
 
-        if (!usuario || !password) return alert("Falta usuario o contraseña");
+        if (!usuario || !password) {
+            alert('Falta usuario o contraseña');
+            return;
+        }
 
         try {
             const res = await fetch('/api/crear-usuario', {
@@ -1136,30 +1151,36 @@ function guardarFirma() {
             });
 
             const data = await res.json();
+
             if (data.success) {
-                document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
-                document.getElementById('newUsuario').value = '';
-                document.getElementById('newPassword').value = '';
+                if ($('msgUsuario')) $('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
+                if ($('newUsuario')) $('newUsuario').value = '';
+                if ($('newPassword')) $('newPassword').value = '';
+                if ($('newNombre')) $('newNombre').value = '';
             } else {
-                document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
+                if ($('msgUsuario')) $('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error || 'No se pudo crear'}</span>`;
             }
         } catch (err) {
-            alert("Error de conexión");
+            alert('Error de conexión');
         }
     }
 
     async function verListaUsuarios() {
         ocultarTodasSecciones();
-        document.getElementById('listUsersSection').classList.add('active');
-        const tbody = document.getElementById('tablaUsuariosBody');
+        $('listUsersSection')?.classList.add('active');
+
+        const tbody = $('tablaUsuariosBody');
+        if (!tbody) return;
+
         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
 
         try {
             const res = await fetch('/api/usuarios');
             const data = await res.json();
+
             tbody.innerHTML = '';
 
-            if (data.length === 0) {
+            if (!Array.isArray(data) || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
                 return;
             }
@@ -1177,67 +1198,71 @@ function guardarFirma() {
         }
     }
 
-    // --- DASHBOARD ---
     function cerrarDashboard() {
-        document.getElementById('dashboardSection').classList.remove('active');
-        document.getElementById('searchSection').classList.add('active');
-        document.getElementById('footerBtn').style.display = 'block';
+        $('dashboardSection')?.classList.remove('active');
+        $('searchSection')?.classList.add('active');
+        if ($('footerBtn')) $('footerBtn').style.display = 'block';
     }
 
     async function abrirDashboard() {
         ocultarTodasSecciones();
-        document.getElementById('dashboardSection').classList.add('active');
+        $('dashboardSection')?.classList.add('active');
+
         const hoy = new Date().toISOString().split('T')[0];
-        document.getElementById('fechaDesde').value = hoy;
-        document.getElementById('fechaHasta').value = hoy;
+        if ($('fechaDesde')) $('fechaDesde').value = hoy;
+        if ($('fechaHasta')) $('fechaHasta').value = hoy;
+
         await cargarDatosDashboard(hoy, hoy);
     }
 
     async function cargarDatosDashboard(desde, hasta) {
-        mostrarToast("Cargando estadísticas...", "info");
+        mostrarToast('Cargando estadísticas...', 'info');
 
         try {
             const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
             const data = await res.json();
 
-            document.getElementById('numTotalHoy').innerText = data.totalHoy;
+            if ($('numTotalHoy')) $('numTotalHoy').innerText = data.totalHoy ?? 0;
 
-            const nombres = data.porInspector.map(u => `${u.nombre} (${u.usuario})`);
-            const cantidades = data.porInspector.map(u => u.cantidad);
-            const ctxBarra = document.getElementById('graficoInspectores').getContext('2d');
+            const nombres = (data.porInspector || []).map(u => `${u.nombre} (${u.usuario})`);
+            const cantidades = (data.porInspector || []).map(u => u.cantidad);
 
-            if (miGrafico) miGrafico.destroy();
+            const canvasBar = $('graficoInspectores');
+            if (canvasBar && typeof Chart !== 'undefined') {
+                const ctx = canvasBar.getContext('2d');
+                if (miGrafico) miGrafico.destroy();
 
-            miGrafico = new Chart(ctxBarra, {
-                type: 'bar',
-                data: {
-                    labels: nombres,
-                    datasets: [{
-                        label: 'Controles',
-                        data: cantidades,
-                        backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
-                        borderWidth: 2,
-                        borderRadius: 5,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+                miGrafico = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: nombres,
+                        datasets: [{
+                            label: 'Controles',
+                            data: cantidades,
+                            backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            barPercentage: 0.6
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
                         },
-                        x: {
-                            grid: { display: false }
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
 
             const faltas = data.docsFaltantes || {};
             const tortaLabels = ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'];
@@ -1249,101 +1274,122 @@ function guardarFirma() {
                 faltas.falta_rto || 0
             ];
 
-            const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
+            const canvasTorta = $('graficoFaltantes');
+            if (canvasTorta && typeof Chart !== 'undefined') {
+                const ctxTorta = canvasTorta.getContext('2d');
+                if (miGraficoTorta) miGraficoTorta.destroy();
 
-            if (miGraficoTorta) miGraficoTorta.destroy();
-
-            miGraficoTorta = new Chart(ctxTorta, {
-                type: 'doughnut',
-                data: {
-                    labels: tortaLabels,
-                    datasets: [{
-                        data: tortaData,
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: { size: 12, weight: 'bold' },
-                                padding: 15
+                miGraficoTorta = new Chart(ctxTorta, {
+                    type: 'doughnut',
+                    data: {
+                        labels: tortaLabels,
+                        datasets: [{
+                            data: tortaData,
+                            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            });
-
+                });
+            }
         } catch (error) {
             console.error(error);
-            mostrarToast("Error al cargar dashboard", "error");
+            mostrarToast('Error al cargar dashboard', 'error');
         }
     }
 
     function actualizarDashboard() {
-        const desde = document.getElementById('fechaDesde').value;
-        const hasta = document.getElementById('fechaHasta').value;
-        if (!desde || !hasta) return mostrarToast("Selecciona ambas fechas", "warning");
+        const desde = $('fechaDesde')?.value || '';
+        const hasta = $('fechaHasta')?.value || '';
+
+        if (!desde || !hasta) {
+            mostrarToast('Selecciona ambas fechas', 'warning');
+            return;
+        }
+
         cargarDatosDashboard(desde, hasta);
     }
 
     function descargarExcel() {
-        const desde = document.getElementById('fechaDesde').value;
-        const hasta = document.getElementById('fechaHasta').value;
-        if (!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
+        const desde = $('fechaDesde')?.value || '';
+        const hasta = $('fechaHasta')?.value || '';
+
+        if (!desde || !hasta) {
+            mostrarToast('Selecciona fechas para exportar', 'warning');
+            return;
+        }
+
         window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
     }
 
-    // --- MODAL HISTORIAL ---
     function abrirModalHistorial() {
         const control = infoUltimoControl;
         if (!control) {
-            mostrarToast("No hay datos del control anterior", "warning");
+            mostrarToast('No hay datos del control anterior', 'warning');
             return;
         }
 
         const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
         const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence.split('T')[0] : '-';
 
-        const modal = document.getElementById('modalHistorial');
-        const contenido = document.getElementById('contenidoHistorial');
+        const modal = $('modalHistorial');
+        const contenido = $('contenidoHistorial');
+        if (!modal || !contenido) return;
+
         const fecha = new Date(control.fecha_hora).toLocaleString();
 
         let html = `<p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p><hr style="border-color:#334155;">`;
 
-        html += `<div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
-                        <span style="color:white; font-weight:bold;">${venceSeguro}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="color:#94a3b8; font-size:12px;">VENCE RTO:</span>
-                        <span style="color:white; font-weight:bold;">${venceRTO}</span>
-                    </div>
-                 </div>`;
+        html += `
+            <div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
+                    <span style="color:white; font-weight:bold;">${venceSeguro}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8; font-size:12px;">VENCE RTO:</span>
+                    <span style="color:white; font-weight:bold;">${venceRTO}</span>
+                </div>
+            </div>
+        `;
 
-        html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
-            <div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
-            <div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div>
-            <div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label><div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div></div>
-            <div><label style="font-size:12px; color:#94a3b8;">RTO</label><div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div></div>
-        </div>`;
+        html += `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label><div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div></div>
+                <div><label style="font-size:12px; color:#94a3b8;">RTO</label><div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div></div>
+            </div>
+        `;
 
         if (control.observaciones) {
             html += `<div style="margin-top:15px; background:#fffbeb; padding:10px; border-radius:8px;"><label>OBS:</label><p style="margin:0; color:#78350f;">"${control.observaciones}"</p></div>`;
         }
 
         if (control.foto_evidencia) {
-            html += `<div style="margin-top:20px; text-align:center; border-top:1px dashed #475569; padding-top:15px;">
-                        <label style="font-size:12px; color:#94a3b8; font-weight:bold;">📸 EVIDENCIA FOTOGRÁFICA</label>
-                        <img src="${control.foto_evidencia}" style="max-width:100%; border-radius:8px; border:2px solid #475569; margin-top:5px; background:black;">
-                     </div>`;
+            html += `
+                <div style="margin-top:20px; text-align:center; border-top:1px dashed #475569; padding-top:15px;">
+                    <label style="font-size:12px; color:#94a3b8; font-weight:bold;">📸 EVIDENCIA FOTOGRÁFICA</label>
+                    <img src="${control.foto_evidencia}" style="max-width:100%; border-radius:8px; border:2px solid #475569; margin-top:5px; background:black;">
+                </div>
+            `;
         }
 
         contenido.innerHTML = html;
@@ -1352,15 +1398,14 @@ function guardarFirma() {
     }
 
     function cerrarModalHistorial() {
-        document.getElementById('modalHistorial').style.display = 'none';
-        document.getElementById('modalHistorial').classList.add('hidden');
+        if ($('modalHistorial')) $('modalHistorial').style.display = 'none';
+        $('modalHistorial')?.classList.add('hidden');
     }
 
-    // --- REPORTES ---
     function generarTextoReporte(data) {
         const fecha = new Date().toLocaleDateString();
         let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n📅 Fecha: ${fecha}\n🚗 Total: ${data.totalHoy}\n\n📋 *Por Inspector:*\n`;
-        data.porInspector.forEach(insp => {
+        (data.porInspector || []).forEach(insp => {
             texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`;
         });
         return texto;
@@ -1368,37 +1413,34 @@ function guardarFirma() {
 
     async function compartirPorEmail() {
         try {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
+            const desde = $('fechaDesde')?.value || '';
+            const hasta = $('fechaHasta')?.value || '';
             const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
             const data = await res.json();
             const texto = generarTextoReporte(data);
-            window.location.href = `mailto:?subject=${encodeURIComponent("Reporte de Tránsito")}&body=${encodeURIComponent(texto)}`;
+            window.location.href = `mailto:?subject=${encodeURIComponent('Reporte de Tránsito')}&body=${encodeURIComponent(texto)}`;
         } catch (error) {
-            mostrarToast("Error al generar reporte", "error");
+            mostrarToast('Error al generar reporte', 'error');
         }
     }
 
     async function compartirPorWhatsApp() {
         try {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
+            const desde = $('fechaDesde')?.value || '';
+            const hasta = $('fechaHasta')?.value || '';
             const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
             const data = await res.json();
             window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))}`, '_blank');
         } catch (error) {
-            mostrarToast("Error al generar reporte", "error");
+            mostrarToast('Error al generar reporte', 'error');
         }
     }
 
-    // --- TEMA ---
     function aplicarTema() {
         const temaGuardado = localStorage.getItem('tema');
         if (temaGuardado === 'oscuro') {
             document.body.classList.add('dark-mode');
-            if (document.getElementById('btnDarkMode')) {
-                document.getElementById('btnDarkMode').innerText = '☀️';
-            }
+            if ($('btnDarkMode')) $('btnDarkMode').innerText = '☀️';
         }
     }
 
@@ -1406,14 +1448,13 @@ function guardarFirma() {
         document.body.classList.toggle('dark-mode');
         const esOscuro = document.body.classList.contains('dark-mode');
         localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
-        document.getElementById('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
+        if ($('btnDarkMode')) $('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
     }
 
     aplicarTema();
 
-    // --- FUNCIONES OFFLINE ---
     function actualizarContadorPendientes() {
-        const badge = document.getElementById('badgePendientes');
+        const badge = $('badgePendientes');
         if (!badge) return;
 
         const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
@@ -1431,6 +1472,7 @@ function guardarFirma() {
         if (!data || !data.vehiculo) return;
 
         let cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+
         const registro = {
             patente: data.vehiculo.patricula,
             vehiculo: data.vehiculo,
@@ -1439,11 +1481,8 @@ function guardarFirma() {
         };
 
         const index = cache.findIndex(c => c.patente === registro.patente);
-        if (index !== -1) {
-            cache[index] = registro;
-        } else {
-            cache.push(registro);
-        }
+        if (index !== -1) cache[index] = registro;
+        else cache.push(registro);
 
         if (cache.length > 1000) cache.shift();
         localStorage.setItem('cache_vehiculos', JSON.stringify(cache));
@@ -1461,11 +1500,7 @@ function guardarFirma() {
             };
         }
 
-        return {
-            vehiculo: null,
-            ultimoControl: null,
-            esOffline: true
-        };
+        return { vehiculo: null, ultimoControl: null, esOffline: true };
     }
 
     async function sincronizarDatosLocales() {
@@ -1474,7 +1509,7 @@ function guardarFirma() {
             if (!res.ok) return;
 
             const controles = await res.json();
-            let nuevoCache = [];
+            const nuevoCache = [];
 
             controles.forEach(ctrl => {
                 const patente = ctrl.patricula;
@@ -1483,7 +1518,11 @@ function guardarFirma() {
                 if (!existe && patente) {
                     nuevoCache.push({
                         patente,
-                        vehiculo: { patricula: patente, modelo: ctrl.modelo, numero_08: ctrl.numero_08 },
+                        vehiculo: {
+                            patricula: patente,
+                            modelo: ctrl.modelo,
+                            numero_08: ctrl.numero_08
+                        },
                         ultimoControl: ctrl,
                         timestamp: Date.now()
                     });
@@ -1493,12 +1532,12 @@ function guardarFirma() {
             localStorage.setItem('cache_vehiculos', JSON.stringify(nuevoCache));
             console.log(`Sincronización completada: ${nuevoCache.length} vehículos.`);
         } catch (err) {
-            console.error("Error al sincronizar datos locales", err);
+            console.error('Error al sincronizar datos locales', err);
         }
     }
 
     function guardarControlPendiente(datos) {
-        let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+        const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
         datos.fecha_hora_local = new Date().toISOString();
         datos.idTemporal = Date.now();
         pendientes.push(datos);
@@ -1509,13 +1548,13 @@ function guardarFirma() {
     }
 
     async function sincronizarPendientes() {
-        let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+        const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
         if (pendientes.length === 0) return;
 
-        mostrarToast(`Sincronizando ${pendientes.length} controles...`, "info");
-        let nuevosPendientes = [];
+        mostrarToast(`Sincronizando ${pendientes.length} controles...`, 'info');
+        const nuevosPendientes = [];
 
-        for (let control of pendientes) {
+        for (const control of pendientes) {
             try {
                 const res = await fetch('/registrar-control', {
                     method: 'POST',
@@ -1523,12 +1562,7 @@ function guardarFirma() {
                     body: JSON.stringify(control)
                 });
 
-                if (res.ok) {
-                    console.log('Sincronizado:', control.patricula);
-                    actualizarContadorPendientes();
-                } else {
-                    nuevosPendientes.push(control);
-                }
+                if (!res.ok) nuevosPendientes.push(control);
             } catch (error) {
                 nuevosPendientes.push(control);
             }
@@ -1538,55 +1572,25 @@ function guardarFirma() {
         actualizarContadorPendientes();
 
         if (nuevosPendientes.length === 0) {
-            mostrarToast("¡Todo sincronizado!", "success");
+            mostrarToast('¡Todo sincronizado!', 'success');
         } else {
-            mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, "warning");
+            mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, 'warning');
         }
-    }
-
-    window.addEventListener('online', () => {
-        mostrarToast("Conexión recuperada", "success");
-        sincronizarPendientes();
-        sincronizarDatosLocales();
-        actualizarEstadoRed();
-    });
-
-    window.addEventListener('offline', () => {
-        mostrarToast("Modo Offline activado", "warning");
-        actualizarEstadoRed();
-    });
-
-    window.addEventListener('load', () => {
-        if (navigator.onLine) {
-            sincronizarPendientes();
-            actualizarEstadoRed();
-        } else {
-            mostrarToast("Modo Offline activado", "warning");
-            actualizarEstadoRed();
-        }
-    });
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('SW registrado:', reg.scope))
-                .catch(err => console.error('Error SW:', err));
-        });
     }
 
     function exportarPendientes() {
         const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
 
         if (pendientes.length === 0) {
-            mostrarToast("No hay controles pendientes para respaldar", "info");
+            mostrarToast('No hay controles pendientes para respaldar', 'info');
             return;
         }
 
-        let texto = "🚨 RESPALDO DE CONTROLES PENDIENTES 🚨\n";
-        texto += "Generado: " + new Date().toLocaleString() + "\n";
-        texto += "Inspector: " + (usuarioActual ? usuarioActual.nombre : "Desconocido") + "\n";
-        texto += "Total a sincronizar: " + pendientes.length + " controles\n";
-        texto += "==========================================\n\n";
+        let texto = '🚨 RESPALDO DE CONTROLES PENDIENTES 🚨\n';
+        texto += 'Generado: ' + new Date().toLocaleString() + '\n';
+        texto += 'Inspector: ' + (usuarioActual ? usuarioActual.nombre : 'Desconocido') + '\n';
+        texto += 'Total a sincronizar: ' + pendientes.length + ' controles\n';
+        texto += '==========================================\n\n';
 
         pendientes.forEach((ctrl, index) => {
             texto += `--- CONTROL ${index + 1} ---\n`;
@@ -1594,19 +1598,20 @@ function guardarFirma() {
             texto += `Modelo: ${ctrl.modelo || '-'}\n`;
             texto += `Docs: Céd[${ctrl.tiene_cedula ? '✅' : '❌'}] Lic[${ctrl.tiene_licencia ? '✅' : '❌'}] Seg[${ctrl.tiene_seguro ? '✅' : '❌'}] 08[${ctrl.tiene_08_pago ? '✅' : '❌'}] RTO[${ctrl.tiene_rto_habilitada ? '✅' : '❌'}]\n`;
             if (ctrl.observaciones) texto += `Obs: ${ctrl.observaciones}\n`;
-            texto += `\n`;
+            texto += '\n';
         });
 
-        const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+        const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
-        a.download = `Respaldo_${new Date().getTime()}.txt`;
+        a.download = `Respaldo_${Date.now()}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        mostrarToast("📄 Respaldo descargado", "success");
+
+        mostrarToast('📄 Respaldo descargado', 'success');
     }
 
     function actualizarEstadoBtnRegistrar() {
@@ -1614,11 +1619,11 @@ function guardarFirma() {
         if (!btn) return;
 
         const checks = [
-            document.getElementById('chkCedula').checked,
-            document.getElementById('chkLicencia').checked,
-            document.getElementById('chkSeguro').checked,
-            document.getElementById('chk08').checked,
-            document.getElementById('chkRTO').checked
+            $('chkCedula')?.checked || false,
+            $('chkLicencia')?.checked || false,
+            $('chkSeguro')?.checked || false,
+            $('chk08')?.checked || false,
+            $('chkRTO')?.checked || false
         ];
 
         const algunosTildados = checks.some(c => c);
@@ -1626,10 +1631,10 @@ function guardarFirma() {
 
         if (algunosTildados && !todosTildados) {
             btn.style.background = '#dc2626';
-            btn.innerText = "⚠️ FALTA DOCUMENTACIÓN";
+            btn.innerText = '⚠️ FALTA DOCUMENTACIÓN';
         } else {
             btn.style.background = '#16a34a';
-            btn.innerText = "✅ REGISTRAR CONTROL";
+            btn.innerText = '✅ REGISTRAR CONTROL';
         }
     }
 
@@ -1639,66 +1644,111 @@ function guardarFirma() {
 
         if (!navigator.onLine) {
             btn.style.background = '#d97706';
-            btn.innerText = "📴 GUARDAR LOCALMENTE";
+            btn.innerText = '📴 GUARDAR LOCALMENTE';
         } else {
             actualizarEstadoBtnRegistrar();
         }
     }
 
-    // --- GENERAR Y MOSTRAR QR ---
     async function generarYMostrarQR(controlData) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        try {
+            if (!window.jspdf) return;
 
-        doc.setFontSize(18);
-        doc.text("ACTA DE INFRACCIÓN", 105, 20, null, null, null, "center");
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-        doc.setFontSize(12);
-        doc.text(`Patente: ${controlData.patente}`, 20, 40);
-        doc.text(`Fecha: ${new Date(controlData.fecha_hora).toLocaleString()}`, 20, 50);
+            doc.setFontSize(18);
+            doc.text('ACTA DE INFRACCIÓN', 105, 20, { align: 'center' });
 
-        const splitText = doc.splitTextToSize(controlData.observaciones || "Sin observaciones", 170);
-        doc.text("Observaciones:", 20, 70);
-        doc.text(splitText, 20, 80);
+            doc.setFontSize(12);
+            doc.text(`Patente: ${controlData.patente || controlData.patricula || '-'}`, 20, 40);
+            doc.text(`Fecha: ${new Date(controlData.fecha_hora || Date.now()).toLocaleString()}`, 20, 50);
 
-        if (controlData.foto_evidencia) {
-            try {
-                doc.addImage(controlData.foto_evidencia, 'JPEG', 20, 100, 170, 100);
-            } catch (e) {
-                console.error("Error al agregar foto", e);
+            const splitText = doc.splitTextToSize(controlData.observaciones || 'Sin observaciones', 170);
+            doc.text('Observaciones:', 20, 70);
+            doc.text(splitText, 20, 80);
+
+            if (controlData.foto_evidencia) {
+                try {
+                    doc.addImage(controlData.foto_evidencia, 'JPEG', 20, 100, 170, 100);
+                } catch (e) {
+                    console.error('Error al agregar foto', e);
+                }
             }
-        }
 
-        if (controlData.firma_conductor) {
-            doc.text("Firma Conductor:", 20, 210);
-            try {
-                doc.addImage(controlData.firma_conductor, 'PNG', 20, 220, 80, 50);
-            } catch (e) {
-                console.error("Error al agregar firma", e);
+            if (controlData.firma_conductor) {
+                doc.text('Firma Conductor:', 20, 210);
+                try {
+                    doc.addImage(controlData.firma_conductor, 'PNG', 20, 220, 80, 50);
+                } catch (e) {
+                    console.error('Error al agregar firma', e);
+                }
             }
-        }
 
-        const urlQR = `https://control-transito-acabamos-usar-la-url-real-del-acta-${controlData.id}`;
+            const urlQR = `${location.origin}/acta/${controlData.id || controlData.id_control || 'temp'}`;
 
-        const modalHTML = `
-            <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; display:flex; justify-content:center; align-items:center;">
-                <div style="background:white; padding:20px; border-radius:10px; text-align:center; max-width:300px;">
-                    <h3>¡Acta Generada!</h3>
-                    <p style="font-size:12px; color:#64748b;">Escanea para descargar tu copia</p>
-                    <div id="qrCodeContainer" style="margin:20px auto; width:150px; height:150px;"></div>
-                    <button onclick="this.closest('div').parentElement.remove()" class="btn-primary">CERRAR</button>
+            const modalHTML = `
+                <div id="modalQRTemp" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; display:flex; justify-content:center; align-items:center;">
+                    <div style="background:white; padding:20px; border-radius:10px; text-align:center; max-width:300px;">
+                        <h3>¡Acta Generada!</h3>
+                        <p style="font-size:12px; color:#64748b;">Escaneá para descargar tu copia</p>
+                        <div id="qrCodeContainer" style="margin:20px auto; width:150px; height:150px;"></div>
+                        <button onclick="document.getElementById('modalQRTemp').remove()" class="btn-primary">CERRAR</button>
+                    </div>
                 </div>
-            </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+            `;
 
-        new QRCode(document.getElementById("qrCodeContainer"), {
-            text: urlQR,
-            width: 128,
-            height: 128
+            const anterior = document.getElementById('modalQRTemp');
+            if (anterior) anterior.remove();
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(document.getElementById('qrCodeContainer'), {
+                    text: urlQR,
+                    width: 128,
+                    height: 128
+                });
+            }
+
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+        } catch (error) {
+            console.error('Error al generar acta/QR:', error);
+        }
+    }
+
+    window.addEventListener('online', () => {
+        mostrarToast('Conexión recuperada', 'success');
+        sincronizarPendientes();
+        sincronizarDatosLocales();
+        actualizarEstadoRed();
+    });
+
+    window.addEventListener('offline', () => {
+        mostrarToast('Modo Offline activado', 'warning');
+        actualizarEstadoRed();
+    });
+
+    window.addEventListener('load', () => {
+        if (navigator.onLine) {
+            sincronizarPendientes();
+        } else {
+            mostrarToast('Modo Offline activado', 'warning');
+        }
+        actualizarEstadoRed();
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registrado:', reg.scope))
+                .catch(err => console.error('Error SW:', err));
         });
-
-        return doc;
     }
 </script>
+   
+
 </body>
 </html>
