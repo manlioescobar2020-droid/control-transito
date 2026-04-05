@@ -1262,19 +1262,29 @@
 
         async function compartirPorWhatsApp() {
             try {
-                const desde = document.getElementById('fechaDesde').value;
-                const hasta = document.getElementById('fechaHasta').value;
-                if(!desde || !hasta) return mostrarToast("Selecciona fechas", "warning");
-
-                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-                const data = await res.json();
-                const texto = generarTextoReporte(data);
+                // 1. Obtenemos las fechas
+                var desde = document.getElementById('fechaDesde').value;
+                var hasta = document.getElementById('fechaHasta').value;
                 
-                // Esta es la línea que suele romperse, aquí está corregida:
-                window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+                if(!desde || !hasta) {
+                    mostrarToast("Selecciona fechas", "warning");
+                    return;
+                }
+
+                // 2. Pedimos los datos al servidor
+                var respuesta = await fetch('/api/estadisticas?desde=' + desde + '&hasta=' + hasta);
+                var info = await respuesta.json();
+                
+                // 3. Generamos el texto (usando una función simple)
+                var textoFinal = generarTextoReporte(info);
+                
+                // 4. Preparamos el enlace de WhatsApp (Sin usar las comillas invertidas que fallan)
+                var enlace = "https://wa.me/?text=" + encodeURIComponent(textoFinal);
+                
+                window.open(enlace, '_blank');
             } catch (error) { 
-                console.error(error);
-                mostrarToast("Error al conectar con el servidor", "error"); 
+                console.error("Error en reporte:", error);
+                mostrarToast("Error al generar reporte", "error"); 
             }
         }
         
