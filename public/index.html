@@ -1216,10 +1216,11 @@
             const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
             const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence ? control.fecha_rto_vence.split('span'>[-]</span> -'; // <--- ERROR ACÁ VA AQUÍ ---
 
-        function cerrarModalHistorial() {
-            document.getElementById('modalHistorial').style.display = 'none';
-            document.getElementById('modalHistorial') = document.getElementById('modalHistorial').classList.add('hidden');
-        }
+       function cerrarModalHistorial() {
+    const modal = document.getElementById('modalHistorial');
+    modal.style.display = 'none'; 
+    modal.classList.add('hidden'); // Corregido: se eliminó la asignación inválida
+}
         
         // --- REPORTES ---
         
