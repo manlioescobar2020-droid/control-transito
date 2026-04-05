@@ -313,7 +313,7 @@ app.get('/api/estadisticas', async (req, res) => {
     }
 
     const totalResult = await pool.query(
-      'SELECT COUNT(*)::int AS total FROM pdf_acta WHERE fecha_hora::date BETWEEN $1 AND $2',
+      'SELECT COUNT(*)::int AS total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2',
       [desde, hasta]
     );
 
@@ -337,12 +337,12 @@ app.get('/api/estadisticas', async (req, res) => {
     const docsResult = await pool.query(
       `
       SELECT
-        SUM(CASE WHEN COALESCE(tiene_cedula,false) = false THEN 1 ELSE 0 END)::int AS falta_cedula,
-        SUM(CASE WHEN COALESCE(tiene_licencia,false) = false THEN 1 ELSE 0 END)::int AS falta_licencia,
-        SUM(CASE WHEN COALESCE(tiene_seguro,false) = false THEN 1 ELSE 0 END)::int AS falta_seguro,
-        SUM(CASE WHEN COALESCE(tiene_08_pago,false) = false THEN 1 ELSE 0 END)::int AS falta_08,
-        SUM(CASE WHEN COALESCE(tiene_rto_habilitada,false) = false THEN 1 ELSE 0 END)::int AS falta_rto
-      FROM pdf_acta
+        SUM(CASE WHEN COALESCE(tiene_cedula,false) = false THEN 1 ELSE 0 END)::int AS faltacedula,
+        SUM(CASE WHEN COALESCE(tiene_licencia,false) = false THEN 1 ELSE 0 END)::int AS faltalicencia,
+        SUM(CASE WHEN COALESCE(tiene_seguro,false) = false THEN 1 ELSE 0 END)::int AS faltaseguro,
+        SUM(CASE WHEN COALESCE(tiene_08_pago,false) = false THEN 1 ELSE 0 END)::int AS falta08,
+        SUM(CASE WHEN COALESCE(tiene_rto_habilitada,false) = false THEN 1 ELSE 0 END)::int AS faltarto
+      FROM registros_controles
       WHERE fecha_hora::date BETWEEN $1 AND $2
       `,
       [desde, hasta]
@@ -352,11 +352,11 @@ app.get('/api/estadisticas', async (req, res) => {
       totalHoy: totalResult.rows[0]?.total || 0,
       porInspector: porInspectorResult.rows || [],
       docsFaltantes: docsResult.rows[0] || {
-        falta_cedula: 0,
-        falta_licencia: 0,
-        falta_seguro: 0,
-        falta_08: 0,
-        falta_rto: 0
+        faltacedula: 0,
+        faltalicencia: 0,
+        faltaseguro: 0,
+        falta08: 0,
+        faltarto: 0
       }
     });
   } catch (err) {
@@ -364,7 +364,6 @@ app.get('/api/estadisticas', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener estadísticas' });
   }
 });
-
 app.get('/api/exportar-registros', async (req, res) => {
   try {
     const desde = req.query.desde;
