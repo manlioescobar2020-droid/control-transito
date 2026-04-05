@@ -112,21 +112,25 @@ app.post('/registrar-control', async (req, res) => {
 // 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE (CORREGIDO CON CHECKS)
 app.get('/api/historial', async (req, res) => {
     try {
-        const limite = req.query.limit || 100;
+        const limite = parseInt(req.query.limit, 10) || 100;
+
         const queryText = `
             SELECT 
-                r.id, r.patricula, r.fecha_hora, r.latitud, r.longitud, 
-                v.modelo, v.numero_08,
-                r.tiene_cedula, r.tiene_licencia, r.tiene_seguro, r.tiene_08_pago, r.tiene_rto_habilitada, r.observaciones
-            FROM registros_controles r
-            LEFT JOIN vehiculos v ON r.patricula = v.patricula
-            ORDER BY r.fecha_hora DESC 
+                id,
+                patricula,
+                fecha_hora,
+                latitud,
+                longitud,
+                observaciones
+            FROM registros_controles
+            ORDER BY fecha_hora DESC
             LIMIT $1
         `;
+
         const result = await pool.query(queryText, [limite]);
         res.json(result.rows);
     } catch (err) {
-        console.error("Error al obtener historial:", err.message);
+        console.error("Error al obtener historial:", err);
         res.status(500).json({ error: 'Error al obtener historial' });
     }
 });
