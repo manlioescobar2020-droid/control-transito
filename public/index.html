@@ -769,32 +769,37 @@
     }
 
     function limpiarPantalla() {
-        document.getElementById('txtPatente').value = '';
-        document.getElementById('divResultado').innerHTML = '';
-        document.getElementById('footerBtn').style.display = 'none';
-        document.getElementById('formSection').classList.remove('active');
-        document.getElementById('searchSection').classList.add('active');
-        document.getElementById('txtModelo').value = '';
-        document.getElementById('txtNro08').value = '';
-        document.getElementById('chkCedula').checked = false;
-        document.getElementById('chkLicencia').checked = false;
-        document.getElementById('chkSeguro').checked = false;
-        document.getElementById('chk08').checked = false;
-        document.getElementById('chkRTO').checked = false;
-        document.getElementById('txtObs').value = '';
+    document.getElementById('txtPatente').value = '';
+    document.getElementById('divResultado').innerHTML = '';
+    document.getElementById('footerBtn').style.display = 'none';
+    document.getElementById('formSection').classList.remove('active');
+    document.getElementById('searchSection').classList.add('active');
+    document.getElementById('txtModelo').value = '';
+    document.getElementById('txtNro08').value = '';
+    document.getElementById('chkCedula').checked = false;
+    document.getElementById('chkLicencia').checked = false;
+    document.getElementById('chkSeguro').checked = false;
+    document.getElementById('chk08').checked = false;
+    document.getElementById('chkRTO').checked = false;
+    document.getElementById('txtObs').value = '';
 
-        borrarFoto();
-        firmaBase64Actual = null;
+    borrarFoto();
+    limpiarFirma();
+    firmaBase64Actual = null;
 
-        const btnIniciar = document.getElementById('btnIniciarFirma');
-        if (btnIniciar) {
-            btnIniciar.style.display = 'block';
-            btnIniciar.innerText = "✍️ Firmar Acta";
-        }
-
-        const seccionFirma = document.getElementById('seccionFirma');
-        if (seccionFirma) seccionFirma.style.display = 'none';
+    const btnIniciar = document.getElementById('btnIniciarFirma');
+    if (btnIniciar) {
+        btnIniciar.style.display = 'none';
+        btnIniciar.innerText = '✍️ FIRMAR ACTA';
+        btnIniciar.style.background = '#475569';
     }
+
+    const seccionFoto = document.getElementById('seccionFoto');
+    if (seccionFoto) seccionFoto.style.display = 'none';
+
+    const seccionFirma = document.getElementById('seccionFirma');
+    if (seccionFirma) seccionFirma.style.display = 'none';
+}
 
     function mostrarToast(mensaje, tipo = "success") {
         let colorFondo = "#16a34a";
