@@ -169,13 +169,13 @@ app.get('/api/estadisticas', async (req, res) => {
         const porInspectorResult = await pool.query(`SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad FROM usuarios u INNER JOIN registros_controles r ON u.id = r.id_inspector WHERE r.fecha_hora::date BETWEEN $1 AND $2 GROUP BY u.id, u.nombre, u.usuario HAVING COUNT(r.id) > 0 ORDER BY cantidad DESC`, [fechaDesde, fechaHasta]);
         
         // NUEVO: Contador de documentos faltantes
-       const faltantesResult = await pool.query(`
+      const faltantesResult = await pool.query(`
   SELECT 
-    COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) as faltacedula,
-    COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) as faltalicencia,
-    COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) as faltaseguro,
-    COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) as falta08,
-    COALESCE(SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) as faltarto
+    COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) as falta_cedula,
+    COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) as falta_licencia,
+    COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) as falta_seguro,
+    COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) as falta_08,
+    COALESCE(SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) as falta_rto
   FROM registros_controles 
   WHERE fecha_hora::date BETWEEN $1 AND $2
 `, [fechaDesde, fechaHasta]);
