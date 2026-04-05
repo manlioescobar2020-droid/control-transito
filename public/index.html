@@ -496,7 +496,7 @@
         }
 
         vehiculoActual = data.vehiculo;
-        const ultimoControl = data.ultimoControl; 
+            const ultimoControl = data.ultimoControl || null;
 
         if (ultimoControl) {
             const fechaCtrl = new Date(ultimoControl.fecha_hora);
