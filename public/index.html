@@ -1256,16 +1256,20 @@
             return texto;
         }
 
-       async function compartirPorEmail() {
+       async function compartirPorWhatsApp() {
     try {
         const desde = document.getElementById('fechaDesde').value;
         const hasta = document.getElementById('fechaHasta').value;
         const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
         const data = await res.json();
-        const texto = generarTextoReporte(data);
-        window.location.href = `mailto:?subject=${encodeURIComponent("Reporte de Tránsito")}&body=${encodeURIComponent(texto)}`;
+        
+        // Aquí estaba el error: faltaba cerrar la llave } al final del texto
+        const textoReporte = generarTextoReporte(data);
+        const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(textoReporte)}`;
+        
+        window.open(urlWhatsApp, '_blank');
     } catch (error) { 
-        // Corregido: cambié ; por ,
+        console.error(error);
         mostrarToast("Error al generar reporte", "error"); 
     }
 }
