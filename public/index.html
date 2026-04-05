@@ -1256,16 +1256,19 @@
             return texto;
         }
 
-        async function compartirPorEmail() {
-            try {
-                const desde = document.getElementById('fechaDesde').value;
-                const hasta = document.getElementById('fechaHasta').value;
-                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-                const data = await res.json();
-                const texto = generarTextoReporte(data);
-                window.location.href = `mailto:?subject=${encodeURIComponent("Reporte de Tránsito")}&body=${encodeURIComponent(texto)}`;
-            } catch (error) { mostrarToast("Error al generar reporte"; "error"); }
-        }
+       async function compartirPorEmail() {
+    try {
+        const desde = document.getElementById('fechaDesde').value;
+        const hasta = document.getElementById('fechaHasta').value;
+        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+        const data = await res.json();
+        const texto = generarTextoReporte(data);
+        window.location.href = `mailto:?subject=${encodeURIComponent("Reporte de Tránsito")}&body=${encodeURIComponent(texto)}`;
+    } catch (error) { 
+        // Corregido: cambié ; por ,
+        mostrarToast("Error al generar reporte", "error"); 
+    }
+}
 
         async function compartirPorWhatsApp() {
     try {
