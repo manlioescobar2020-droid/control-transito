@@ -129,9 +129,13 @@ app.get('/api/historial', async (req, res) => {
 
         const result = await pool.query(queryText, [limite]);
         res.json(result.rows);
+
     } catch (err) {
         console.error("Error al obtener historial:", err);
-        res.status(500).json({ error: 'Error al obtener historial' });
+        res.status(500).json({
+            error: 'Error al obtener historial',
+            detalle: err.message
+        });
     }
 });
 
