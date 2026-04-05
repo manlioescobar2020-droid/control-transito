@@ -1142,14 +1142,16 @@
     }
 
     async function abrirDashboard() {
-      ocultarTodasLasSecciones();
-      document.getElementById('dashboardSection').classList.add('active');
+  ocultarTodasLasSecciones();
+  document.getElementById('dashboardSection').classList.add('active');
 
-      const hoy = new Date().toISOString().split('T')[0];
-      document.getElementById('fechaDesde').value = hoy;
-      document.getElementById('fechaHasta').value = hoy;
-      await cargarDatosDashboard(hoy, hoy);
-    }
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('fechaDesde').value = hoy;
+  document.getElementById('fechaHasta').value = hoy;
+
+  await new Promise(resolve => setTimeout(resolve, 150));
+  await cargarDatosDashboard(hoy, hoy);
+}
 
     async function cargarDatosDashboard(desde, hasta) {
       try {
