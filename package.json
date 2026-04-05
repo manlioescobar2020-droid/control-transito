@@ -1,19 +1,12 @@
 {
   "name": "app-control-transito",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "App de Control de Transito",
+  "main": "index.html",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx serve ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "pg": "^8.20.0",
-    "socket.io": "^4.8.3"
+    "serve": "^14.2.4"
   }
 }
