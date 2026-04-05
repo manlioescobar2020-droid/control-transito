@@ -66,45 +66,47 @@ app.post('/registrar-control', async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia, firma_conductor } = req.body;
+        const { 
+            patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, 
+            id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, 
+            tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, 
+            observaciones, foto_evidencia, firma_conductor 
+        } = req.body;
 
-        // --- CORRECCIÓN DE FECHAS ---
-        const fechaSeguro = (fecha_seguro_vence && fecha_seguro_vence !== "") ? fecha_seguro vence : null;
-        const fechaRTO = (fecha_rto_vence && fecha_rto_vence !== "") ? fecha_rto_vence : null;
+        // 1. Upsert del Vehículo (Uso patricula siempre)
+        const upsertVehiculo = `
+            INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, pdf_rto) 
+            VALUES ($1, $2, $3, $4, $5) 
+            ON CONFLICT (patricula) 
+            DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, 
+                          fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, pdf_rto = EXCLUDED.pdf_rto`;
+        
+        await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fecha_seguro_vence || null, fecha_rto_vence || null]);
 
-        // 1. Upsert del Vehículo
-        const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, pdf_acta, pdf_rto) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, pdf_acta = EXCLUDED.pdf_acta; pdf_rto = EXCLUDED.pdf_rto_vence`;
-        await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fechaSeguro, fechaRTO]);
-
-        // 2. Insertar en el Historial (USANDO LAS VARIABLES LIMPIAS)
-        const insertRegistro = `INSERT INTO pdf_acta (patente, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubre; tiene_cedula, tiene_icontenido, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia, firma_conductor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`;
+        // 2. Insertar Acta
+        const insertRegistro = `
+            INSERT INTO pdf_acta (patricula, id_inspector, latitud, longitud, texto_ubicacion, 
+            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, 
+            observaciones, foto_evidencia, firma_conductor) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`;
         
         const result = await client.query(insertRegistro, [
-            patente.toUpperCase(), 
-            id_inspector, 
-            fechaSeguro, 
-            fechaRTO, 
-            latitud, 
-            longitud, 
-            texto_ubicacion, 
-            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, 
-            observaciones,
-            req.body.foto_evidencia || null,
-            req.body.firma_conductor || null
+            patricula.toUpperCase(), id_inspector, latitud, longitud, texto_ubicacion,
+            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada,
+            observaciones, foto_evidencia, firma_conductor
         ]);
 
         await client.query('COMMIT');
         io.emit('nuevo_control_registrado', result.rows[0]);
         res.json({ success: true, registro: result.rows[0] });
     } catch (err) {
-        await client.query('GET', 'ROLLBACK');
-        console.error("Error al registrar control:", err.message);
-        res.status(500).json({ error: 'Error al registrar control' });
+        await client.query('ROLLBACK');
+        console.error("Error:", err.message);
+        res.status(500).json({ error: 'Error al registrar' });
     } finally {
         client.release();
     }
 });
-
 // 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE
 app.get('/api/historial', async (req, res) => {
     try {
