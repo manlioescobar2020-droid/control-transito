@@ -18,7 +18,12 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
+console.log("DATABASE_URL existe:", !!process.env.DATABASE_URL);
 
+if (process.env.DATABASE_URL) {
+    const urlSinClave = process.env.DATABASE_URL.replace(/:\/\/(.*?):(.*?)@/, '://***:***@');
+    console.log("DATABASE_URL visible:", urlSinClave);
+}
 // --- CONFIGURACIÓN DE BASE DE DATOS ---
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
