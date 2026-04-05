@@ -1065,13 +1065,13 @@
                 });
                 const data = await res.json();
                 if(data.success) {
-                    document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
-                    document.getElementById('newUsuario').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
-                } else {
-                    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌️ Error: ${data.error}</span>`;
-                }
+    document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
+    document.getElementById('newUsuario').value = '';
+    document.getElementById('newPassword').value = '';
+    // Eliminar la línea que vuelve a poner el error aquí
+} else {
+    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
+}
             } catch (err) { alert("Error de conexión"); }
         }
 
