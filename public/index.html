@@ -1210,22 +1210,37 @@
         // --- MODAL HISTORIAL ---
 
         function abrirModalHistorial(vehiculo) {
-            const control = infoUltimoControl;
-            if (!control) { mostrarToast("No hay datos del control anterior", "warning"); return; }
-            
-            const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
-const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
-            const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence.split('T')[0] : '-';
+    const control = infoUltimoControl;
+    if (!control) { 
+        mostrarToast("No hay datos del control anterior", "warning"); 
+        return; 
+    }
+    
+    // Extraemos las fechas de forma limpia (YYYY-MM-DD)
+    const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
+    const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence.split('T')[0] : '-';
 
-            // Ahora llenamos el modal con los datos (asegúrate de tener estos IDs en tu HTML)
-            document.getElementById('historialPatente').innerText = control.patente || '-';
-            document.getElementById('historialFecha').innerText = new Date(control.fecha_hora).toLocaleString();
-            document.getElementById('historialVenceSeguro').innerText = venceSeguro;
-            document.getElementById('historialVenceRTO').innerText = venceRTO;
+    // Llenamos los campos del modal
+    if(document.getElementById('historialPatente')) {
+        document.getElementById('historialPatente').innerText = control.patente || '-';
+    }
+    if(document.getElementById('historialFecha')) {
+        document.getElementById('historialFecha').innerText = new Date(control.fecha_hora).toLocaleString();
+    }
+    if(document.getElementById('historialVenceSeguro')) {
+        document.getElementById('historialVenceSeguro').innerText = venceSeguro;
+    }
+    if(document.getElementById('historialVenceRTO')) {
+        document.getElementById('historialVenceRTO').innerText = venceRTO;
+    }
 
-            document.getElementById('modalHistorial').style.display = 'flex';
-            document.getElementById('modalHistorial').classList.remove('hidden');
-        }
+    // Mostramos el modal
+    const modal = document.getElementById('modalHistorial');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
+}
        function cerrarModalHistorial() {
     const modal = document.getElementById('modalHistorial');
     modal.style.display = 'none'; 
