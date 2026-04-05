@@ -89,7 +89,7 @@ app.get('/api/vehiculos/:patricula', async (req, res) => {
     );
 
     const controlResult = await pool.query(
-      'SELECT * FROM pdf_acta WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1',
+      'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1',
       [patricula]
     );
 
@@ -158,7 +158,7 @@ app.post('/registrar-control', async (req, res) => {
     ]);
 
     const insertRegistro = `
-      INSERT INTO pdf_acta (
+      INSERT INTO registros_controles (
         patricula,
         id_inspector,
         latitud,
@@ -233,7 +233,7 @@ app.get('/api/historial', async (req, res) => {
         tiene_seguro,
         tiene_08_pago,
         tiene_rto_habilitada
-      FROM pdf_acta
+      FROM registros_controles
       ORDER BY fecha_hora DESC
       LIMIT $1
       `,
@@ -313,7 +313,7 @@ app.get('/api/estadisticas', async (req, res) => {
         u.nombre,
         u.usuario,
         COUNT(r.id)::int AS cantidad
-      FROM pdf_acta r
+      FROM registros_controles r
       LEFT JOIN usuarios u ON u.id = r.id_inspector
       WHERE r.fecha_hora::date BETWEEN $1 AND $2
       GROUP BY u.id, u.nombre, u.usuario
@@ -379,7 +379,7 @@ app.get('/api/exportar-registros', async (req, res) => {
         tiene_08_pago,
         tiene_rto_habilitada,
         observaciones
-      FROM pdf_acta
+      FROM registros_controles
       WHERE fecha_hora::date BETWEEN $1 AND $2
       ORDER BY fecha_hora DESC
       `,
