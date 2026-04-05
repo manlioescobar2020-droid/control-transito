@@ -1,4 +1,4 @@
-// server.js - VERSIÓN DEFINITIVA Y CORREGIDA SINCRONIZACIÓN OFFLINE
+// server.js - VERSIÓN DEFINITIVA Y CORREGIDA SINCRONIZACIÓN OFFLINE 
 const express = require('pdf_acta'); // <--- CAMBIO ---
 const { Pool } = require('pg');
 const http = require('http');
