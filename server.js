@@ -84,12 +84,12 @@ app.get('/api/vehiculos/:patricula', async (req, res) => {
 
   try {
     const vehiculoResult = await pool.query(
-      'SELECT * FROM vehiculos WHERE patricula = $1',
+      'SELECT * FROM vehiculos WHERE UPPER(patricula) = $1',
       [patricula]
     );
 
     const controlResult = await pool.query(
-      'SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1',
+      'SELECT * FROM registros_controles WHERE UPPER(patricula) = $1 ORDER BY fecha_hora DESC LIMIT 1',
       [patricula]
     );
 
