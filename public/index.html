@@ -1154,69 +1154,82 @@
 }
 
     async function cargarDatosDashboard(desde, hasta) {
-      try {
-        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-        const data = await res.json();
+  try {
+    const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+    const data = await res.json();
 
-        document.getElementById('numTotalHoy').innerText = data.totalHoy || 0;
+    document.getElementById('numTotalHoy').innerText = data.totalHoy || 0;
 
-        const nombres = (data.porInspector || []).map(u => `${u.nombre} (${u.usuario})`);
-        const cantidades = (data.porInspector || []).map(u => u.cantidad);
+    const nombres = (data.porInspector || []).map(u => u.nombre || u.usuario);
+    const cantidades = (data.porInspector || []).map(u => u.cantidad || 0);
 
-        const ctxBarras = document.getElementById('graficoInspectores').getContext('2d');
-        if (miGrafico) miGrafico.destroy();
+    const ctxBarras = document.getElementById('graficoInspectores').getContext('2d');
+    if (miGrafico) miGrafico.destroy();
 
-        miGrafico = new Chart(ctxBarras, {
-          type: 'bar',
-          data: {
-            labels: nombres,
-            datasets: [{
-              label: 'Controles',
-              data: cantidades,
-              backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#f59e0b'],
-              borderWidth: 2,
-              borderRadius: 5
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-          }
-        });
-        |miGrafico.resize();
-        miGrafico.update();
-        const faltas = data.docsFaltantes || {};
-        const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
-        if (miGraficoTorta) miGraficoTorta.destroy();
-
-        miGraficoTorta = new Chart(ctxTorta, {
-          type: 'doughnut',
-          data: {
-            labels: ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'],
-            datasets: [{
-              data: [
-                faltas.falta_cedula || 0,
-                faltas.falta_licencia || 0,
-                faltas.falta_seguro || 0,
-                faltas.falta_08 || 0,
-                faltas.falta_rto || 0
-              ],
-              backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } }
-          }
-        });
-        miGraficoTorta.resize();
-        miGraficoTorta.update();
-      } catch (err) {
-        console.error(err);
-        mostrarToast('Error al cargar dashboard', 'error');
+    miGrafico = new Chart(ctxBarras, {
+      type: 'bar',
+      data: {
+        labels: nombres,
+        datasets: [{
+          label: 'Controles',
+          data: cantidades,
+          backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#f59e0b'],
+          borderWidth: 2,
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
       }
-    }
+    });
+
+    miGrafico.resize();
+    miGrafico.update();
+
+    const faltas = data.docsFaltantes || {};
+
+    const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
+    if (miGraficoTorta) miGraficoTorta.destroy();
+
+    miGraficoTorta = new Chart(ctxTorta, {
+      type: 'doughnut',
+      data: {
+        labels: ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'],
+        datasets: [{
+          data: [
+            faltas.faltacedula || 0,
+            faltas.faltalicencia || 0,
+            faltas.faltaseguro || 0,
+            faltas.falta08 || 0,
+            faltas.faltarto || 0
+          ],
+          backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+
+    miGraficoTorta.resize();
+    miGraficoTorta.update();
+
+  } catch (err) {
+    console.error(err);
+    mostrarToast('Error al cargar dashboard', 'error');
+  }
+}
 
     function actualizarDashboard() {
       const desde = document.getElementById('fechaDesde').value;
