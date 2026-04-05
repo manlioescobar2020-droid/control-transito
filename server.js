@@ -165,31 +165,53 @@ app.get('/api/estadisticas', async (req, res) => {
         const hoy = new Date().toISOString().split('T')[0];
         const fechaDesde = desde || hoy;
         const fechaHasta = hasta || hoy;
-        
-        // Total de controles
-        const totalResult = await pool.query("SELECT COUNT(*) as total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2", [fechaDesde, fechaHasta]);
-        
-        // Controles por inspector
-        const porInspectorResult = await pool.query(`SELECT u.id, u.nombre, u.usuario, COUNT(r.id) as cantidad FROM usuarios u INNER JOIN registros_controles r ON u.id = r.id_inspector WHERE r.fecha_hora::date BETWEEN $1 AND $2 GROUP BY u.id, u.nombre, u.usuario HAVING COUNT(r.id) > 0 ORDER BY cantidad DESC`, [fechaDesde, fechaHasta]);
-        
-        // NUEVO: Contador de documentos faltantes
-      const faltantesResult = await pool.query(`
-  SELECT 
-    COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) as falta_cedula,
-    COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) as falta_licencia,
-    COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) as falta_seguro,
-    COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) as falta_08,
-    COALESCE(SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) as falta_rto
-  FROM registros_controles 
-  WHERE fecha_hora::date BETWEEN $1 AND $2
-`, [fechaDesde, fechaHasta]);
 
-        res.json({ 
-            totalHoy: totalResult.rows[0].total, 
+        const totalResult = await pool.query(
+            `SELECT COUNT(*) AS total
+             FROM registros_controles
+             WHERE fecha_hora::date BETWEEN $1 AND $2`,
+            [fechaDesde, fechaHasta]
+        );
+
+        const porInspectorResult = await pool.query(
+            `SELECT 
+                u.id,
+                u.nombre,
+                u.usuario,
+                COUNT(r.id) AS cantidad
+             FROM registros_controles r
+             LEFT JOIN usuarios u ON u.id = r.id_inspector
+             WHERE r.fecha_hora::date BETWEEN $1 AND $2
+             GROUP BY u.id, u.nombre, u.usuario
+             ORDER BY cantidad DESC`,
+            [fechaDesde, fechaHasta]
+        );
+
+        const faltantesResult = await pool.query(
+            `SELECT 
+                COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) AS falta_cedula,
+                COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) AS falta_licencia,
+                COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) AS falta_seguro,
+                COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) AS falta_08,
+                COALESCE(SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) AS falta_rto
+             FROM registros_controles
+             WHERE fecha_hora::date BETWEEN $1 AND $2`,
+            [fechaDesde, fechaHasta]
+        );
+
+        res.json({
+            totalHoy: Number(totalResult.rows[0]?.total || 0),
             porInspector: porInspectorResult.rows,
-            docsFaltantes: faltantesResult.rows[0] // NUEVO DATO PARA EL FRONT
+            docsFaltantes: faltantesResult.rows[0] || {
+                falta_cedula: 0,
+                falta_licencia: 0,
+                falta_seguro: 0,
+                falta_08: 0,
+                falta_rto: 0
+            }
         });
     } catch (error) {
+        console.error('Error al obtener estadísticas:', error);
         res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
 });
