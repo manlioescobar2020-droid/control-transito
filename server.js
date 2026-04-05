@@ -214,9 +214,13 @@ app.get('/api/estadisticas', async (req, res) => {
                 falta_rto: 0
             }
         });
+
     } catch (error) {
-        console.error('Error al obtener estadísticas:', error);
-        res.status(500).json({ error: 'Error al obtener estadísticas' });
+        console.error("Error al obtener estadísticas:", error);
+        res.status(500).json({
+            error: 'Error al obtener estadísticas',
+            detalle: error.message
+        });
     }
 });
 
