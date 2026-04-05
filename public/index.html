@@ -1464,7 +1464,7 @@
                 texto += `--- CONTROL ${index + 1} ---\n`;
                 texto += `Patente: ${ctrl.patente || 'SIN PATENTE'}\n`;
                 texto += `Modelo: ${ctrl.modelo || '-'}\n`;
-                texto += `Docs: Céd[${ctrl.tiene_cedula ? '✅' : '❌']`) Lic[${ctrl.tiene_licencia ? '✅' : '❌'] Seguro[${ctrl.tiene_seguro ? '✅' : '❌'] 08[${ctrl.tiene_08_pago ? '✅' : '❌'] RTO[${ctrl.tiene_rto_habilitada ? '✅' : '❌']\n`;
+                texto += `Docs: Céd[${ctrl.tiene_cedula ? '✅' : '❌'}] Lic[${ctrl.tiene_licencia ? '✅' : '❌'}] Seguro[${ctrl.tiene_seguro ? '✅' : '❌'}] 08[${ctrl.tiene_08_pago ? '✅' : '❌'}] RTO[${ctrl.tiene_rto_habilitada ? '✅' : '❌'}]\n`;
                 if (ctrl.observaciones) texto += `Obs: ${ctrl.observaciones || 'Sin observaciones'}`;
                 texto += `\n`;
             });
