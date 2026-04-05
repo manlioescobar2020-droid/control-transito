@@ -492,17 +492,15 @@
                     data = buscarEnCacheLocal(patente);
                 }
             } else {
-                data = buscarEnCacheLocal(patente);
-            }
+               data = buscarEnCacheLocal(patente);
+        }
 
-            vehiculoActual = data.vehiculo;
-            const ultimoControl = data. 
-            
-         ///   let html = "";
-            }
-            if (ultimoControl) {
-                const fechaCtrl = new Date(ultimoControl.fecha_hora);
-                const ahora = new Date();
+        vehiculoActual = data.vehiculo;
+        const ultimoControl = data.ultimoControl; 
+
+        if (ultimoControl) {
+            const fechaCtrl = new Date(ultimoControl.fecha_hora);
+            const ahora = new Date();
                 const minutos = Math.round((ahora - fechaCtrl) / 60000);
                 
                 let tiempoTexto = "";
