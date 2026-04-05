@@ -1184,7 +1184,8 @@
             scales: { y: { beginAtZero: true } }
           }
         });
-
+        |miGrafico.resize();
+        miGrafico.update();
         const faltas = data.docsFaltantes || {};
         const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
         if (miGraficoTorta) miGraficoTorta.destroy();
@@ -1209,6 +1210,8 @@
             plugins: { legend: { position: 'bottom' } }
           }
         });
+        miGraficoTorta.resize();
+        miGraficoTorta.update();
       } catch (err) {
         console.error(err);
         mostrarToast('Error al cargar dashboard', 'error');
