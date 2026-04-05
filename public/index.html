@@ -1304,13 +1304,15 @@
         }
 
         function buscarEnCacheLocal(patente) {
-            const cache = JSON.parse(localStorage.getItem('cache_ vehiculos') || '[]');
-            const encontrado = cache.find(c => c.patente === patente);
-            if (encontrado) {
-                return { vehiculo: encontrado.vehiculo, ultimoControl: encontrado.ultimoControl, esOffline: true };
-            }
-            return { vehiculo: null, ultimoControl: null, esOffline: true };
-        }
+    // Corregido: Eliminado el espacio en 'cache_vehiculos'
+    const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+    const encontrado = cache.find(c => c.patente === patente);
+    
+    if (encontrado) {
+        return { vehiculo: encontrado.vehiculo, ultimoControl: encontrado.ultimoControl, esOffline: true };
+    }
+    return { vehiculo: null, ultimoControl: null, esOffline: true };
+}
 
         async function sincronizarDatosLocales() {
             try {
