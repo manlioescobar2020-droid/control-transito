@@ -1234,35 +1234,84 @@
     }
 
     function abrirModalHistorial() {
-      if (!infoUltimoControl) {
-        mostrarToast('No hay datos del último control', 'warning');
-        return;
-      }
+  if (!infoUltimoControl) {
+    mostrarToast('No hay datos del último control', 'warning');
+    return;
+  }
 
-      const fecha = infoUltimoControl.fecha_hora ? new Date(infoUltimoControl.fecha_hora).toLocaleString() : '-';
-      const venceSeguro = infoUltimoControl.fecha_seguro_vence ? String(infoUltimoControl.fecha_seguro_vence).split('T')[0] : '-';
-      const venceRTO = infoUltimoControl.fecha_rto_vence ? String(infoUltimoControl.fecha_rto_vence).split('T')[0] : '-';
+  const fecha = infoUltimoControl.fecha_hora
+    ? new Date(infoUltimoControl.fecha_hora).toLocaleString()
+    : '-';
 
-      const html = `
-        <p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p>
-        <hr style="border-color:#334155;">
-        <div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
-            <span style="color:white; font-weight:bold;">${venceSeguro}</span>
-          </div>
-          <div style="display:flex; justify-content:space-between;">
-            <span style="color:#94a3b8; font-size:12px;">VENCE RTO:</span>
-            <span style="color:white; font-weight:bold;">${venceRTO}</span>
-          </div>
-        </div>
-      `;
+  const venceSeguro = infoUltimoControl.fecha_seguro_vence
+    ? String(infoUltimoControl.fecha_seguro_vence).split('T')[0]
+    : '-';
 
-      document.getElementById('contenidoHistorial').innerHTML = html;
-      const modal = document.getElementById('modalHistorial');
-      modal.style.display = 'flex';
-      modal.classList.remove('hidden');
-    }
+  const venceRTO = infoUltimoControl.fecha_rto_vence
+    ? String(infoUltimoControl.fecha_rto_vence).split('T')[0]
+    : '-';
+
+  const html = `
+    <p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p>
+    <hr style="border-color:#334155; margin: 12px 0;">
+
+    <div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+        <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO</span>
+        <span style="color:white; font-weight:bold;">${venceSeguro}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:#94a3b8; font-size:12px;">VENCE RTO</span>
+        <span style="color:white; font-weight:bold;">${venceRTO}</span>
+      </div>
+    </div>
+
+    <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155;">
+      <div style="color:#94a3b8; font-size:12px; margin-bottom:10px; font-weight:bold;">DOCUMENTACIÓN PRESENTADA</div>
+
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+        <span style="color:#f3f4f6;">Cédula</span>
+        <span style="color:${infoUltimoControl.tiene_cedula ? '#22c55e' : '#ef4444'}; font-weight:bold;">
+          ${infoUltimoControl.tiene_cedula ? '✅ Sí' : '❌ No'}
+        </span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+        <span style="color:#f3f4f6;">Licencia</span>
+        <span style="color:${infoUltimoControl.tiene_licencia ? '#22c55e' : '#ef4444'}; font-weight:bold;">
+          ${infoUltimoControl.tiene_licencia ? '✅ Sí' : '❌ No'}
+        </span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+        <span style="color:#f3f4f6;">Seguro</span>
+        <span style="color:${infoUltimoControl.tiene_seguro ? '#22c55e' : '#ef4444'}; font-weight:bold;">
+          ${infoUltimoControl.tiene_seguro ? '✅ Sí' : '❌ No'}
+        </span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+        <span style="color:#f3f4f6;">08 Pagado</span>
+        <span style="color:${infoUltimoControl.tiene_08_pago ? '#22c55e' : '#ef4444'}; font-weight:bold;">
+          ${infoUltimoControl.tiene_08_pago ? '✅ Sí' : '❌ No'}
+        </span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:6px 0;">
+        <span style="color:#f3f4f6;">RTO Habilitada</span>
+        <span style="color:${infoUltimoControl.tiene_rto_habilitada ? '#22c55e' : '#ef4444'}; font-weight:bold;">
+          ${infoUltimoControl.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}
+        </span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('contenidoHistorial').innerHTML = html;
+
+  const modal = document.getElementById('modalHistorial');
+  modal.style.display = 'flex';
+  modal.classList.remove('hidden');
+}
 
     function cerrarModalHistorial() {
       const modal = document.getElementById('modalHistorial');
