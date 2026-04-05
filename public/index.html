@@ -1274,19 +1274,7 @@
     }
 }
 
-        async function compartirPorWhatsApp() {
-    try {
-        const desde = document.getElementById('fechaDesde').value;
-        const hasta = document.getElementById('fechaHasta').value;
-        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-        const data = await res.json();
-        // CORRECCIÓN: Se cerraron correctamente los paréntesis )) antes de la llave }
-        window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))}`, '_blank');
-    } catch (error) { 
-        mostrarToast("Error al generar reporte", "error"); 
-    }
-}
-
+        
         // --- TEMA ---
 
         function aplicarTema() {
