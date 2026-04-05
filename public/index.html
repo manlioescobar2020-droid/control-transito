@@ -822,98 +822,148 @@
     let canvas, ctx;
     let ultimaX = 0;
     let ultimaY = 0;
-
     function mostrarPadFirma() {
-        const btn = document.getElementById('btnIniciarFirma');
-        if (btn) btn.style.display = 'none';
+    const seccionFirma = document.getElementById('seccionFirma');
+    const btn = document.getElementById('btnIniciarFirma');
 
-        canvas = document.getElementById('canvasFirma');
-        ctx = canvas.getContext('2d');
+    if (seccionFirma) {
+        seccionFirma.style.display = 'block';
+    }
 
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+    if (btn) {
+        btn.style.display = 'none';
+    }
 
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#000000';
+    canvas = document.getElementById('canvasFirma');
+    if (!canvas) {
+        mostrarToast("No se encontró el área de firma", "error");
+        return;
+    }
 
-        canvas.addEventListener('mousedown', iniciarTrazo);
-        canvas.addEventListener('mousemove', dibujar);
-        canvas.addEventListener('mouseup', terminarTrazo);
-        canvas.addEventListener('mouseout', terminarTrazo);
+    ctx = canvas.getContext('2d');
 
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
-            canvas.dispatchEvent(mouseEvent);
-        }, { passive: false });
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(rect.width, 300);
+    canvas.height = Math.max(rect.height, 180);
 
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
-            canvas.dispatchEvent(mouseEvent);
-        }, { passive: false });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#000000';
 
-        canvas.addEventListener('touchend', () => {
-            const mouseEvent = new MouseEvent('mouseup', {});
-            canvas.dispatchEvent(mouseEvent);
+    canvas.onmousedown = iniciarTrazo;
+    canvas.onmousemove = dibujar;
+    canvas.onmouseup = terminarTrazo;
+    canvas.onmouseleave = terminarTrazo;
+
+    canvas.ontouchstart = function (e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        iniciarTrazo({
+            clientX: touch.clientX,
+            clientY: touch.clientY
         });
+    };
+
+    canvas.ontouchmove = function (e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        dibujar({
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+    };
+
+    canvas.ontouchend = function (e) {
+        e.preventDefault();
+        terminarTrazo();
+    };
+}
+
+function iniciarTrazo(e) {
+    if (!canvas) return;
+    estaFirmando = true;
+    [ultimaX, ultimaY] = obtenerCoords(e);
+}
+
+function dibujar(e) {
+    if (!estaFirmando || !ctx) return;
+
+    const [x, y] = obtenerCoords(e);
+    ctx.beginPath();
+    ctx.moveTo(ultimaX, ultimaY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    [ultimaX, ultimaY] = [x, y];
+}
+
+function terminarTrazo() {
+    estaFirmando = false;
+}
+
+function obtenerCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    return [
+        e.clientX - rect.left,
+        e.clientY - rect.top
+    ];
+}
+
+function limpiarFirma() {
+    const c = document.getElementById('canvasFirma');
+    if (c) {
+        const x = c.getContext('2d');
+        x.clearRect(0, 0, c.width, c.height);
+        x.fillStyle = '#ffffff';
+        x.fillRect(0, 0, c.width, c.height);
+    }
+    firmaBase64Actual = null;
+}
+
+function guardarFirma() {
+    if (!canvas || !ctx) {
+        mostrarToast("Primero debes abrir el cuadro de firma", "warning");
+        return;
     }
 
-    function iniciarTrazo(e) {
-        estaFirmando = true;
-        [ultimaX, ultimaY] = obtenerCoords(e);
-    }
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let hayTrazo = false;
 
-    function dibujar(e) {
-        if (!estaFirmando) return;
-        const [x, y] = obtenerCoords(e);
-        ctx.beginPath();
-        ctx.moveTo(ultimaX, ultimaY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        [ultimaX, ultimaY] = [x, y];
-    }
+    for (let i = 0; i < imageData.length; i += 4) {
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const a = imageData[i + 3];
 
-    function terminarTrazo() {
-        estaFirmando = false;
-    }
-
-    function obtenerCoords(e) {
-        const rect = canvas.getBoundingClientRect();
-        return [e.clientX - rect.left, e.clientY - rect.top];
-    }
-
-    function limpiarFirma() {
-        const c = document.getElementById('canvasFirma');
-        if (c) {
-            const x = c.getContext('2d');
-            x.clearRect(0, 0, c.width, c.height);
+        if (!(r === 255 && g === 255 && b === 255 && a === 255)) {
+            hayTrazo = true;
+            break;
         }
-        firmaBase64Actual = null;
     }
 
-    function guardarFirma() {
-        const pixelBuffer = new Uint32Array(
-            ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
-        );
+    if (!hayTrazo) {
+        mostrarToast("El canvas está vacío. Firma primero.", "warning");
+        return;
+    }
 
-        if (!pixelBuffer.some(color => color !== 0)) {
-            alert("El canvas está vacío. Por favor firme o cancele.");
-            return;
-        }
+    firmaBase64Actual = canvas.toDataURL('image/png');
+    mostrarToast("Firma capturada correctamente", "success");
 
-        firmaBase64Actual = canvas.toDataURL('image/png');
-        mostrarToast("Firma capturada correctamente", "success");
-        document.getElementById('seccionFirma').style.display = 'none';
+    const seccionFirma = document.getElementById('seccionFirma');
+    if (seccionFirma) {
+        seccionFirma.style.display = 'none';
+    }
 
-        const btn = document.getElementById('btnIniciarFirma');
-        if (btn) {
-            btn.innerText = "Firma Guardada ✅";
-            btn.style.background = "#10b981";
-        }
+    const btn = document.getElementById('btnIniciarFirma');
+    if (btn) {
+        btn.style.display = 'block';
+        btn.innerText = "Firma Guardada ✅";
+        btn.style.background = "#10b981";
+    }
+}
+    
     }
 
     // --- MANEJO DE FOTOS ---
