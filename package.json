@@ -1,7 +1,7 @@
 {
   "name": "app-control-transito",
   "version": "1.0.0",
-  "description": "App de Control de Transito",
+  "description": "App Estatica",
   "main": "index.html",
   "scripts": {
     "start": "npx serve ."
