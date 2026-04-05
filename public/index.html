@@ -997,7 +997,7 @@
         }
 
         function abrirMapa() {
-            ocultar tardasSecciones();
+            ocultar ocultarTodasLasSecciones();
             document.getElementById('mapSection').classList.add('active');
             await new Promise(resolve => setTimeout(resolve, 150));
 
@@ -1038,7 +1038,7 @@
         // --- USUARIOS ---
 
         function abrirUsuarios() {
-            ocultar tardasSecciones();
+            ocultarTodasLasSecciones();
             document.getElementById('userSection').classList.add('active');
             document.getElementById('msgUsuario').innerHTML = '';
         }
@@ -1076,7 +1076,7 @@
         }
 
         async function verListaUsuarios() {
-            ocultar tardasSecciones();
+        ocultarTodasLasSecciones();
             document.getElementById('listUsersSection').classList.add('active');
             const tbody = document.getElementById('tablaUsuariosBody');
             tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
@@ -1110,7 +1110,7 @@
         }
 
         async function abrirDashboard() {
-            ocultar tardasSecciones();
+            ocultarTodasLasSecciones();
             document.getElementById('dashboardSection').classList.add('active');
             const hoy = new Date().toISOString().split('T')[0];
             document.getElementById('fechaDesde').value = hoy;
