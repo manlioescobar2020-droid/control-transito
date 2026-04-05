@@ -1273,7 +1273,7 @@
                 const hasta = document.getElementById('fechaHasta').value;
                 const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
                 const data = await res.json();
-                window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))`, '_blank');
+                window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))}`, '_blank');
             } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
 
