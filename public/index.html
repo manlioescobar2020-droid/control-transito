@@ -1,1579 +1,1023 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Tránsito</title>
-
-    <style>
-        /* ESTILO PARA EL BOTÓN ACTIVO (GRABANDO) */
-        .grabando-voz {
-            background-color: #fee2e2e !important;
-            color: #dc2626 !important;
-            animation: pulso-mic 1.5s infinite;
-        }
-
-        @keyframes pulso-mic {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        :root {
-            --bg-body: #e2e8f0;
-            --bg-card: #ffffff;
-            --text-main: #1e293b;
-            --text-sec: #64748b8;
-            --input-bg: #ffffff;
-            --input-border: #e2e8f0;
-            --primary: #3b82f6;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning: #f59e0b;
-            --dark: #1e293b;
-        }
-
-        .dark-mode {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f3f4f6;
-            --text-sec: #94a3b8;
-            --input-bg: #374151;
-            --input-border: #4b5563;
-        }
-        .dark-mode .card { border: 1px solid #4b5563; }
-        .dark-mode .card-alert { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
-        .dark-mode .card-success { background: #064e3b; border-color: #059669; color: #bbf7d0; }
-        .dark-mode .card-warning { background: #854d0e; border-color: #713f12; color: #fde68a; }
-        .dark-mode .login-box h2 { color: white; }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; transition: background-color: 0.3s; }
-        .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
-        
-        .header-badge-container { position: relative; display: inline-block; }
-        .badge-pendientes {
-            position: absolute; top: -10px; right: -18px; background: #dc2626; color: white;
-            border-radius: 50%; min-width: 22px; height: 22px; font-size: 11px; font-weight: bold;
-            display: none; align-items: center; justify-content: center; 
-            border: 2px solid var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            animation: pulse-badge 2s infinite;
-        }
-        @keyframes pulse-badge {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
-            70% { box-shadow: 0 0 0 0 8px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-        }
-
-        .login-box { padding: 40px 20px; }
-        .login-box h2 { text-align: center; color: var(--text-main); margin-bottom: 30px; }
-
-        input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s; background-color: var(--input-bg); color: var(--text-main); }
-        input:focus { border-color: var(--primary); outline: none; }
-
-        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: transform: 0.1s, opacity: 0.2s; }
-        button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: var(--text-sec); color: white; margin-top: 10px; }
-        .btn-purple { background: #7c3aed; color: white; margin-top: 10px; }
-        .btn-warning { background: var(--warning); color: black; }
-
-        .section { padding: 20px; display: none; }
-        .section.active { display: block; }
-
-        #mapSection { padding: 0; position: relative; }
-        #mapSection.active { display: block; height: calc(100vh - 70px); }
-        #map { height: 100%; min-height: 450px; width: 100%; background: #f0f0f0; }
-
-        .card { border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid var(--input-border); background-color: var(--bg-card); color: var(--text-main); }
-        .card h3 { margin-top: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
-        .card-alert { background: #fef2f2; border-color: #fca5a5a; color: #991b1b; }
-        .card-success { background: #f0fdf4; border-color: #86efac; color: #166534; }
-        .card-warning { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
-
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-sec); font-size: 14px; }
-
-        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .check-item { background: var(--input-bg); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; }
-        .check-item:has(input:checked) { border-color: var(--primary); background: #eff6ff; }
-        .check-item input { width: 20px; height: 20px; margin: 0; }
-
-        .footer-fixed { position: fixed; bottom: 0; width: 100%; max-width: 500px; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); box-sizing: border-box; display: none; }
-        .hidden { display: none !important; }
-        .text-center { text-align: center; }
-
-        .table-users { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 15px; }
-        .table-users th, .table-users td { padding: 12px; text-align: left; border-bottom: 1px solid var(--input-border); color: var(--text-main); }
-        .table-users th { background-color: var(--dark); color: white; font-weight: bold; border-bottom: 2px solid #1e293b; }
-        .table-users tr:hover { background-color: var(--input-bg); }
-        .badge-role { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-owner { background-color: #fbbf24; color: #78350f; }
-        .badge-inspector { background-color: #dbeafe; color: #1e40af; }
-
-        #txtPatente, #txtModelo, #txtNro08 {
-            width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--input-border); border-radius: 8px; box-sizing: border-box; font-size: 20px; text-align: center;
-            background-color: var(--input-bg); color: var(--text-main); text-transform: uppercase;
-        }
-        .dark-mode #txtPatente { color: var(--text-main); background-color: #374151; border-color: #4b5563; }
-        .dark-mode input[type="date"], .dark-mode input[type="text"] { color: var(--text-main); color-scheme: light; }
-    </style>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Control de Tránsito</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <style>
+    :root {
+      --bg-body: #e2e8f0;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-sec: #64748b;
+      --input-bg: #ffffff;
+      --input-border: #e2e8f0;
+      --primary: #3b82f6;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --dark: #1e293b;
+    }
+    .dark-mode {
+      --bg-body: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f3f4f6;
+      --text-sec: #94a3b8;
+      --input-bg: #374151;
+      --input-border: #4b5563;
+    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; display: flex; justify-content: center; min-height: 100vh; transition: background-color 0.3s; }
+    .container { width: 100%; max-width: 500px; background: var(--bg-card); min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; padding-bottom: 80px; box-sizing: border-box; }
+    .header { background: var(--primary); color: white; padding: 20px; }
+    .header-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .header-actions { display:flex; gap:10px; align-items:center; }
+    .header h1 { margin:0; font-size:24px; }
+    .header p { margin:5px 0 0; opacity:.9; font-size:14px; }
+    .login-box { padding: 40px 20px; }
+    .login-box h2 { text-align:center; margin-bottom:30px; }
+    input, select, textarea { width:100%; padding:15px; margin:8px 0; border:2px solid var(--input-border); border-radius:8px; box-sizing:border-box; font-size:16px; background-color:var(--input-bg); color:var(--text-main); }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); outline:none; }
+    button { width:100%; padding:15px; border:none; border-radius:8px; font-size:18px; font-weight:bold; cursor:pointer; transition:transform .1s, opacity .2s; }
+    button:active { transform: scale(.98); }
+    button:disabled { opacity: .6; cursor:not-allowed; }
+    .btn-primary { background: var(--primary); color:white; }
+    .btn-success { background: var(--success); color:white; }
+    .btn-danger { background: var(--danger); color:white; }
+    .btn-secondary { background: var(--text-sec); color:white; }
+    .btn-purple { background: #7c3aed; color:white; }
+    .btn-warning { background: var(--warning); color:black; }
+    .section { padding:20px; display:none; }
+    .section.active { display:block; }
+    .card { border-radius:10px; padding:15px; margin:15px 0; border:1px solid var(--input-border); background-color:var(--bg-card); color:var(--text-main); }
+    .card h3, .card h4 { margin-top:0; }
+    .card-alert { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    .card-success { background:#f0fdf4; border-color:#86efac; color:#166534; }
+    .card-warning { background:#fffbeb; border-color:#fcd34d; color:#92400e; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:600; color:var(--text-sec); font-size:14px; }
+    .checkbox-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .check-item { background:var(--input-bg); padding:10px; border-radius:8px; display:flex; align-items:center; gap:10px; cursor:pointer; border:2px solid transparent; }
+    .check-item input { width:20px; height:20px; margin:0; }
+    .check-item.checked { border-color: var(--primary); background:#eff6ff; }
+    .footer-fixed { position:fixed; bottom:0; width:100%; max-width:500px; background:var(--bg-card); padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.05); box-sizing:border-box; display:none; }
+    .hidden { display:none !important; }
+    .text-center { text-align:center; }
+    #mapSection { padding:0; position:relative; }
+    #mapSection.active { display:block; height:calc(100vh - 70px); }
+    #map { height:100%; min-height:450px; width:100%; background:#f0f0f0; }
+    .badge-pendientes { display:none; align-items:center; justify-content:center; min-width:22px; height:22px; border-radius:50%; background:#dc2626; color:#fff; font-size:11px; font-weight:bold; padding:0 6px; margin-left:8px; }
+    .toolbar { display:none; margin-top:10px; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .toolbar button, .header-actions button { width:auto; font-size:14px; padding:10px 12px; }
+    .table-users { width:100%; border-collapse:collapse; margin-top:15px; font-size:15px; }
+    .table-users th, .table-users td { padding:12px; text-align:left; border-bottom:1px solid var(--input-border); }
+    .table-users th { background-color:var(--dark); color:white; }
+    .badge-role { padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; text-transform:uppercase; }
+    .badge-owner { background-color:#fbbf24; color:#78350f; }
+    .badge-inspector { background-color:#dbeafe; color:#1e40af; }
+    .grabando-voz { background-color:#fee2e2 !important; color:#dc2626 !important; animation:pulso-mic 1.5s infinite; }
+    @keyframes pulso-mic { 0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)} }
+  </style>
 </head>
 <body>
+  <div id="loginScreen" class="container login-box">
+    <div class="text-center" style="margin-bottom: 30px;">
+      <div style="font-size: 50px;">👮‍♂️</div>
+      <h2>Control de Tránsito</h2>
+      <p style="color: #64748b;">Ingresá tus credenciales para iniciar tu turno</p>
+    </div>
+    <input type="text" id="txtUsuario" placeholder="Usuario">
+    <input type="password" id="txtPassword" placeholder="Password">
+    <div id="loginError" class="card card-alert hidden" style="text-align:center;">Usuario o contraseña incorrectos</div>
+    <button class="btn-primary" onclick="iniciarSesion()">INICIAR SESIÓN</button>
+  </div>
 
-    <!-- PANTALLA DE LOGIN -->
-    <div id="loginScreen" class="container login-box">
-        <div class="text-center" style="margin-bottom: 30px;">
-            <div style="font-size: 50px;">👮‍♂️</div>
-            <h2>Control de Tráquíb</h2>
-            <p style="color: #64748b;">Ingresá tus credenciales para iniciar tu turno</p>
+  <div id="mainApp" class="container" style="display:none;">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div style="display:flex; align-items:center;">
+            <h1>Control Vehicular</h1>
+            <span id="badgePendientes" class="badge-pendientes">0</span>
+          </div>
+          <p>Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)</p>
+          <div id="adminTools" class="toolbar">
+            <button class="btn-success" onclick="abrirDashboard()">📊 Stats</button>
+            <button class="btn-danger" onclick="abrirMapa()">📍 Mapa</button>
+            <button class="btn-purple" onclick="abrirUsuarios()">👤 Usuarios</button>
+          </div>
         </div>
-        <input type="text" id="txtUsuario" placeholder="Usuario">
-        <input type="password" id="txtPassword" placeholder="Password">
-        <div id="loginError" class="card card-alert hidden" style="text-align:center;">
-            Usuario o contraseña incorrectos
+        <div class="header-actions">
+          <button onclick="exportarPendientes()" title="Exportar pendientes">📋</button>
+          <button onclick="toggleDarkMode()" id="btnDarkMode">🌙</button>
+          <button onclick="cerrarSesion()" class="btn-secondary">Salir ❌</button>
         </div>
-        <button class="btn-primary" onclick="iniciarSesion()">INICIAR SESIÓN</button>
+      </div>
     </div>
 
-    <!-- PANTALLA PRINCIPAL -->
-    <div id="mainApp" class="container" style="display:none;">
-
-        <div class="header">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
-                <div>
-                    <div class="header-badge-container">
-                        <h1 style="margin:0;">Control Vehicular</h1>
-                        <span id="badgePendientes" class="badge-pendientes">0</span>
-                    </div>
-                    <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">
-                        Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)
-                    </p>
-                    <div id="reportTools" style="display:none; margin-top:10px; justify-content: center; gap: 10px;">
-                        <button class="btn-success" onclick="abrirDashboard()">📊 Stats</button>
-                        <button class="btn-danger" onclick="abrirMapa()">📍 Mapa</button>
-                        <button class="btn-purple" onclick="abrirUsuarios()">👤 Usuarios</button>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                    <button onclick="exportarPendientes()" style="width:auto; padding: 8px 12px; font-size: 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 20px;" title="Exportar pendientes por emergencia">📋</button>
-                    <button onclick="toggleDarkMode()" id="btnDarkMode" style="width:auto; padding: 8px 15px; font-size: 18px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 50%;">🌙</button>
-                    <button onclick="cerrarSesion()" class="btn-secondary" style="padding: 10px 15px; font-size: 14px;">Salir ❌</button>
-                </div>
-            </div>
-
-        <!-- Sección Buscador -->
-        <div id="searchSection" class="section active">
-            <div style="padding: 20px;">
-                <label style="color: #64748b; font-weight:bold;">INGRESAR PATENTE</label>
-                <input type="text" id="txtPatente" placeholder="Ej: ABC123">
-                <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
-            </div>
-            <div id="divResultado" style="padding: 0 20px;"></div>
-        </div>
-
-        <!-- Sección Formulario -->
-        <div id="formSection" class="section">
-            <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                <div class="form-group">
-                    <label>DATOS DEL VEHÍCULO</label>
-                    <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)" oninput="this.value = this.value.toUpperCase()">
-                    <input type="text" id="txtNro08" placeholder="Nro. 08" oninput="this.value = this.value.toUpperCase()">
-                    <div style="display:flex; gap:10px;">
-                        <div style="flex:1;"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
-                        <div style="flex:1;"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>DOCUMENTACIÓN PRESENTADA</label>
-                    <div class="checkbox-grid">
-                        <label class="check-item"><input type="checkbox" id="chkCedula" onchange="actualizarEstadoBtnRegistrar()"> Cédula</label>
-                        <label class="check-item"><input type="checkbox" id="chkLicencia" onchange="actualizarEstadoBtnRegistrar()"> Licencia</label>
-                        <label class="check-item"><input type="checkbox" id="chkSeguro" onchange="actualizarEstadoBtnRegistrar()"> Seguro</label>
-                        <label class="check-item"><input type="checkbox" id="chk08" onchange="actualizarEstadoBtnRegistrar()"> 08 Pagado</label>
-                        <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarEstadoBtnRegistrar()"> RTO OK</label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>OBSERVACIONES</label>
-                    
-                    <!-- CONTENEDOR RELATIVO -->
-                    <div style="position: relative;">
-                        <textarea id="textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="verificarPalabraMulta()"></textarea>
-                        
-                        <!-- BOTÓN DE MICRÓFONO -->
-                        <button type="button" id="btnMic" onclick="iniciarDictado()" style="position: absolute; top: 8px; right: 8px; background: transparent; border: none; font-size: 20px; cursor: pointer; z-index: 10px; padding: 5px; border-radius: 50%;">
-                            🎤
-                        </button>
-                    </div>
-
-                    <!-- SECCIÓN FOTO -->
-                    <div id="seccionFoto" style="display:none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-                        <label style="color:#64748b; font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">EVIDENCIA FOTOGRÁFICA</label>
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)">
-                        <div id="contenedorPreview" style="display:none; position:relative; width:100%; height:200px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:2px solid #e2e8f0; margin-bottom:10px;">
-                            <img id="previewFoto" style="width:100%; height:100%; object-fit:contain; background:black;">
-                            <button onclick="borrarFoto()" style="position:absolute; top:5px; right:5px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); color:white; border:none; font-weight:bold; cursor:pointer;">✕</button>
-                        </div>
-                        <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px; margin-top:0;">
-                            📷 TOMAR FOTO DE LA INFRACTORA
-                        </button>
-                    </div>
-
-                    <!-- SECCIÓN DE FIRMA DIGITAL -->
-                    <div id="seccionFirma" style="display:none; margin-top: 20px; border-top: 2px dashed #94a3b8; padding-top: 15px; background: #f8fafc; border-radius: 8px;">
-                        <label style="font-size: 12px; color: #475569; font-weight: bold; display:block; margin-bottom: 10px;">✍️ FIRMA DEL CONDUCTOR (Dedo sobre pantalla)</label>
-                        
-                        <div style="background: white; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; height: 200px; width: 100%; touch-action: none;">
-                            <canvas id="canvasFirma" style="width:100%; height: 100%;"></canvas>
-                        </div>
-                        
-                        <div style="margin-top: 10px; display: flex; gap: 10px;">
-                            <button onclick="limpiarFirma()" style="flex:1; background: #e2e8f0; color: #1e293b; font-size: 14px; padding:10px; border-radius: 6px; font-weight: 600;">
-                                🗑️ Borrar
-                            </button>
-                            <button onclick="guardarFirma()" style="flex:1; background: #3b82f6; color: white; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
-                                ✅ Confirmar Firma
-                            </button>
-                        </div>
-                    </div>
-                    <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
-                </div>
-            </div>
-
-        <!-- Sección Mapa -->
-        <div id="mapSection" class="section">
-            <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
-            <div id="map"></div>
-        </div>
-
-        <!-- Sección Crear Usuario -->
-        <div id="userSection" class="section">
-            <div style="padding: 20px;">
-                <h3>Crear Nuevo Usuario</h3>
-                <input type="text" id="newUsuario" placeholder="Nombre de usuario (ej: juan123)">
-                <input type="password" id="newPassword" placeholder="Contraseña">
-                <input type="text" id="newNombre" placeholder="nombre real (ej: Juan Perez)">
-                <div class="form-group" style="margin-top:10px;">
-                    <label>Rol:</label>
-                        <select id="newRol" style="width:100%; padding: 15px; border-radius:8px; border: 2px solid #e2e8f0;">
-                            <option value="INSPECTOR">INSPECTOR</option>
-                            <option value="OWNER">OWNER (Administrador</option>
-                        </select>
-                    </div>
-                    <button class="btn-success" onclick="guardarUsuario()" style="margin-top:15px;">💾 Guardar Usuario</button>
-                    <button class="btn-warning" onclick="verListaUsuarios()" style="margin-top:10px; color:black;">📋 Ver Lista de Usuarios</button>
-                    <button class="btn-secondary" onclick="cerrarUsuarios()">Volver al Inicio</button>
-                </div>
-            </div>
-
-        <!-- Sección Lista de Usuarios -->
-        <div id="listUsersSection" class="section">
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin:0;">👥 Usuarios Registrados</h3>
-                    <button onclick="abrirUsuarios()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="table-users">
-                        <thead>
-                            <tr><th>Nombre Completo</th><th>Cargo</th></tr>
-                        </thead>
-                        <tbody id="tbody">
-                            <tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección Dashboard -->
-        <div id="dashboardSection" class="section">
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin:0;">📊 Panel de Control</h3>
-                    <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
-                </div>
-                <div class="card" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
-                    <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;">
-                        <div style="flex:1;">
-                            <label style="font-size:12px; font-weight:bold; color:#64748b;">Desde</label>
-                            <input type="date" id="fechaDesde" style="padding:10px; font-size:14px;">
-                        </div>
-                        <div style="flex:1;">
-                            <label style="font-size:12px; font-weight:bold; color:#64748b;">Hasta</label>
-                            <input type="date" id="fechaHasta" style="padding:10px; font-size:14px;">
-                        </div>
-                        <div style="flex:0 0 auto;">
-                            <button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px; font-size:14px; margin:0;">🔍 Filtrar</button>
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <div class="card" style="background: #f0f9ff; border-color: #bae6fd; text-align: center; padding: 10px;">
-                        <p style="margin:0; color:#64748b; font-size:12px; font-weight:bold;">CONTROLES EN RANGO</p>
-                        <h1 id="numTotalHoy" style="margin:5px 0 0; font-size:38px; color:#0284c7; line-height:1;">-</h1>
-                    </div>
-                    <div id="reportTools" style="display:none; flex-direction:column; gap:8px; justify-content:center;">
-                        <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:13px; padding:8px;">📧 Email (Resumen)</button>
-                        <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp</button>
-                        <button onclick="descargarExcel()" class="btn-secondary" style="font-size:13px; padding:8px; background:#10b981; border:none;">⬇️ Descargar Excel</button>
-                    </div>
-                </div>
-                <div class="card">
-                    <h4 style="margin-top:0; text-align:center; color:#475569;">Rendimiento por Inspector</h4>
-                    <div style="height: 260px; position: relative;">
-                        <canvas id="graficoInspectores"></canvas>
-                    </div>
-                </div>
-                
-                <!-- GRÁFICO DE TORTA DE FALTAS -->
-                <div class="card" style="margin-top: 15px;">
-                    <h4 style="margin-top:0; text-align:center; color:#475569;">📊 ¿Qué es lo más que falta?</h4>
-                    <div style="height: 280px; position: relative; display: flex; justify-content: center;">
-                        <canvas id="graficoFaltantes"></canvas>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Modal Historial -->
-        <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 9000; display:none; justify-content:center; align-items: center;">
-            <div style="background-color: #1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <h3 style="margin:0; color: #f3f4f6;">Último Control</h3>
-                    <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; border:none; font-size:24px; color:#94a3b8;">&times;</button>
-                </div>
-                <div id="contenidoHistorial"></div>
-                <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
-            </div>
-        </div>
-
+    <div id="searchSection" class="section active">
+      <label style="color:#64748b; font-weight:bold;">INGRESAR PATENTE</label>
+      <input type="text" id="txtPatente" placeholder="Ej: ABC123" oninput="this.value = this.value.toUpperCase()">
+      <button class="btn-primary" onclick="buscarVehiculo()" style="margin-top:10px;">🔍 CONSULTAR</button>
+      <div id="divResultado"></div>
     </div>
 
-    <!-- BOTÓN FLOTANTE -->
-    <div id="footerBtn" class="footer-fixed">
-        <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
+    <div id="formSection" class="section">
+      <div class="form-group">
+        <label>DATOS DEL VEHÍCULO</label>
+        <input type="text" id="txtModelo" placeholder="Modelo (Ej: Fiesta)" oninput="this.value = this.value.toUpperCase()">
+        <input type="text" id="txtNro08" placeholder="Nro. 08" oninput="this.value = this.value.toUpperCase()">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;"><label style="font-size:12px; color:#94a3b8;">Vence Seguro</label><input type="date" id="txtSeguro"></div>
+          <div style="flex:1;"><label style="font-size:12px; color:#94a3b8;">Vence RTO</label><input type="date" id="txtRTO"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>DOCUMENTACIÓN PRESENTADA</label>
+        <div class="checkbox-grid">
+          <label class="check-item"><input type="checkbox" id="chkCedula" onchange="actualizarChecks()"> Cédula</label>
+          <label class="check-item"><input type="checkbox" id="chkLicencia" onchange="actualizarChecks()"> Licencia</label>
+          <label class="check-item"><input type="checkbox" id="chkSeguro" onchange="actualizarChecks()"> Seguro</label>
+          <label class="check-item"><input type="checkbox" id="chk08" onchange="actualizarChecks()"> 08 Pagado</label>
+          <label class="check-item"><input type="checkbox" id="chkRTO" onchange="actualizarChecks()"> RTO OK</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>OBSERVACIONES</label>
+        <div style="position:relative;">
+          <textarea id="txtObs" rows="2" placeholder="Alguna nota adicional..." oninput="verificarPalabraMulta()"></textarea>
+          <button type="button" id="btnMic" onclick="iniciarDictado()" style="position:absolute; top:8px; right:8px; width:auto; padding:5px 8px; font-size:20px; background:transparent;">🎤</button>
+        </div>
+      </div>
+      <button id="btnIniciarFirma" type="button" class="btn-primary" onclick="mostrarPadFirma()" style="background:#475569; font-size:14px; margin-top:10px;">✍️ Firmar Acta</button>
+      <div id="seccionFoto" style="display:none; margin-top:15px; border-top:1px dashed #cbd5e1; padding-top:10px;">
+        <label style="color:#64748b; font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">EVIDENCIA FOTOGRÁFICA</label>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)">
+        <div id="contenedorPreview" style="display:none; position:relative; width:100%; height:200px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:2px solid #e2e8f0; margin-bottom:10px;">
+          <img id="previewFoto" alt="Preview" style="width:100%; height:100%; object-fit:contain; background:black;">
+          <button type="button" onclick="borrarFoto()" style="position:absolute; top:5px; right:5px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); color:white;">✕</button>
+        </div>
+        <button type="button" class="btn-secondary" onclick="document.getElementById('cameraInput').click()" style="background:#475569; font-size:14px; padding:10px;">📷 TOMAR FOTO DE LA INFRACTORA</button>
+      </div>
+      <div id="seccionFirma" style="display:none; margin-top:20px; border-top:2px dashed #94a3b8; padding-top:15px; background:#f8fafc; border-radius:8px;">
+        <label style="font-size:12px; color:#475569; font-weight:bold; display:block; margin-bottom:10px;">✍️ FIRMA DEL CONDUCTOR</label>
+        <div style="background:white; border:2px solid #cbd5e1; border-radius:8px; position:relative; height:200px; width:100%; touch-action:none;">
+          <canvas id="canvasFirma" style="width:100%; height:100%;"></canvas>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+          <button onclick="limpiarFirma()" type="button" style="flex:1; background:#e2e8f0; color:#1e293b; font-size:14px;">🗑️ Borrar</button>
+          <button onclick="guardarFirma()" type="button" style="flex:1; background:#3b82f6; color:white; font-size:14px;">✅ Confirmar Firma</button>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
     </div>
 
-    <script>
-        // --- VARIABLES GLOBALES ---
-        let infoUltimoControl = null;
-        let usuarioActual = null;
-        let vehiculoActual = null;
-        let map = null;
-        let miGrafico = null;
-        let miGraficoTorta = null;
-        const socket = io();
-        let fotoBase64 = null;
-        let intervaloGPS = null;
-        let firmaBase64Actual = null;
-
-        // --- FUNCIONES DE INTERFAZ ---
-        
-        function mostrarMainApp() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            actualizarContadorPendientes(); 
-            iniciarRastreadorGPS();
-            setTimeout(() => { document.getElementById('txtPatente').focus(); }, 300);
-            actualizarEstadoRed(); 
-        }
-
-        function ocultarTodasSecciones() {
-            document.getElementById('searchSection').classList.remove('active');
-            document.getElementById('formSection').classList.remove('active');
-            document.getElementById('mapSection').classList.remove('active');
-            document.getElementById('userSection').classList.remove('active');
-            document.getElementById('listUsersSection').classList.remove('active');
-            document.getElementById('dashboardSection').classList.remove('active');
-            document.getElementById('footerBtn').style.display = 'none';
-        }
-
-        // --- LÓGICA DE LOGIN (ONLINE Y OFFLINE) ---
-
-        async function iniciarSesion() {
-            const usuario = document.getElementById('txtUsuario').value;
-            const pass = document.getElementById('txtPassword').value;
-
-            if (navigator.onLine) {
-                try {
-                    const res = await fetch('/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ usuario, password: pass })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        usuarioActual = data.user;
-                        document.getElementById('spanNombre').innerText = usuarioActual.nombre;
-                        localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
-                        
-                        if (usuarioActual.rol === 'OWNER') {
-                            document.getElementById('adminTools').style.display = 'block';
-                            document.getElementById('reportTools').style.display = 'flex';
-                        } else {
-                            document.getElementById('adminTools').style.display = 'none';
-                            document.getElementById('reportTools').style.display = 'none';
-                        }
-
-                        sincronizarDatosLocales(); 
-                        mostrarMainApp();
-                    } else {
-                        document.getElementById('loginError').classList.remove('hidden');
-                        setTimeout(() => { document.getElementById('loginError').classList.add('hidden'); }, 3000);
-                    }
-                } catch (err) {
-                    console.error("Error de red, intentando offline...", err);
-                    intentarLoginOffline(usuario, pass);
-                }
-            } else {
-                intentarLoginOffline(usuario, pass);
-            }
-        }
-
-        function intentarLoginOffline(usuario, pass) {
-            const userGuardado = localStorage.getItem('usuarioGuardado');
-            if (!userGuardado) {
-                alert("⚠️ Sin conexión y sin sesión previa. Conéctate a internet una vez.");
-                return;
-            }
-            const user = JSON.parse(userGuardado);
-            if (user.usuario === usuario) {
-                usuarioActual = user;
-                
-                if (usuarioActual.rol === 'OWNER') {
-                    document.getElementById('adminTools').style.display = 'block';
-                    document.getElementById('reportTools').style.display = 'flex';
-                } else {
-                    document.getElementById('adminTools').style.display = 'none';
-                    document.getElementById('recordsTools').style.display = 'none';
-                }
-
-                mostrarToast("Modo Offline: Ingresando con sesión guardada", "warning");
-                mostrarMainApp();
-            } else {
-                alert("Usuario incorrecto para modo offline.");
-            }
-        }
-
-        // --- BUSCAR VEHÍCULO (ONLINE Y OFFLINE) ---
-
-        async function buscarVehiculo() {
-            const patente = document.getElementById('txtPatente').value.toUpperCase();
-            if(!patente) return alert("Ingrese una patente");
-            
-            const divRes = document.getElementById('divResultado');
-            document.getElementById('footerBtn').style.display = 'block';
-            let data;
-
-            if (navigator.onLine) {
-                try {
-                    const res = await fetch('/api/vehiculos/' + patente);
-                    data = await res.json();
-                    guardarEnCacheLocal(data); 
-                } catch (err) {
-                    console.error("Error de red, buscando en caché...", err);
-                    data = buscarEnCacheLocal(patente);
-                }
-            } else {
-               data = buscarEnCacheLocal(patente);
-        }
-
-        vehiculoActual = data.vehiculo;
-            const ultimoControl = data.ultimoControl || null;
-
-        if (ultimoControl) {
-            const fechaCtrl = new Date(ultimoControl.fecha_hora);
-            const ahora = new Date();
-                const minutos = Math.round((ahora - fechaCtrl) / 60000);
-                
-                let tiempoTexto = "";
-                if (minutos < 60) {
-                    tiempoTexto = `hace ${minutos} minutos`;
-                } else if (minutos < 1440) {
-                    tiempoTexto = `hace ${Math.round(minutos / 60)} horas`;
-                } else {
-                    const dias = Math.floor(minutos / 1440);
-                    const horasRestantes = Math.round((minutos % 1440) / 60);
-                    if (horasRestantes > 0) {
-                        tiempoTexto = `hace ${dias} días y ${horasRestantes} horas`;
-                    } else {
-                        tiempoTexto = `hace ${dias} días`;
-                    }
-                }
-                
-                const venceSeguro = ultimoControl.fecha_seguro_vence ? ultimoControl.fecha_seguro_vence.split('T')[0] : 'No registrado';
-                const etiquetaOffline = data.esOffline ? " (Datos locales)" : "";
-                
-                html += `<div class="card card-alert">
-                            <h3>⚠️ ATENCIÓN ${etiquetaOffline}</h3>
-                            <p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p>
-                            <p style="margin-top:8px; margin-bottom:8px; font-size:15px;">
-                                🛡️ <strong>Vence Seguro:</strong> ${venceSeguro}
-                            </p>
-                            <button onclick="abrirModalHistorial(vehiculoActual)" class="btn-warning" style="margin-top:5px; padding:10px;">👁️ Ver Detalles</button>
-                         </div>`;
-            } else {
-                const msg = data.esOffline ? "Sin registros en este dispositivo." : "Vehículo nuevo. Proceda con el control.";
-                html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>${msg}</p></div>`;
-            }
-
-            if (vehiculoActual) {
-                html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
-                document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
-                document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
-            } else {
-                html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
-                document.getElementById('txtModeló value = '';
-                document.getElementById('txtNro08') = '';
-            }
-            html += `<button class="btn-secondary" onclick="mostrarFormulario()">📝 Editar Datos</button>`;
-            html += `<button class="btn-danger" onclick="limpiarPantalla()">❌ Cancelar</button>`;
-            divRes.innerHTML = html;
-        }
-
-        // --- LÓGICA DE GPS OFFLINE (PUNTO 6) ---
-
-        function iniciarRastreadorGPS() {
-            guardarPosicionEnFondo();
-            if (intervaloGPS) clearInterval(intervaloGPS);
-            // Actualizar cada 5 minutos (300000 ms)
-            intervaloGPS = setInterval(guardarPosicionEnFondo, 300000);
-        }
-
-        function guardarPosicionEnFondo() {
-            if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const dato = {
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
-                        tiempo: Date.now()
-                    };
-                    localStorage.setItem('ultima_posicion_gps', JSON.stringify(dato));
-                    console.log("Posición de fondo actualizada:", dato);
-                },
-                (err) => { console.warn("No se pudo obtener posición de fondo:", err); }
-            );
-        }
-
-        function obtenerUbicacionConRespaldo(callback) {
-            if (!navigator.geolocation) {
-                callback(null, null, "GPS no soportado");
-                return;
-            }
-
-            // Intento 1: GPS Actual
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    callback(pos.coords.latitude, pos.coords.longitude, null);
-                },
-                (err) => {
-                    console.log("GPS actual falló, buscando respaldo...", err);
-                    const guardadoStr = localStorage.getItem('ultima_posicion_gps');
-                    const guardado = JSON.parse(guardadoStr);
-                    const minutosPasados = (Date.now() - guardado.tiempo) / 60000;
-                    if (minutosPasados <= 10) {
-                        callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
-                    } else {
-                        callback(null, null, "GPS desactualizado (más de 10 min).");
-                    }
-                }
-            );
-        }
-
-        // --- REGISTRO DE CONTROLES ---
-
-        async function registrarControl() {
-            if(!usuarioActual) return alert("Sesión expirada");
-
-            const btn = document.querySelector('#footerBtn button');
-            if (btn.disabled) return; 
-
-            btn.disabled = true;
-            btn.innerText = "Obteniendo ubicación...";
-
-            obtenerUbicacionConRespaldo((lat, lon, mensaje) => {
-                if (mensaje) {
-                    if (mensaje.includes("GPS no soportado") || mensaje.includes("desactualizado")) {
-                        mostrarToast("⚠️ " + mensaje, "warning");
-                    } else if (mensaje.includes("Usando GPS")) {
-                        mostrarToast("📍 " + mensaje, "info");
-                    }
-                }
-                enviarDatos(lat, lon);
-            });
-        }
-
-        async function enviarDatos(lat, lon) {
-            const btn = document.querySelector('#footerBtn button');
-            btn.disabled = true;
-            btn.innerHTML = "⏳ Guardando...";
-            
-            const payload = {
-                patricula: document.getElementById('txtPatente').value.toUpperCase(),
-                modelo: document.getElementById('txtModelo').value,
-                numero_08: document.getElementById('txtNro08').value,
-                fecha_seguro_vence: document.getElementById('txtSeguro').value,
-                fecha_rto_vence: document.getElementById('txtRTO').value,
-                id_inspector: usuarioActual.id,
-                latitud: lat,
-                longitud: lon,
-                texto_ubicacion: "Ubicación GPS",
-                tiene_cedula: document.getElementById('chkCedula').checked,
-                tiene_licencia: documento.getElementById('chkLicencia').checked,
-                tiene_seguro: document.getElementById('chkSeguro').checked,
-                tiene_08_pago: document.getElementById('todo chk08_pago').checked,
-                tiene_rto_habilitada: document.getElementById('todo chkRTO').checked,
-                observaciones: document.getElementById('txtObs').value,
-                foto_evidencia: fotoBase64,
-                firma_conductor: firmaBase64Actual
-            };
-
-            if (!navigator.onLine) {
-                guardarControlPendiente(payload); 
-                mostrarToast("📴 Sin conexión. Guardado localmente.", "warning");
-                limpiarPantalla(); 
-                btn.disabled = false;
-                btn.innerHTML = "✅ REGISTRAR CONTROL";
-                return; 
-            }
-
-            try {
-                const res = await fetch('/registrar-control', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    mostrarToast("✅ Control registrado con éxito", "success");
-                    generarYMostrarQR(data.registro); 
-                    limpiarPantalla();
-                } else {
-                    mostrarToast("Error del servidor al guardar", "error");
-                }
-            } catch (err) {
-                console.error("Fallo de conexión inesperado, guardando local:", err);
-                guardarControlPendiente(payload);
-                mostrarToast("📴 Conexión perdida. Guardado localmente.", "warning");
-                limpiarPantalla();
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "✅ REGISTRAR CONTROL";
-            }
-        }
-
-        // --- FUNCIONES AUXILIARES UI ---
-
-        function mostrarFormulario() {
-            document.getElementById('formSection').classList.add('active');
-            document.getElementById('searchSection').classList.remove('active');
-            document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
-        }
-
-        function verificarPalabraMulta() {
-            const texto = document.getElementById('txtObs').value.toUpperCase();
-            const seccionFoto = document.getElementById('seccionFoto');
-            const seccionFirma = document.getElementById('seccionFirma');
-
-            if (texto.includes('MULTA')) {
-                seccionFoto.style.display = 'block';
-                seccionFirma.style.display = 'block';
-            } else {
-                seccionFoto.style.display = 'none';
-                seccionFirma.style.display = 'none';
-                borrarFoto();
-                limpiarFirma();
-            }
-        }
-
-        function cerrarFormulario() {
-            document.getElementById('formSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-        }
-
-        function limpiarPantalla() {
-            document.getElementById('txtPatente').value = '';
-            document.getElementById('divResultado').innerHTML = '';
-            document.getElementById('footerBtn').style.display = 'none';
-            document.getElementById('formSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-            document.getElementById('txtModelo').value = '';
-            document.getElementById('txtNro08').value = '';
-            document.getElementById('chkCedula').checked = false;
-            document.getElementById('chkLicencia').checked = false;
-            document.getElementById('chkSeguro').checked = false;
-            document.getElementById('chk08').checked = false;
-            document.getElementById('chkRTO').checked = false;
-            document.getElementById('chkRTO').checked = false;
-            document.getElementById('txtObs').value = '';
-            
-            borrarFoto();
-            firmaBase64 = null;
-            
-            const btnIniciar = document.getElementById('btnIniciarFirma');
-            if(btnIniciar) {
-                btnIniciar.style.display = 'block';
-                btnIniciar.innerText = "✍️ Firmar Acta";
-            } else {
-                const btnIniciar = document.getElementById('btnIniciarFirma'); // Si no existe, lo creamos en el DOM
-                btnIniciar = document.createElement('button');
-                btnIniciar.id = 'btnIniciarFirma';
-                btnIniciar.className = 'btn-primary';
-                btnIniciar.style.marginTop = '10px';
-                btnIniciar.style.fontSize = '14px';
-                btnIniciar.style.background = '#475569';
-                btnIniciar.innerText = "✍️ Firmar Acta";
-                btnIniciar.onclick = mostrarPadFirma;
-                // Insertamos después del div de observaciones
-                const obsDiv = document.querySelector('.form-group:has(#txtObs)');
-                if(obsDiv) {
-                    obsDiv.insertAdjacentElement('afterend', btnIniciar);
-                }
-            }
-            
-            const seccionFirma = document.getElementById('seccionFirma');
-            if(seccionFirma) seccionFirma.style.display = 'none';
-        }
-
-        function mostrarToast(mensaje, tipo = "success") {
-            let colorFondo = "#16a34a";
-            if (tipo === "error") colorFondo = "#dc2626";
-            if (tipo === "info") colorFondo = "#2563eb";
-            if (tipo === "warning") colorFondo = "#f59e0b";
-            Toastify({
-                text: mensaje, duration: 3000, gravity: "top", position: "center", stopOnFocus: true,
-                style: { background: colorFondo, borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.15);", fontWeight: "bold" }
-            }).showToast();
-        }
-
-        function cerrarSesion() {
-            if (intervaloGPS) clearInterval(intervaloGPS);
-            mostrarToast("Cerrando sesión...", "info");
-            setTimeout(() => { location.reload(); }, 1000);
-        }
-
-        // --- DICTADO POR VOZ (CORREGIDO)---
-
-        function iniciarDictado() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("Tu navegador no soporta dictado por voz. Probá con Chrome.");
-                return;
-            }
-
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'es-AR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.interimResults = false;
-
-            const btn = document.getElementById('btnMic');
-
-            recognition.onstart = function() {
-                btn.classList.add('grabando-voz');
-                mostrarToast("🎤 Escuchando...", "info");
-            };
-
-            recognition.onend = function() {
-                btn.classList.remove('grabando-voz');
-            };
-
-            recognition.onresult = function(event) {
-                const texto = event.results[0][0].transcript;
-                const textarea = document.getElementById('txtObs');
-                
-                // Evitar errores de símbolos chinos o textos raros
-                try {
-                    const texto = event.results[0][0].transcript.replace(/[^\w\s]+/g, ''); // Limpia emojis y espacios en blanco
-                    textarea.value += (textarea.value.length > 0 ? ' ' : '') + texto;
-                    
-                    // Importante: Disparar evento 'input' para poder seguir escribiendo
-                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                } catch (err) {
-                    console.error("Error de voz:", event.error);
-                    btn.classList.remove('grabando-voz');
-                }
-
-            recognition.start();
-        }
-
-        // --- LÓGICA DE FIRMA DIGITAL (PUNTO 3) ---
-
-        let estaFirmando = false;
-        let canvas, ctx;
-        let ultimaX = 0;
-        let ultimaY = 0;
-
-        function mostrarPadFirma() {
-            const btn = document.getElementById('btnIniciarFirma');
-            if(btn) btn.style.display = 'none';
-
-            canvas = document.getElementById('canvasFirma');
-            ctx = canvas.getContext('2d');
-            
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-            
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#000000';
-
-            canvas.addEventListener('mousedown', iniciarTrazo);
-            canvas.addEventListener('mousemove', dibujar');
-            canvas.addEventListener('mouseup', terminarTrazo);
-            canvas.addEventListener('mouseout', terminarTrazo);
-
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
-                canvas.dispatchEvent(mouseEvent);
-            }, {passive: false});
-
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
-                canvas.dispatchEvent(mouseEvent);
-            }, {passive: false});
-
-            canvas.addEventListener('touchend', (e) => {
-                const mouseEvent = new MouseEvent('mouseup', {});
-                canvas.dispatchEvent(mouseEvent);
-            });
-        }
-
-        function iniciarTrazo(e) {
-            estaFirmando = true;
-            [ultimaX, ultimaY] = obtenerCoords(e);
-        }
-
-        function dibujar(e) {
-            if (!estaFirmando) return;
-            const [x, y] = obtenerCoords(e);
-            ctx.beginPath();
-            ctx.moveTo(ultimaX, ultimaY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            [ultimaX, ultimaY] = [x, y];
-        }
-
-        function terminarTrazo() {
-            estaFirmando = false;
-        }
-
-        function obtenerCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            return [e.clientX - rect.left, e.clientY - rect.top;
-        }
-
-        function limpiarFirma() {
-            const c = document.getElementById('canvasFirma');
-            if (c) {
-                const x = c.getContext('2d');
-                x.clearRect(0, 0, c.width, c.height);
-            }
-            firmaBase64Actual = null;
-            if (document.getElementById('btnIniciarFirma') {
-                // Reseteamos el botón a su estado inicial
-                const btn = document.getElementById('btnIniciarFirma');
-                if (btn) {
-                    btn.style.display = 'block';
-                    btn.innerText = "✍️ Firmar Acta";
-                }
-            }
-        }
-
-        function guardarFirma() {
-            const pixelBuffer = new Uint32Array(
-                ctx.getImageData(0, 0, c.width, c.height).data.buffer
-            );
-            if (!pixelBuffer.some(color => color !== 0)) {
-                alert("El canvas está vacío. Por favor firme o cancele o cancele.";
-                return;
-            }
-            firmaBase64Actual = canvas.toDataURL('image/png');
-            mostrarToast("Firma capturada correctamente", "success");
-            
-            // Ocultamos el botón
-            const btnIniciar = document.getElementById('btnIniciarFirma');
-            if(btn) {
-                btn.innerText = "Firma Guardada ✅";
-                btn.style.background = "#10b981"; 
-            } else {
-                // Si el botón no existe, lo creamos dinámicamente
-                const btnIniciar = document.createElement('button');
-                btnIniciar.id = 'btnIniciarFirma';
-                btnIniciar.className = 'btn-primary';
-                btnIniciar.style.marginTop = '10px';
-                btnIniciar.style.fontSize = '14px';
-                btnIniciar.style.background = '#475569'; 
-                btnIniciar.innerText = "✍️ Firmar Acta";
-                // Insertamos el botón en el DOM, exactamente donde estaba antes de `limpiarPantalla`.
-                const obsDiv = document.querySelector('.form-group:has(#txtObs)'); // Buscamos el contenedor de observaciones
-                if(obsDiv) {
-                    obsDiv.insertAdjacentElement('afterend', btnIniciar);
-                }
-            }
-            
-            const seccionFirma = document.getElementById('seccionFirma');
-            if(seccionFirma) seccionFirma.style.display = 'none';
-        }
-
-        // --- MANEJO DE FOTOS (PUNTO 9) ---
-
-        function procesarFoto(input) {
-            if (input.files && input.files[0]) {
-                const archivo = input.files[0];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 800;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        ctx.drawImage(img, 0, 0, width, height); // Dibuja la imagen
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // Comprimir imagen
-                        fotoBase64 = dataUrl;
-
-                        document.getElementById('previewFoto').src = dataUrl;
-                        document.getElementById('contenedorPreview').style.display = 'block';
-                        mostrarToast("Foto procesada y lista", "success");
-                    };
-                    img.src = e.target.result;
-                };
- reader.readAsDataURL(archivo);
-            }
-        }
-
-        function borrarFoto() {
-            fotoBase64 = null;
-            document.getElementById('cameraInput').value = "";
-            document.getElementById('previewFoto').src = "";
-            document.getElementById('contenedorPreview').style.display = 'none'; // Ocultar el preview de la foto
-            document.getElementById('contenedorPreview').style.display = 'none'; // Oculta el preview para evitar elementos flotantes
-            document.getElementById('cameraInput').value = ""; // Limpia el input para evitar problemas
-            document.getElementById('previewFoto').src = ""; // Limpia la imagen
-            // El buscador de archivos y el evento 'change' siguen ahí porque ya que toda la sección de observaciones está desordenada y generaba el error de "Sí, sí, no... no..."
-            // Si este bloque de código sigue ahí, es casi seguro que el error está en la lógica de búsqueda (fetch) o en alguna parte extra que no estoy viendo.
-
-            // ... (Lo que sigue ahí es bastante grande, y tiene una búsqueda con `async/await` o `try/catch`, es muy probable que haya un error de sintaxis sin embargo. 
-            // Para verificar qué parte falló, tene que ver si tenés funciones de Mapa (abrirMapa, abrirUsuarios, etc.), ve si son `async` o si son funciones "normales" (ocultarTardes, buscarVehiculo). 
-            // En la función `buscarVehiculo`, debés ver si el bloque `if (ultimoControl)` está bien cerrado y tiene el `try/catch`. Si esos están bien, el problema estrictamente en `buscarVehiculo` (que es la que falla).
-
-            // Si los anteriores fallan, es un problema en los datos o en la lógica, el Script se corta y no llega a ejecutar `iniciarSesion`. 
-        }
-
-        function abrirMapa() {
-            ocultar ocultarTodasLasSecciones();
-            document.getElementById('mapSection').classList.add('active');
-            await new Promise(resolve => setTimeout(resolve, 150));
-
-            if (map) {
-                map.invalidateSize();
-                return;
-            }
-
-            map = L.map('map').setView([-28.5343, -56.0406], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-
-            try {
-                const res = await fetch('/api/historial');
-                const data = await res.json();
-                if (data.length > 0) {
-                    data.forEach(ctrl => {
-                        if (ctrl.latitud && ctrl.longitud) {
-                            const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
-                            const fecha = new Date(ctrl.fecha_hora).toLocaleString();
-                            marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}</b><br><b>Fecha:</b> ${fecha}</b><br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
-                        }
-                    });
-                } else {
-                    mostrarToast("No hay controles con GPS registrados aún", "info");
-                }
-            } catch (err) {
-                console.error(err);
-                mostrarToast("Error al cargar datos del mapa", "error");
-            }
-        }
-
-        function cerrarMapa() {
-            document.getElementById('mapSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'block';
-        }
-
-        // --- USUARIOS ---
-
-        function abrirUsuarios() {
-            ocultarTodasLasSecciones();
-            document.getElementById('userSection').classList.add('active');
-            document.getElementById('msgUsuario').innerHTML = '';
-        }
-
-        function cerrarUsuarios() {
-    document.getElementById('userSection').classList.remove('active');
-    document.getElementById('listUsersSection').classList.remove('active'); // Corregido: antes decía .add
-    document.getElementById('searchSection').classList.add('active');
-    document.getElementById('btnIniciarFirma').style.display = 'none'; 
-    document.getElementById('footerBtn').style.display = 'block';
-}
-
-        async function guardarUsuario() {
-            const usuario = document.getElementById('newUsuario').value;
-            const password = document.getElementById('newPassword').value;
-            const nombre = document.getElementById('newNombre').value;
-            const rol = document.getElementById('newRol').value;
-            if(!usuario || !password) return alert("Falta usuario o contraseña");
-            try {
-                const res = await fetch('/api/usuario', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, password, nombre, rol })
-                });
-                const data = await res.json();
-                if(data.success) {
-    document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
-    document.getElementById('newUsuario').value = '';
-    document.getElementById('newPassword').value = '';
-    // Eliminar la línea que vuelve a poner el error aquí
-} else {
-    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
-}
-            } catch (err) { alert("Error de conexión"); }
-        }
-
-        async function verListaUsuarios() {
-        ocultarTodasLasSecciones();
-            document.getElementById('listUsersSection').classList.add('active');
-            const tbody = document.getElementById('tablaUsuariosBody');
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
-            try {
-                const res = await fetch('/api/usuarios');
-                const data = await res.json();
-                tbody.innerHTML = '';
-                if(data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
-                    return;
-                }
-                data.forEach(u => {
-                    const tr = document.createElement('tr');
-                    const icono = u.rol === 'OWNER' ? '👑�' : '👮';
-                    const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
-                    tr.innerHTML = `<td>${u.nombre || 'Sin nombre'}</td><td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td>`;
-                    tbody.appendChild(tr);
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
-            }
-        }
-
-        // --- DASHBOARD ---
-
-        function cerrarDashboard() {
-            document.getElementById('dashboardSection').classList.remove('active');
-            document.getElementById('searchSection').classList.add('active');
-            document.getElementById('footerBtn').style.display = 'block';
-        }
-
-        async function abrirDashboard() {
-            ocultarTodasLasSecciones();
-            document.getElementById('dashboardSection').classList.add('active');
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaDesde').value = hoy;
-            document.getElementById('fechaHasta').value = hoy;
-            await cargarDatosDashboard(hoy, hoy);
-        }
-
-        async function cargarDatosDashboard(desde, hasta) {
-            mostrarToast("Cargando estadísticas...", "info");
-            try {
-                const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
-                const data = await res.json();
-                document.getElementById('numTotalHoy').innerText = data.totalHoy;
-                
-                // --- GRÁFICO 1: BARRAS -->
-                const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
-                const cantidades = data.porInspector.map(u => u.cantidad);
-                const ctx = document.getElementById('graficoInspectores').getContext('2d');
-                
-                if (miGrafico) miGrafico.destroy();
-                miGrafico = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: nombres,
-                        datasets: [{
-                            label: 'Controles',
-                            data: cantidades,
-                            backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#10b981', '#8b5cf6', '#8b5cf6'],
-                            borderWidth: 2, borderRadius: 5, barPercentage: 0.6
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: none } }
-                    }
-                });
-
-                // --- GRÁFICO 2: TORTA (FALTAS) ---
-                const faltas = data.docsFaltantes;
-                const tortaLabels = ['Cédula', 'Licencia', 'Seguro', '08', 'RTO'];
-                const tortaData = [
-                    faltas.falta_cedula || 0, 
-                    faltas.falta_licencia || 0, 
-                    faltas.falta_seguro || 0, 
-                    faltas.falta_08 || 0, 
-                    faltas.falta_rto || 0 
-                ];
-                const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
-
-                if (miGraficoTorta) miGraficoTorta.destroy();
-                miGraficoTorta = new Chart(ctxTorta, {
-                    type: 'doughnut',
-                    data: {
-                        labels: tortaLabels,
-                        datasets: [{
-                            data: tortaData,
-                            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'],
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
-                        }]
-                    },
-                    options: {
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { 
-                            legend: { 
-                                position: 'bottom', 
-                                labels: { 
-    font: { size: 12, weight: 'bold' }, // Sin 'px' y con comillas en 'bold'
-    padding: 15
-}
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error(error);
-                mostrarToast("Error al cargar dashboard", "error");
-            }
-        }
-
-        function actualizarDashboard() {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            if(!desde || !hasta) return mostrarToast("Selecciona ambas fechas", "warning");
-            cargarDatosDashboard(desde, hasta);
-        }
-
-        function descargarExcel() {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            if(!desde || !hasta) return mostrarToast("Selecciona fechas para exportar", "warning");
-            window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
-        }
-
-        // --- MODAL HISTORIAL ---
-
-        function abrirModalHistorial(vehiculo) {
-    const control = infoUltimoControl;
-    if (!control) { 
-        mostrarToast("No hay datos del control anterior", "warning"); 
-        return; 
-    }
-    
-    // Extraemos las fechas de forma limpia (YYYY-MM-DD)
-    const venceSeguro = control.fecha_seguro_vence ? control.fecha_seguro_vence.split('T')[0] : '-';
-    const venceRTO = control.fecha_rto_vence ? control.fecha_rto_vence.split('T')[0] : '-';
-
-    // Llenamos los campos del modal
-    if(document.getElementById('historialPatente')) {
-        document.getElementById('historialPatente').innerText = control.patente || '-';
-    }
-    if(document.getElementById('historialFecha')) {
-        document.getElementById('historialFecha').innerText = new Date(control.fecha_hora).toLocaleString();
-    }
-    if(document.getElementById('historialVenceSeguro')) {
-        document.getElementById('historialVenceSeguro').innerText = venceSeguro;
-    }
-    if(document.getElementById('historialVenceRTO')) {
-        document.getElementById('historialVenceRTO').innerText = venceRTO;
+    <div id="mapSection" class="section">
+      <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
+      <div id="map"></div>
+    </div>
+
+    <div id="userSection" class="section">
+      <h3>Crear Nuevo Usuario</h3>
+      <div id="msgUsuario"></div>
+      <input type="text" id="newUsuario" placeholder="Nombre de usuario">
+      <input type="password" id="newPassword" placeholder="Contraseña">
+      <input type="text" id="newNombre" placeholder="Nombre real">
+      <div class="form-group">
+        <label>Rol:</label>
+        <select id="newRol">
+          <option value="INSPECTOR">INSPECTOR</option>
+          <option value="OWNER">OWNER (Administrador)</option>
+        </select>
+      </div>
+      <button class="btn-success" onclick="guardarUsuario()">💾 Guardar Usuario</button>
+      <button class="btn-warning" onclick="verListaUsuarios()" style="margin-top:10px;">📋 Ver Lista de Usuarios</button>
+      <button class="btn-secondary" onclick="cerrarUsuarios()">Volver al Inicio</button>
+    </div>
+
+    <div id="listUsersSection" class="section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;">👥 Usuarios Registrados</h3>
+        <button onclick="abrirUsuarios()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table-users">
+          <thead><tr><th>Nombre Completo</th><th>Cargo</th></tr></thead>
+          <tbody id="tablaUsuariosBody"><tr><td colspan="2" style="text-align:center;">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="dashboardSection" class="section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="margin:0;">📊 Panel de Control</h3>
+        <button onclick="cerrarDashboard()" style="width:auto; padding:8px 15px; font-size:14px;" class="btn-secondary">Volver</button>
+      </div>
+      <div class="card" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+        <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;">
+          <div style="flex:1;"><label style="font-size:12px; font-weight:bold; color:#64748b;">Desde</label><input type="date" id="fechaDesde" style="padding:10px; font-size:14px;"></div>
+          <div style="flex:1;"><label style="font-size:12px; font-weight:bold; color:#64748b;">Hasta</label><input type="date" id="fechaHasta" style="padding:10px; font-size:14px;"></div>
+          <div><button onclick="actualizarDashboard()" class="btn-primary" style="padding:10px; font-size:14px; margin:0; width:auto;">🔍 Filtrar</button></div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:15px; margin-bottom:20px;">
+        <div class="card" style="background:#f0f9ff; border-color:#bae6fd; text-align:center; padding:10px;">
+          <p style="margin:0; color:#64748b; font-size:12px; font-weight:bold;">CONTROLES EN RANGO</p>
+          <h1 id="numTotalHoy" style="margin:5px 0 0; font-size:38px; color:#0284c7; line-height:1;">-</h1>
+        </div>
+        <div id="reportTools" style="display:flex; flex-direction:column; gap:8px; justify-content:center;">
+          <button onclick="compartirPorEmail()" class="btn-primary" style="font-size:13px; padding:8px;">📧 Email</button>
+          <button onclick="compartirPorWhatsApp()" class="btn-success" style="font-size:13px; padding:8px; background:#25D366;">💬 WhatsApp</button>
+          <button onclick="descargarExcel()" class="btn-secondary" style="font-size:13px; padding:8px; background:#10b981;">⬇️ Descargar CSV</button>
+        </div>
+      </div>
+      <div class="card"><h4 style="text-align:center; color:#475569;">Rendimiento por Inspector</h4><canvas id="graficoInspectores"></canvas></div>
+      <div class="card" style="margin-top:15px;"><h4 style="text-align:center; color:#475569;">📊 ¿Qué es lo que más falta?</h4><canvas id="graficoFaltantes"></canvas></div>
+    </div>
+
+    <div id="modalHistorial" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; display:none; justify-content:center; align-items:center;">
+      <div style="background-color:#1e293b; width:90%; max-width:400px; border-radius:12px; padding:20px; max-height:80vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #334155; padding-bottom:10px;">
+          <h3 style="margin:0; color:#f3f4f6;">Último Control</h3>
+          <button onclick="cerrarModalHistorial()" style="width:auto; padding:5px 10px; background:none; font-size:24px; color:#94a3b8;">&times;</button>
+        </div>
+        <div id="contenidoHistorial"></div>
+        <button onclick="cerrarModalHistorial()" class="btn-primary" style="margin-top:20px;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="footerBtn" class="footer-fixed">
+    <button class="btn-success" onclick="registrarControl()">✅ REGISTRAR CONTROL</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    let infoUltimoControl = null;
+    let usuarioActual = null;
+    let vehiculoActual = null;
+    let map = null;
+    let miGrafico = null;
+    let miGraficoTorta = null;
+    let fotoBase64 = null;
+    let intervaloGPS = null;
+    let firmaBase64Actual = null;
+    let estaFirmando = false;
+    let canvas = null;
+    let ctx = null;
+    let ultimaX = 0;
+    let ultimaY = 0;
+    const socket = window.io ? io() : null;
+
+    function mostrarToast(mensaje, tipo = 'success') {
+      let colorFondo = '#16a34a';
+      if (tipo === 'error') colorFondo = '#dc2626';
+      if (tipo === 'info') colorFondo = '#2563eb';
+      if (tipo === 'warning') colorFondo = '#f59e0b';
+      Toastify({ text: mensaje, duration: 3000, gravity: 'top', position: 'center', stopOnFocus: true, style: { background: colorFondo, borderRadius: '8px' } }).showToast();
     }
 
-    // Mostramos el modal
-    const modal = document.getElementById('modalHistorial');
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.remove('hidden');
+    function aplicarTema() {
+      const temaGuardado = localStorage.getItem('tema');
+      if (temaGuardado === 'oscuro') {
+        document.body.classList.add('dark-mode');
+        const btn = document.getElementById('btnDarkMode');
+        if (btn) btn.innerText = '☀️';
+      }
     }
-}
-       function cerrarModalHistorial() {
-    const modal = document.getElementById('modalHistorial');
-    modal.style.display = 'none'; 
-    modal.classList.add('hidden'); // Corregido: se eliminó la asignación inválida
-}
-        
-        // --- REPORTES ---
-        
-        function generarTextoReporte(data) {
-            const fecha = new Date().toLocaleDateString();
-            let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n📅 Fecha: ${fecha}\n🚗 Total: ${data.totalHoy}\n\n📋 *Por Inspector:*\n`;
-            if (data.porInspector) {
-                data.porInspector.forEach(insp => { 
-                    texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`; 
-                });
-            }
-            return texto;
-        }
 
-        async function compartirPorWhatsApp() {
-            try {
-                // 1. Obtenemos las fechas
-                var desde = document.getElementById('fechaDesde').value;
-                var hasta = document.getElementById('fechaHasta').value;
-                
-                if(!desde || !hasta) {
-                    mostrarToast("Selecciona fechas", "warning");
-                    return;
-                }
-
-                // 2. Pedimos los datos al servidor
-                var respuesta = await fetch('/api/estadisticas?desde=' + desde + '&hasta=' + hasta);
-                var info = await respuesta.json();
-                
-                // 3. Generamos el texto (usando una función simple)
-                var textoFinal = generarTextoReporte(info);
-                
-                // 4. Preparamos el enlace de WhatsApp (Sin usar las comillas invertidas que fallan)
-                var enlace = "https://wa.me/?text=" + encodeURIComponent(textoFinal);
-                
-                window.open(enlace, '_blank');
-            } catch (error) { 
-                console.error("Error en reporte:", error);
-                mostrarToast("Error al generar reporte", "error"); 
-            }
-        }
-        
-        // --- TEMA ---
-
-        function aplicarTema() {
-            const temaGuardado = localStorage.getItem('tema');
-            if (temaGuardado === 'oscuro') {
-                document.body.classList.add('dark-mode');
-                if(document.getElementById('btnDarkMode')) document.getElementById('btnDarkMode').innerText = '☀️';
-            }
-        }
-
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const esOscuro = document.body.classList.contains('dark-mode');
-            localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
-            document.getElementById('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
-        }
-
-        aplicarTema();
-
-        // ==========================================
-        // BLOQUE ÚNICO DE FUNCIONES OFFLINE Y CAMBIO --
-
-        function actualizarContadorPendientes() {
-            const badge = document.getElementById('biasedos');
-            if (!badge) return;
-            const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            const cantidad = pendientes.length;
-            
-            if (cantidad > 0) {
-                badge.style.display = 'flex';
-                badge.innerText = cantidad > 99 ? '99+' : cantidad;
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        function guardarEnCacheLocal(data) {
-            if (!data || !data.vehiculo) return;
-            let cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
-            let registro = {
-                patente: data.vehiculo.patricula,
-                vehiculo: data.vehiculo,
-                ultimoControl: data.ultimoControl,
-                timestamp: Date.now()
-            };
-            const index = cache.findIndex(c => c.patente === registro.patente);
-            if (index !== -1) { cache[index] = registro; } 
-            else { cache.push(registro); }
-            if (cache.length > 1000) cache.shift(); 
-            localStorage.setItem('cache_vehiculos', JSON.stringify(cache));
-        }
-
-        function buscarEnCacheLocal(patente) {
-    // Corregido: Eliminado el espacio en 'cache_vehiculos'
-    const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
-    const encontrado = cache.find(c => c.patente === patente);
-    
-    if (encontrado) {
-        return { vehiculo: encontrado.vehiculo, ultimoControl: encontrado.ultimoControl, esOffline: true };
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const esOscuro = document.body.classList.contains('dark-mode');
+      localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
+      document.getElementById('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
     }
-    return { vehiculo: null, ultimoControl: null, esOffline: true };
-}
 
-        async function sincronizarDatosLocales() {
-            try {
-                const res = await fetch('/api/historial?limit=1000'); 
-                if (!res.ok) return;
-                const controles = await res.json();
-                let nuevoCache = [];
-                controles.forEach(ctrl => {
-                    const patente = ctrl.patente;
-                    const existe = nuevoCache.find(c => c.patente === patente);
-                    if (!existe && patente) {
-                        nuevoCache.push({
-                            patente: patente,
-                            vehiculo: { patente: patente, modelo: ctrl.modelo, numero_08: ctrl.numero_08 },
-                            ultimoControl: ctrl,
-                            timestamp: Date.now()
-                        });
-                    }
-                });
-                localStorage.setItem('cache_vehiculos', JSON.stringify(nuevoCache));
-                console.log(`Sincronización completada: ${nuevoCache.length} vehículos.`);
-            } catch (err) {
-                console.error("Error al sincronizar datos locales", err);
-            }
+    function ocultarTodasLasSecciones() {
+      ['searchSection','formSection','mapSection','userSection','listUsersSection','dashboardSection'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+      });
+      document.getElementById('footerBtn').style.display = 'none';
+    }
+
+    function mostrarMainApp() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('spanNombre').innerText = usuarioActual?.nombre || '...';
+      document.getElementById('spanRol').innerText = usuarioActual?.rol || '...';
+      document.getElementById('adminTools').style.display = usuarioActual?.rol === 'OWNER' ? 'flex' : 'none';
+      actualizarContadorPendientes();
+      iniciarRastreadorGPS();
+      actualizarEstadoRed();
+      setTimeout(() => document.getElementById('txtPatente').focus(), 300);
+    }
+
+    async function iniciarSesion() {
+      const usuario = document.getElementById('txtUsuario').value.trim();
+      const pass = document.getElementById('txtPassword').value;
+      if (!usuario || !pass) return mostrarToast('Completá usuario y contraseña', 'warning');
+
+      if (navigator.onLine) {
+        try {
+          const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, password: pass })
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error(data.message || 'Login inválido');
+          usuarioActual = data.user;
+          localStorage.setItem('usuarioGuardado', JSON.stringify(usuarioActual));
+          await sincronizarDatosLocales();
+          mostrarMainApp();
+        } catch (err) {
+          console.error(err);
+          intentarLoginOffline(usuario, pass);
         }
+      } else {
+        intentarLoginOffline(usuario, pass);
+      }
+    }
 
-        function guardarControlPendiente(datos) {
-            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            datos.fecha_hora_local = new Date().toISOString();
-            datos.idTemporal = Date.now();
-            pendientes.push(datos);
-            localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
-            
-            if (navigator.vibrate) navigator.vibrate(200); 
-            actualizarContadorPendientes(); 
+    function intentarLoginOffline(usuario) {
+      const userGuardado = localStorage.getItem('usuarioGuardado');
+      if (!userGuardado) {
+        alert('⚠️ Sin conexión y sin sesión previa. Conéctate a internet al menos una vez.');
+        return;
+      }
+      const user = JSON.parse(userGuardado);
+      if (String(user.usuario || '').toLowerCase() !== String(usuario || '').toLowerCase()) {
+        alert('Usuario incorrecto para modo offline.');
+        return;
+      }
+      usuarioActual = user;
+      mostrarToast('Modo Offline: ingresando con sesión guardada', 'warning');
+      mostrarMainApp();
+    }
+
+    async function buscarVehiculo() {
+      const patente = document.getElementById('txtPatente').value.toUpperCase().trim();
+      if (!patente) return alert('Ingrese una patente');
+
+      const divRes = document.getElementById('divResultado');
+      document.getElementById('footerBtn').style.display = 'block';
+      let data;
+      let html = '';
+
+      if (navigator.onLine) {
+        try {
+          const res = await fetch('/api/vehiculos/' + encodeURIComponent(patente));
+          data = await res.json();
+          guardarEnCacheLocal(data, patente);
+        } catch (err) {
+          console.error('Error de red, buscando en caché...', err);
+          data = buscarEnCacheLocal(patente);
         }
+      } else {
+        data = buscarEnCacheLocal(patente);
+      }
 
-        async function sincronizarPendientes() {
-            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            if (pendientes.length === 0) return;
+      vehiculoActual = data.vehiculo;
+      infoUltimoControl = data.ultimoControl || null;
+      const ultimoControl = data.ultimoControl || null;
 
-            mostrarToast(`Sincronizando ${pendientes.length} controles...`, "info");
-            let nuevosPendientes = [];
+      if (ultimoControl) {
+        const fechaCtrl = new Date(ultimoControl.fecha_hora);
+        const ahora = new Date();
+        const minutos = Math.max(1, Math.round((ahora - fechaCtrl) / 60000));
+        let tiempoTexto = '';
+        if (minutos < 60) tiempoTexto = `hace ${minutos} minutos`;
+        else if (minutos < 1440) tiempoTexto = `hace ${Math.round(minutos / 60)} horas`;
+        else tiempoTexto = `hace ${Math.floor(minutos / 1440)} días`;
+        const venceSeguro = ultimoControl.fecha_seguro_vence ? String(ultimoControl.fecha_seguro_vence).split('T')[0] : 'No registrado';
+        const etiquetaOffline = data.esOffline ? ' (Datos locales)' : '';
+        html += `<div class="card card-alert"><h3>⚠️ ATENCIÓN${etiquetaOffline}</h3><p>Este vehículo fue controlado <strong>${tiempoTexto}</strong>.</p><p style="margin-top:8px; margin-bottom:8px; font-size:15px;">🛡️ <strong>Vence Seguro:</strong> ${venceSeguro}</p><button onclick="abrirModalHistorial()" class="btn-warning" style="margin-top:5px; padding:10px;">👁️ Ver Detalles</button></div>`;
+      } else {
+        const msg = data.esOffline ? 'Sin registros en este dispositivo.' : 'Vehículo nuevo. Proceda con el control.';
+        html += `<div class="card card-success"><h3>✅ SIN REGISTROS</h3><p>${msg}</p></div>`;
+      }
 
-            for (let control of pendientes) {
-                try {
-                    const res = await fetch('/registrar-control', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(control) 
-                    });
-                    if (res.ok) {
-                        console.log('Sincronizado:', control.patricula);
-                        actualizarContadorPendientes(); 
-                    } else {
-                        nuevosPendientes.push(control);
-                } catch (error) {
-                    nuevosPendientes.push(control);
-                }
-            }
-            localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
-            actualizarContadorPendientes();
-            
-            if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
-            else mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, "warning");
+      if (vehiculoActual) {
+        html += `<div class="card" style="background:#f8fafc;"><h3>ℹ️ Datos</h3><p><strong>Modelo:</strong> ${vehiculoActual.modelo || '-'}</p></div>`;
+        document.getElementById('txtModelo').value = vehiculoActual.modelo || '';
+        document.getElementById('txtNro08').value = vehiculoActual.numero_08 || '';
+        document.getElementById('txtSeguro').value = vehiculoActual.fecha_seguro_vence ? String(vehiculoActual.fecha_seguro_vence).split('T')[0] : '';
+        document.getElementById('txtRTO').value = vehiculoActual.fecha_rto_vence ? String(vehiculoActual.fecha_rto_vence).split('T')[0] : '';
+      } else {
+        html += `<div class="card card-warning"><h3>📝 NUEVO</h3><p>Complete los datos.</p></div>`;
+        document.getElementById('txtModelo').value = '';
+        document.getElementById('txtNro08').value = '';
+        document.getElementById('txtSeguro').value = '';
+        document.getElementById('txtRTO').value = '';
+      }
+
+      html += `<button class="btn-secondary" onclick="mostrarFormulario()">📝 Editar Datos</button>`;
+      html += `<button class="btn-danger" onclick="limpiarPantalla()">❌ Cancelar</button>`;
+      divRes.innerHTML = html;
+    }
+
+    function mostrarFormulario() {
+      document.getElementById('formSection').classList.add('active');
+      document.getElementById('searchSection').classList.remove('active');
+      document.querySelector('#footerBtn button').innerText = '✅ GUARDAR CONTROL';
+    }
+
+    function cerrarFormulario() {
+      document.getElementById('formSection').classList.remove('active');
+      document.getElementById('searchSection').classList.add('active');
+    }
+
+    function limpiarPantalla() {
+      document.getElementById('txtPatente').value = '';
+      document.getElementById('divResultado').innerHTML = '';
+      document.getElementById('footerBtn').style.display = 'none';
+      document.getElementById('formSection').classList.remove('active');
+      document.getElementById('searchSection').classList.add('active');
+      document.getElementById('txtModelo').value = '';
+      document.getElementById('txtNro08').value = '';
+      document.getElementById('txtSeguro').value = '';
+      document.getElementById('txtRTO').value = '';
+      document.getElementById('txtObs').value = '';
+      ['chkCedula','chkLicencia','chkSeguro','chk08','chkRTO'].forEach(id => document.getElementById(id).checked = false);
+      fotoBase64 = null;
+      firmaBase64Actual = null;
+      borrarFoto();
+      limpiarFirma();
+      verificarPalabraMulta();
+      actualizarChecks();
+    }
+
+    function actualizarChecks() {
+      document.querySelectorAll('.check-item').forEach(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        label.classList.toggle('checked', !!input.checked);
+      });
+    }
+
+    function verificarPalabraMulta() {
+      const texto = document.getElementById('txtObs').value.toUpperCase();
+      const mostrar = texto.includes('MULTA');
+      document.getElementById('seccionFoto').style.display = mostrar ? 'block' : 'none';
+      document.getElementById('seccionFirma').style.display = 'none';
+      document.getElementById('btnIniciarFirma').style.display = mostrar ? 'block' : 'none';
+      if (!mostrar) {
+        borrarFoto();
+        limpiarFirma();
+      }
+    }
+
+    function iniciarRastreadorGPS() {
+      guardarPosicionEnFondo();
+      if (intervaloGPS) clearInterval(intervaloGPS);
+      intervaloGPS = setInterval(guardarPosicionEnFondo, 300000);
+    }
+
+    function guardarPosicionEnFondo() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          localStorage.setItem('ultima_posicion_gps', JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, tiempo: Date.now() }));
+        },
+        (err) => console.warn('No se pudo obtener posición de fondo:', err)
+      );
+    }
+
+    function obtenerUbicacionConRespaldo(callback) {
+      if (!navigator.geolocation) return callback(null, null, 'GPS no soportado');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => callback(pos.coords.latitude, pos.coords.longitude, null),
+        () => {
+          const guardadoStr = localStorage.getItem('ultima_posicion_gps');
+          if (!guardadoStr) return callback(null, null, 'GPS no disponible');
+          const guardado = JSON.parse(guardadoStr);
+          const minutosPasados = (Date.now() - guardado.tiempo) / 60000;
+          if (minutosPasados <= 10) callback(guardado.lat, guardado.lon, `Usando GPS de hace ${Math.round(minutosPasados)} min`);
+          else callback(null, null, 'GPS desactualizado (más de 10 min).');
         }
+      );
+    }
 
-        // Listeners de red
-        window.addEventListener('online', () => {
-            mostrarToast("Conexión recuperada", "success");
-            sincronizarPendientes();
-            sincronizarDatosLocales();
-            actualizarEstadoRed(); 
+    async function registrarControl() {
+      if (!usuarioActual) return alert('Sesión expirada');
+      const btn = document.querySelector('#footerBtn button');
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.innerText = 'Obteniendo ubicación...';
+      obtenerUbicacionConRespaldo((lat, lon, mensaje) => {
+        if (mensaje) mostrarToast('📍 ' + mensaje, mensaje.includes('desactualizado') ? 'warning' : 'info');
+        enviarDatos(lat, lon);
+      });
+    }
+
+    async function enviarDatos(lat, lon) {
+      const btn = document.querySelector('#footerBtn button');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Guardando...';
+
+      const payload = {
+        patricula: document.getElementById('txtPatente').value.toUpperCase(),
+        modelo: document.getElementById('txtModelo').value,
+        numero_08: document.getElementById('txtNro08').value,
+        fecha_seguro_vence: document.getElementById('txtSeguro').value,
+        fecha_rto_vence: document.getElementById('txtRTO').value,
+        id_inspector: usuarioActual.id,
+        latitud: lat,
+        longitud: lon,
+        texto_ubicacion: 'Ubicación GPS',
+        tiene_cedula: document.getElementById('chkCedula').checked,
+        tiene_licencia: document.getElementById('chkLicencia').checked,
+        tiene_seguro: document.getElementById('chkSeguro').checked,
+        tiene_08_pago: document.getElementById('chk08').checked,
+        tiene_rto_habilitada: document.getElementById('chkRTO').checked,
+        observaciones: document.getElementById('txtObs').value,
+        foto_evidencia: fotoBase64,
+        firma_conductor: firmaBase64Actual
+      };
+
+      if (!navigator.onLine) {
+        guardarControlPendiente(payload);
+        mostrarToast('📴 Sin conexión. Guardado localmente.', 'warning');
+        limpiarPantalla();
+        btn.disabled = false;
+        btn.innerHTML = '✅ REGISTRAR CONTROL';
+        return;
+      }
+
+      try {
+        const res = await fetch('/registrar-control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
+        const data = await res.json();
+        if (data.success) {
+          mostrarToast('✅ Control registrado con éxito', 'success');
+          generarYMostrarQR(data.registro);
+          limpiarPantalla();
+        } else {
+          mostrarToast('Error del servidor al guardar', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        guardarControlPendiente(payload);
+        mostrarToast('📴 Conexión perdida. Guardado localmente.', 'warning');
+        limpiarPantalla();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✅ REGISTRAR CONTROL';
+      }
+    }
 
-        window.addEventListener('offline', () => {
-            mostrarToast("Modo Offline activado", "warning");
-            actualizarEstadoRed(); 
+    function guardarEnCacheLocal(data, patente) {
+      const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+      const registro = { patente, vehiculo: data?.vehiculo || null, ultimoControl: data?.ultimoControl || null, timestamp: Date.now() };
+      const index = cache.findIndex(c => c.patente === patente);
+      if (index !== -1) cache[index] = registro; else cache.push(registro);
+      localStorage.setItem('cache_vehiculos', JSON.stringify(cache.slice(-1000)));
+    }
+
+    function buscarEnCacheLocal(patente) {
+      const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+      const encontrado = cache.find(c => c.patente === patente);
+      if (encontrado) return { vehiculo: encontrado.vehiculo, ultimoControl: encontrado.ultimoControl, esOffline: true };
+      return { vehiculo: null, ultimoControl: null, esOffline: true };
+    }
+
+    async function sincronizarDatosLocales() {
+      try {
+        const res = await fetch('/api/historial?limit=1000');
+        const historial = await res.json();
+        const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]');
+        historial.forEach(item => {
+          const patente = (item.patricula || item.patente || '').toUpperCase();
+          if (!patente) return;
+          const index = cache.findIndex(c => c.patente === patente);
+          if (index !== -1) cache[index].ultimoControl = item;
+          else cache.push({ patente, vehiculo: null, ultimoControl: item, timestamp: Date.now() });
         });
+        localStorage.setItem('cache_vehiculos', JSON.stringify(cache.slice(-1000)));
+      } catch (err) {
+        console.error('Error al sincronizar datos locales', err);
+      }
+    }
 
-        window.addEventListener('load', () => {
-            if(navigator.onLine) {
-                sincronizarPendientes();
-                actualizarEstadoRed(); 
-            } else {
-                mostrarToast("Modo Offline activado", "warning");
-                actualizarEstadoRed(); 
+    function guardarControlPendiente(datos) {
+      const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+      datos.fecha_hora_local = new Date().toISOString();
+      datos.idTemporal = Date.now();
+      pendientes.push(datos);
+      localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+      if (navigator.vibrate) navigator.vibrate(200);
+      actualizarContadorPendientes();
+    }
+
+    async function sincronizarPendientes() {
+      const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+      if (pendientes.length === 0) return;
+      let nuevosPendientes = [];
+      for (const control of pendientes) {
+        try {
+          const res = await fetch('/registrar-control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(control)
+          });
+          if (!res.ok) nuevosPendientes.push(control);
+        } catch {
+          nuevosPendientes.push(control);
+        }
+      }
+      localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
+      actualizarContadorPendientes();
+      mostrarToast(nuevosPendientes.length === 0 ? '¡Todo sincronizado!' : `${nuevosPendientes.length} controles no se pudieron sincronizar`, nuevosPendientes.length === 0 ? 'success' : 'warning');
+    }
+
+    function actualizarContadorPendientes() {
+      const badge = document.getElementById('badgePendientes');
+      const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+      const cantidad = pendientes.length;
+      if (cantidad > 0) {
+        badge.style.display = 'flex';
+        badge.innerText = cantidad > 99 ? '99+' : cantidad;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function exportarPendientes() {
+      const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+      if (!pendientes.length) return mostrarToast('No hay pendientes para exportar', 'info');
+      const blob = new Blob([JSON.stringify(pendientes, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'controles-pendientes.json';
+      a.click();
+    }
+
+    function actualizarEstadoRed() {
+      console.log('Estado de red:', navigator.onLine ? 'online' : 'offline');
+    }
+
+    function cerrarSesion() {
+      if (intervaloGPS) clearInterval(intervaloGPS);
+      mostrarToast('Cerrando sesión...', 'info');
+      setTimeout(() => location.reload(), 1000);
+    }
+
+    function iniciarDictado() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert('Tu navegador no soporta dictado por voz. Probá con Chrome.');
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-AR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      const btn = document.getElementById('btnMic');
+      recognition.onstart = () => { btn.classList.add('grabando-voz'); mostrarToast('🎤 Escuchando...', 'info'); };
+      recognition.onend = () => btn.classList.remove('grabando-voz');
+      recognition.onresult = (event) => {
+        const texto = (event.results?.[0]?.[0]?.transcript || '').trim();
+        const textarea = document.getElementById('txtObs');
+        textarea.value = textarea.value ? `${textarea.value} ${texto}` : texto;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      recognition.onerror = () => btn.classList.remove('grabando-voz');
+      recognition.start();
+    }
+
+    function mostrarPadFirma() {
+      document.getElementById('seccionFirma').style.display = 'block';
+      document.getElementById('btnIniciarFirma').style.display = 'none';
+      canvas = document.getElementById('canvasFirma');
+      ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000000';
+      canvas.onmousedown = iniciarTrazo;
+      canvas.onmousemove = dibujar;
+      canvas.onmouseup = terminarTrazo;
+      canvas.onmouseout = terminarTrazo;
+      canvas.ontouchstart = (e) => touchToMouse(e, 'mousedown');
+      canvas.ontouchmove = (e) => touchToMouse(e, 'mousemove');
+      canvas.ontouchend = (e) => touchToMouse(e, 'mouseup');
+    }
+
+    function touchToMouse(e, type) {
+      e.preventDefault();
+      const touch = e.touches[0] || e.changedTouches[0];
+      if (!touch) return;
+      const mouseEvent = new MouseEvent(type, { clientX: touch.clientX, clientY: touch.clientY });
+      canvas.dispatchEvent(mouseEvent);
+    }
+
+    function iniciarTrazo(e) { estaFirmando = true; [ultimaX, ultimaY] = obtenerCoords(e); }
+    function dibujar(e) {
+      if (!estaFirmando) return;
+      const [x, y] = obtenerCoords(e);
+      ctx.beginPath();
+      ctx.moveTo(ultimaX, ultimaY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      [ultimaX, ultimaY] = [x, y];
+    }
+    function terminarTrazo() { estaFirmando = false; }
+    function obtenerCoords(e) { const rect = canvas.getBoundingClientRect(); return [e.clientX - rect.left, e.clientY - rect.top]; }
+
+    function limpiarFirma() {
+      const c = document.getElementById('canvasFirma');
+      if (c) {
+        const x = c.getContext('2d');
+        x.clearRect(0, 0, c.width, c.height);
+      }
+      firmaBase64Actual = null;
+      const btn = document.getElementById('btnIniciarFirma');
+      if (btn) {
+        btn.style.display = 'block';
+        btn.innerText = '✍️ Firmar Acta';
+        btn.style.background = '#475569';
+      }
+    }
+
+    function guardarFirma() {
+      if (!canvas || !ctx) return;
+      const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+      if (!pixelBuffer.some(color => color !== 0)) {
+        alert('El canvas está vacío. Por favor firme o cancele.');
+        return;
+      }
+      firmaBase64Actual = canvas.toDataURL('image/png');
+      mostrarToast('Firma capturada correctamente', 'success');
+      document.getElementById('seccionFirma').style.display = 'none';
+      const btn = document.getElementById('btnIniciarFirma');
+      btn.style.display = 'block';
+      btn.innerText = 'Firma Guardada ✅';
+      btn.style.background = '#10b981';
+    }
+
+    function procesarFoto(input) {
+      if (!(input.files && input.files[0])) return;
+      const archivo = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const cv = document.createElement('canvas');
+          const c2 = cv.getContext('2d');
+          const MAXWIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAXWIDTH) { height = height * (MAXWIDTH / width); width = MAXWIDTH; }
+          cv.width = width; cv.height = height;
+          c2.drawImage(img, 0, 0, width, height);
+          fotoBase64 = cv.toDataURL('image/jpeg', 0.7);
+          document.getElementById('previewFoto').src = fotoBase64;
+          document.getElementById('contenedorPreview').style.display = 'block';
+          mostrarToast('Foto procesada y lista', 'success');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(archivo);
+    }
+
+    function borrarFoto() {
+      fotoBase64 = null;
+      document.getElementById('cameraInput').value = '';
+      document.getElementById('previewFoto').src = '';
+      document.getElementById('contenedorPreview').style.display = 'none';
+    }
+
+    async function abrirMapa() {
+      ocultarTodasLasSecciones();
+      document.getElementById('mapSection').classList.add('active');
+      await new Promise(resolve => setTimeout(resolve, 150));
+      if (map) {
+        map.invalidateSize();
+        return;
+      }
+      map = L.map('map').setView([-28.5343, -56.0406], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      try {
+        const res = await fetch('/api/historial');
+        const data = await res.json();
+        if (data.length > 0) {
+          data.forEach(ctrl => {
+            if (ctrl.latitud && ctrl.longitud) {
+              const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
+              const fecha = new Date(ctrl.fecha_hora).toLocaleString();
+              marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}<br><b>Fecha:</b> ${fecha}<br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`);
             }
+          });
+        } else {
+          mostrarToast('No hay controles con GPS registrados aún', 'info');
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarToast('Error al cargar datos del mapa', 'error');
+      }
+    }
+
+    function cerrarMapa() {
+      document.getElementById('mapSection').classList.remove('active');
+      document.getElementById('searchSection').classList.add('active');
+      document.getElementById('footerBtn').style.display = 'block';
+    }
+
+    function abrirUsuarios() {
+      ocultarTodasLasSecciones();
+      document.getElementById('userSection').classList.add('active');
+      document.getElementById('msgUsuario').innerHTML = '';
+    }
+
+    function cerrarUsuarios() {
+      document.getElementById('userSection').classList.remove('active');
+      document.getElementById('listUsersSection').classList.remove('active');
+      document.getElementById('searchSection').classList.add('active');
+      document.getElementById('footerBtn').style.display = 'block';
+    }
+
+    async function guardarUsuario() {
+      const usuario = document.getElementById('newUsuario').value.trim();
+      const password = document.getElementById('newPassword').value;
+      const nombre = document.getElementById('newNombre').value.trim();
+      const rol = document.getElementById('newRol').value;
+      if (!usuario || !password || !rol) return alert('Falta usuario o contraseña');
+      try {
+        const res = await fetch('/api/crear-usuario', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, rol })
         });
-
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('SW registrado:', reg.scope) )
-                    .catch(err => console.error("Error SW:", err));
-            });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('msgUsuario').innerHTML = '<span style="color:green;">✅ Usuario creado correctamente</span>';
+          document.getElementById('newUsuario').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('newNombre').value = '';
+        } else {
+          document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error || data.message}</span>`;
         }
+      } catch {
+        alert('Error de conexión');
+      }
+    }
 
-        function exportarPendientes() {
-            const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
-            if (pendientes.length === 0) {
-                mostrarToast("No hay controles pendientes para respaldar", "info");
-                return;
-            }
-            let texto = "🚨 RESPALDO DE CONTROLES PENDIENTES 🚨";
-
-            texto += "Generado: " + new Date().toLocaleString() + "\n";
-            texto += "Inspector: " + (usuarioActual ? usuarioActual.nombre : "Desconocido") + "\n";
-            texto += "Total a sincronizar: " + pendientes.length + " controles\n";
-            pendientes.forEach((ctrl, index) => {
-                texto += `--- CONTROL ${index + 1} ---\n`;
-                texto += `Patente: ${ctrl.patente || 'SIN PATENTE'}\n`;
-                texto += `Modelo: ${ctrl.modelo || '-'}\n`;
-                texto += `Docs: Céd[${ctrl.tiene_cedula ? '✅' : '❌'}] Lic[${ctrl.tiene_licencia ? '✅' : '❌'}] Seguro[${ctrl.tiene_seguro ? '✅' : '❌'}] 08[${ctrl.tiene_08_pago ? '✅' : '❌'}] RTO[${ctrl.tiene_rto_habilitada ? '✅' : '❌'}]\n`;
-                if (ctrl.observaciones) texto += `Obs: ${ctrl.observaciones || 'Sin observaciones'}`;
-                texto += `\n`;
-            });
-            const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `Respaldo_${new Date().getTime()}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            mostrarToast("📄 Respaldo descargado", "success");
+    async function verListaUsuarios() {
+      ocultarTodasLasSecciones();
+      document.getElementById('listUsersSection').classList.add('active');
+      const tbody = document.getElementById('tablaUsuariosBody');
+      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr>';
+      try {
+        const res = await fetch('/api/usuarios');
+        const data = await res.json();
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
+          return;
         }
+        data.forEach(u => {
+          const tr = document.createElement('tr');
+          const icono = u.rol === 'OWNER' ? '👑' : '👮';
+          const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
+          tr.innerHTML = `<td>${u.nombre || 'Sin nombre'}</td><td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
+      }
+    }
 
-        // NUEVO: Lógica del botón inteligente
+    function cerrarDashboard() {
+      document.getElementById('dashboardSection').classList.remove('active');
+      document.getElementById('searchSection').classList.add('active');
+      document.getElementById('footerBtn').style.display = 'block';
+    }
 
-        function actualizarEstadoBtnRegistrar() {
-            const btn = document.querySelector('#footerBtn button');
-            if (!btn) return;
+    async function abrirDashboard() {
+      ocultarTodasLasSecciones();
+      document.getElementById('dashboardSection').classList.add('active');
+      const hoy = new Date().toISOString().split('T')[0];
+      document.getElementById('fechaDesde').value = hoy;
+      document.getElementById('fechaHasta').value = hoy;
+      await cargarDatosDashboard(hoy, hoy);
+    }
 
-            const checks = [
-                document.getElementById('chkCedula').checked,
-                document.getElementById('chkLicencia').checked,
-                document.getElementById('chkSeguro').checked,
-                document.getElementById('chk08').checked,
-                document.getElementById('chkRTO').checked
-            ];
-            
-            const algunosTildados = checks.some(c => c);
-            const todosTildados = checks.every(c => c);
+    async function cargarDatosDashboard(desde, hasta) {
+      mostrarToast('Cargando estadísticas...', 'info');
+      try {
+        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+        const data = await res.json();
+        document.getElementById('numTotalHoy').innerText = data.totalHoy;
+        const nombres = data.porInspector.map(u => `${u.nombre} (${u.usuario})`);
+        const cantidades = data.porInspector.map(u => u.cantidad);
+        const ctxBarras = document.getElementById('graficoInspectores').getContext('2d');
+        if (miGrafico) miGrafico.destroy();
+        miGrafico = new Chart(ctxBarras, {
+          type: 'bar',
+          data: { labels: nombres, datasets: [{ label: 'Controles', data: cantidades, backgroundColor: ['#3b82f6','#ef4444','#10b981','#8b5cf6','#f59e0b'], borderWidth: 2, borderRadius: 5 }] },
+          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+        });
+        const faltas = data.docsFaltantes || {};
+        const ctxTorta = document.getElementById('graficoFaltantes').getContext('2d');
+        if (miGraficoTorta) miGraficoTorta.destroy();
+        miGraficoTorta = new Chart(ctxTorta, {
+          type: 'doughnut',
+          data: { labels: ['Cédula','Licencia','Seguro','08','RTO'], datasets: [{ data: [faltas.falta_cedula || 0, faltas.falta_licencia || 0, faltas.falta_seguro || 0, faltas.falta_08 || 0, faltas.falta_rto || 0], backgroundColor: ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6'], borderWidth: 2, borderColor: '#ffffff' }] },
+          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 12, weight: 'bold' }, padding: 15 } } } }
+        });
+      } catch (error) {
+        console.error(error);
+        mostrarToast('Error al cargar dashboard', 'error');
+      }
+    }
 
-            if (algunosTildados && !todosTildados) {
-                btn.style.background = '#dc2626';
-                btn.innerText = "⚠️ FALTA DOCUMENTACIÓN";
-            } else if (todosTildados) {
-                btn.style.background = '#16a34a';
-                btn.innerText = "✅ REGISTRAR CONTROL";
-            } else {
-                btn.style.background = '#16a34a';
-                btn.innerText = "✅ REGISTRAR CONTROL";
-            }
-        }
+    function actualizarDashboard() {
+      const desde = document.getElementById('fechaDesde').value;
+      const hasta = document.getElementById('fechaHasta').value;
+      if (!desde || !hasta) return mostrarToast('Selecciona ambas fechas', 'warning');
+      cargarDatosDashboard(desde, hasta);
+    }
 
-        function actualizarEstadoRed() {
-            const btn = document.querySelector('#footerBtn button');
-            if (!btn) return;
-            
-            if (!navigator.onLine) {
-                btn.style.background = '#d97706';
-                btn.innerText = "📴 GUARDAR LOCALMENTE";
-            } else {
-                actualizarEstadoBtnRegistrar();
-            }
-        }
+    function descargarExcel() {
+      const desde = document.getElementById('fechaDesde').value;
+      const hasta = document.getElementById('fechaHasta').value;
+      if (!desde || !hasta) return mostrarToast('Selecciona fechas para exportar', 'warning');
+      window.open(`/api/exportar-registros?desde=${desde}&hasta=${hasta}`, '_blank');
+    }
 
-        // --- GENERAR Y MOSTRAR QR ---
+    function abrirModalHistorial() {
+      const control = infoUltimoControl;
+      if (!control) return mostrarToast('No hay datos del control anterior', 'warning');
+      const venceSeguro = control.fecha_seguro_vence ? String(control.fecha_seguro_vence).split('T')[0] : '-';
+      const venceRTO = control.fecha_rto_vence ? String(control.fecha_rto_vence).split('T')[0] : '-';
+      const fecha = control.fecha_hora ? new Date(control.fecha_hora).toLocaleString() : '-';
+      let html = `<p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p><hr style="border-color:#334155;">`;
+      html += `<div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span><span style="color:white; font-weight:bold;">${venceSeguro}</span></div><div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8; font-size:12px;">VENCE RTO:</span><span style="color:white; font-weight:bold;">${venceRTO}</span></div></div>`;
+      html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${control.tiene_cedula ? '#4ade80' : '#f87171'}">${control.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div><div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${control.tiene_licencia ? '#4ade80' : '#f87171'}">${control.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div><div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${control.tiene_seguro ? '#4ade80' : '#f87171'}">${control.tiene_seguro ? '✅ Sí' : '❌ No'}</div></div><div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label><div style="font-weight:bold; color:${control.tiene_08_pago ? '#4ade80' : '#f87171'}">${control.tiene_08_pago ? '✅ Sí' : '❌ No'}</div></div><div><label style="font-size:12px; color:#94a3b8;">RTO</label><div style="font-weight:bold; color:${control.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${control.tiene_rto_habilitada ? '✅ Sí' : '❌ No'}</div></div></div>`;
+      document.getElementById('contenidoHistorial').innerHTML = html;
+      const modal = document.getElementById('modalHistorial');
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+    }
 
-        async function generarYMostrarQR(controlData) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+    function cerrarModalHistorial() {
+      const modal = document.getElementById('modalHistorial');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+    }
 
-            // --- DISEÑO DEL PDF ---
-            doc.setFontSize(18);
-            doc.text("ACTA DE INFRACCIÓN", 105, 20, null, null, null, "center");
-            
-            doc.setFontSize(12);
-            doc.text(`Patente: ${controlData.patente}`, 20, 40);
-            doc.text(`Fecha: ${new Date(controlData.fecha_hora).toLocaleString()}`, 20, 50);
-            
-            // Agregar Observaciones
-            const splitText = doc.splitTextToSize(controlData.observaciones || "Sin observaciones");
-            doc.text("Observaciones:", 20, 70);
-            doc.text(splitText, 20, 80);
-            
-            // Agregar Foto (si existe)
-            if (controlData.foto_evidencia) {
-                try {
-                    doc.addImage(controlData.foto_evidencia, 'JPEG', 20, 100, 170, 100); // x, y, h, w
-                } catch(e) { console.error("Error al agregar foto", e); }
-            }
+    function generarTextoReporte(data) {
+      const fecha = new Date().toLocaleDateString();
+      let texto = `🚨 REPORTE DIARIO DE TRÁNSITO\n📅 Fecha: ${fecha}\n🚗 Total: ${data.totalHoy}\n\n📋 Por Inspector:\n`;
+      data.porInspector.forEach(insp => { texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`; });
+      return texto;
+    }
 
-            // Agregar Firma (si existe)
-            if (controlData.firma_conductor) {
-                doc.text("Firma Conductor:", 20, 210);
-                try {
-                    doc.addImage(control.firma_conductor, 'PNG', 20, 220, 80, 50);
-                } catch(e) { console.error("Error al agregar firma", e); }
-            }
+    async function compartirPorEmail() {
+      try {
+        const desde = document.getElementById('fechaDesde').value;
+        const hasta = document.getElementById('fechaHasta').value;
+        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+        const data = await res.json();
+        window.open(`mailto:?subject=${encodeURIComponent('Reporte de Tránsito')}&body=${encodeURIComponent(generarTextoReporte(data))}`);
+      } catch { mostrarToast('Error al generar reporte', 'error'); }
+    }
 
-            // GENERAR QR
-            const urlQR = `https://control-transito-acabamos-usar-la-url-real-del-acta-${controlData.id}`; 
+    async function compartirPorWhatsApp() {
+      try {
+        const desde = document.getElementById('fechaDesde').value;
+        const hasta = document.getElementById('fechaHasta').value;
+        const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
+        const data = await res.json();
+        window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))}`, '_blank');
+      } catch { mostrarToast('Error al generar reporte', 'error'); }
+    }
 
-            // Crear Modal para mostrar QR
-            const modalHTML = `
-                <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0,0.8); z-index:10000; display:flex; justify-content:center; align-items: center;">
-                    <div style="background:white; padding:20px; border-radius:10px; text-align: center; max-width:300px;">
-                        <h3>¡Acta Generada!</h3>
-                        <p style="font-size:12px; color:#64748b;">Escanea para descargar tu copia</p>
-                        <div id="qrCodeContainer" style="margin:20px; width:150px; height:150px;"></div>
-                        <button onclick="this.closest('div').parentElement.remove()" class="btn-primary">CERRAR</button>
-                    </div>
-                </div>`;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
+    function generarYMostrarQR(registro) {
+      if (!registro || !registro.id) return;
+      mostrarToast(`QR disponible en /acta/${registro.id}`, 'info');
+    }
 
-            // Generar el QR visualmente
-            new QRCode(document.getElementById("qrCodeContainer"), {
-                text: urlQR,
-                width: 128,
-                height: 128
-            });
-        }
-    </script>
+    window.addEventListener('online', () => { mostrarToast('Conexión recuperada', 'success'); sincronizarPendientes(); sincronizarDatosLocales(); actualizarEstadoRed(); });
+    window.addEventListener('offline', () => { mostrarToast('Modo Offline activado', 'warning'); actualizarEstadoRed(); });
+    window.addEventListener('load', () => {
+      aplicarTema();
+      actualizarChecks();
+      verificarPalabraMulta();
+      if (navigator.onLine) { sincronizarPendientes(); actualizarEstadoRed(); } else { mostrarToast('Modo Offline activado', 'warning'); actualizarEstadoRed(); }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => console.log('SW registrado:', reg.scope)).catch(err => console.error('Error SW:', err));
+      });
+    }
+  </script>
 </body>
 </html>
