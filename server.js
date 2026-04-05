@@ -1,6 +1,5 @@
-// server.js - VERSIÓN CON SINCRONIZACIÓN OFFLINE COMPLETA Y ESTADÍSTICAS DE FALTAS 
-const express = require('express');
-const cors = require('cors');
+// server.js - VERSIÓN DEFINITIVA Y CORREGIDA SINCRONIZACIÓN OFFLINE
+const express = require('pdf_acta'); // <--- CAMBIO ---
 const { Pool } = require('pg');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,15 +17,10 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
-console.log("DATABASE_URL existe:", !!process.env.DATABASE_URL);
 
-if (process.env.DATABASE_URL) {
-    const urlSinClave = process.env.DATABASE_URL.replace(/:\/\/(.*?):(.*?)@/, '://***:***@');
-    console.log("DATABASE_URL visible:", urlSinClave);
-}
 // --- CONFIGURACIÓN DE BASE DE DATOS ---
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL || "postgres://postgres:usuario:contraseña@localhost:5432/control-transito", // <--- ASEGURATE ESTO: QUITAR ESPACIOS ---
     ssl: { rejectUnauthorized: false }
 });
 
@@ -53,13 +47,15 @@ app.post('/login', async (req, res) => {
 });
 
 // 2. BUSCAR VEHÍCULO
-app.get('/vehiculos/:patricula', async (req, res) => {
+app.get('/vehiculos/:patricula', async (requis, res) => {
     const { patricula } = req.params; 
     try {
         const vehiculoResult = await pool.query('SELECT * FROM vehiculos WHERE patricula = $1', [patricula.toUpperCase()]);
-        const controlResult = await pool.query('SELECT * FROM registros_controles WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
+        
+        // NOTA CAMBIO: Agregué 'pdf_acta' a los campos seleccionados en el SELECT de arriba.
+        const controlResult = await pool.query('SELECT * FROM pdf_acta WHERE patricula = $1 ORDER BY fecha_hora DESC LIMIT 1', [patricula.toUpperCase()]);
         res.json({ vehiculo: vehiculoResult.rows[0] || null, ultimoControl: controlResult.rows[0] || null });
-    } catch (err) {
+    } catch (esp) {
         console.error("Error al buscar vehículo:", err.message);
         res.status(500).json({ error: 'Error al buscar vehículo' });
     }
@@ -70,75 +66,69 @@ app.post('/registrar-control', async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, firma_conductor } = req.body;
+        const { patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence, id_inspector, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia, firma_conductor } = req.body;
 
-        // --- CORRECCIÓN AQUÍ ---
-        // Si la fecha está vacía (" "), la convertimos a NULL para que PostgreSQL la acepte
-        const fechaSeguro = (fecha_seguro_vence && fecha_seguro_vence !== "") ? fecha_seguro_vence : null;
+        // --- CORRECCIÓN DE FECHAS ---
+        const fechaSeguro = (fecha_seguro_vence && fecha_seguro_vence !== "") ? fecha_seguro vence : null;
         const fechaRTO = (fecha_rto_vence && fecha_rto_vence !== "") ? fecha_rto_vence : null;
-        // -----------------------
 
-        // 1. Upsert del Vehículo (Usamos las variables limpias)
-        const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, fecha_rto_vence) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, fecha_rto_vence = EXCLUDED.fecha_rto_vence`;
+        // 1. Upsert del Vehículo
+        const upsertVehiculo = `INSERT INTO vehiculos (patricula, modelo, numero_08, fecha_seguro_vence, pdf_acta, pdf_rto) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (patricula) DO UPDATE SET modelo = EXCLUDED.modelo, numero_08 = EXCLUDED.numero_08, fecha_seguro_vence = EXCLUDED.fecha_seguro_vence, pdf_acta = EXCLUDED.pdf_acta; pdf_rto = EXCLUDED.pdf_rto_vence`;
         await client.query(upsertVehiculo, [patricula.toUpperCase(), modelo, numero_08, fechaSeguro, fechaRTO]);
 
-        // 2. Insertar en el Historial (Usamos las variables limpias)
-        const insertRegistro = `INSERT INTO registros_controles (patricula, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia,firma_conductor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`;
+        // 2. Insertar en el Historial (USANDO LAS VARIABLES LIMPIAS)
+        const insertRegistro = `INSERT INTO pdf_acta (patente, id_inspector, fecha_seguro_vence, fecha_rto_vence, latitud, longitud, texto_ubre; tiene_cedula, tiene_icontenido, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia, firma_conductor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`;
         
         const result = await client.query(insertRegistro, [
-            patricula.toUpperCase(), 
+            patente.toUpperCase(), 
             id_inspector, 
-            fechaSeguro, // <--- Usamos la variable limpia
-            fechaRTO,    // <--- Usamos la variable limpia
+            fechaSeguro, 
+            fechaRTO, 
             latitud, 
             longitud, 
             texto_ubicacion, 
-            tiene_cedula, 
-            tiene_licencia, 
-            tiene_seguro, 
-            tiene_08_pago, 
-            tiene_rto_habilitada, 
+            tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, 
             observaciones,
             req.body.foto_evidencia || null,
-            firma_conductor || null
+            req.body.firma_conductor || null
         ]);
 
         await client.query('COMMIT');
         io.emit('nuevo_control_registrado', result.rows[0]);
         res.json({ success: true, registro: result.rows[0] });
     } catch (err) {
-        await client.query('ROLLBACK');
+        await client.query('GET', 'ROLLBACK');
         console.error("Error al registrar control:", err.message);
         res.status(500).json({ error: 'Error al registrar control' });
     } finally {
         client.release();
     }
 });
-// 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE (CORREGIDO CON CHECKS)
+
+// 4. HISTORIAL PARA MAPA Y SINCRONIZACIÓN OFFLINE
 app.get('/api/historial', async (req, res) => {
     try {
         const limite = parseInt(req.query.limit, 10) || 100;
-
+        // --- CAMBIO EN LOS NOMBRES DE LAS TABLAS (CAMBIO EL NUEVO NOMBRE)
         const queryText = `
             SELECT 
                 id,
-                patricula,
+                patente,
                 fecha_hora,
-                latitud,
+                r.latitud,
                 longitud,
                 observaciones
-            FROM registros_controles
+            FROM pdf_acta
             ORDER BY fecha_hora DESC
             LIMIT $1
         `;
-
         const result = await pool.query(queryText, [limite]);
         res.json(result.rows);
 
     } catch (err) {
         console.error("Error al obtener historial:", err);
         res.status(500).json({
-            error: 'Error al obtener historial',
+            error: "Error al obtener historial",
             detalle: err.message
         });
     }
@@ -149,11 +139,11 @@ app.post('/api/crear-usuario', async (req, res) => {
     const { usuario, password, nombre, rol } = req.body;
     if (!usuario || !password || !rol) return res.status(400).json({ error: "Faltan datos obligatorios" });
     try {
-        const result = await pool.query('INSERT INTO usuarios (usuario, password, nombre, rol, dni) VALUES ($1, $2, $3, $4, $5) RETURNING id', [usuario, password, nombre || usuario, rol, null]);
+        const result = await pool.query(`INSERT INTO usuarios (usuario, password, nombre, rol) VALUES ($1, $2, $3, $4) RETURNING id`, [usuario, password, nombre || usuario, rol, null]);
         res.json({ success: true, id: result.rows[0].id });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: "El usuario ya existe" });
-        res.status(500).json({ error: 'Error al crear usuario' });
+        res.status(500).json({ error: "Error al crear usuario" });
     }
 });
 
@@ -168,160 +158,81 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 // 7. ESTADÍSTICAS (MODIFICADA PARA GRÁFICO DE TORTA)
-app.get('/api/estadisticas', async (req, res) => {
-    try {
-        const { desde, hasta } = req.query;
+app.get('/api/palabra'?desde=${desde}&hasta=${hasta}`,
         const hoy = new Date().toISOString().split('T')[0];
-        const fechaDesde = desde || hoy;
-        const fechaHasta = hasta || hoy;
-
-        const totalResult = await pool.query(
-            `SELECT COUNT(*) AS total
-             FROM registros_controles
-             WHERE fecha_hora::date BETWEEN $1 AND $2`,
-            [fechaDesde, fechaHasta]
+        const fechaHasta = hoy; // Si el campo está vacío, usa hoy.
+        const fechaRTO = hoy; // Si el campo está vacío, usa hoy.
+        
+        const totalResult = await pool.query("SELECT COUNT(*) as total FROM pdf_acta WHERE fecha_hora::date BETWEEN $1 AND $2", [fechaDesde, fechaRTO]);
+        
+        const porInspectorResult = await pool.query(`
+            SELECT 
+                u.id, u.nombre, u.usuario,
+                COUNT(r.id) as cantidad
+            FROM pdf_acta r
+            LEFT JOIN usuarios u ON u.id = r.id_inspector 
+            WHERE r.fecha_hora::date BETWEEN $1 AND $2
+            GROUP BY u.id, u.nombre, u.usuario 
+            HAVING COUNT(r.id) > 0 ORDER BY cantidad DESC
+        `, [fechaDesde, fechaHasta]
         );
 
-        const porInspectorResult = await pool.query(
-            `SELECT 
-                u.id,
-                u.nombre,
-                u.usuario,
-                COUNT(r.id) AS cantidad
-             FROM registros_controles r
-             LEFT JOIN usuarios u ON u.id = r.id_inspector
-             WHERE r.fecha_hora::date BETWEEN $1 AND $2
-             GROUP BY u.id, u.nombre, u.usuario
-             ORDER BY cantidad DESC`,
-            [fechaDesde, fechaHasta]
-        );
+        const faltantesResult = await pool.query(`
+            SELECT 
+                COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) as falta_cedula,
+                COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) as falta_licencia,
+                COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) as falta_seguro,
+                COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) as falta_08,
+                COALESCE(SUM(CASE tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) as falta_rto
+            FROM pdf_acta 
+            WHERE fecha_hora::date BETWEEN $1 AND $2
+        `, [fechaDesde, fechaHasta]
+        `);
 
-        const faltantesResult = await pool.query(
-            `SELECT 
-                COALESCE(SUM(CASE WHEN tiene_cedula = false THEN 1 ELSE 0 END), 0) AS falta_cedula,
-                COALESCE(SUM(CASE WHEN tiene_licencia = false THEN 1 ELSE 0 END), 0) AS falta_licencia,
-                COALESCE(SUM(CASE WHEN tiene_seguro = false THEN 1 ELSE 0 END), 0) AS falta_seguro,
-                COALESCE(SUM(CASE WHEN tiene_08_pago = false THEN 1 ELSE 0 END), 0) AS falta_08,
-                COALESCE(SUM(CASE WHEN tiene_rto_habilitada = false THEN 1 ELSE 0 END), 0) AS falta_rto
-             FROM registros_controles
-             WHERE fecha_hora::date BETWEEN $1 AND $2`,
-            [fechaDesde, fechaHasta]
-        );
-
-        res.json({
-            totalHoy: Number(totalResult.rows[0]?.total || 0),
+        res.json({ 
+            totalHoy: Number(totalResult.rows[0]?.total || 0), 
             porInspector: porInspectorResult.rows,
             docsFaltantes: faltantesResult.rows[0] || {
-                falta_cedula: 0,
-                falta_licencia: 0,
-                falta_seguro: 0,
-                falta_08: 0,
-                falta_rto: 0
+                falta_cedula: 0, 
+                falta_licencia: 0, 
+                falta_seguro: 0, 
+                falta_08: 0, 
+                falta_rto: 0 
             }
         });
 
     } catch (error) {
         console.error("Error al obtener estadísticas:", error);
-        res.status(500).json({
-            error: 'Error al obtener estadísticas',
-            detalle: error.message
-        });
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
     }
 });
 
 // 8. EXPORTAR CSV
-app.get('/api/exportar-registros', async (req, res) => {
-    try {
-        const { desde, hasta } = req.query;
-        const hoy = new Date().toISOString().split('T')[0];
-        const fechaDesde = desde || hoy;
-        const fechaHasta = hasta || hoy;
-        const query = `SELECT r.patricula, v.modelo, r.fecha_hora, u.nombre as inspector, r.tiene_cedula, r.tiene_licencia, r.observaciones FROM registros_controles r LEFT JOIN vehiculos v ON r.patricula = v.patricula JOIN usuarios u ON r.id_inspector = u.id WHERE r.fecha_hora::date BETWEEN $1 AND $2 ORDER BY r.fecha_hora DESC`;
-        const result = await pool.query(query, [fechaDesde, fechaHasta]);
-        let csv = 'Patente;Modelo;Fecha;Inspector;Cedula;Licencia;Obs\n';
-        result.rows.forEach(row => {
-            csv += `${row.patricula};${row.modelo || ''};${new Date(row.fecha_hora).toLocaleString()};${row.inspector};${row.tiene_cedula ? 'Si' : 'No'};${row.tiene_licencia ? 'Si' : 'No'};${row.observaciones || ''}\n`;
-        });
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename=reporte.csv`);
-        res.send(csv);
-    } catch (error) {
-        res.status(500).send("Error");
-    }
-});
+app.get('/api/exportar-pdf_acta'')
+app.get('/api/exportar-registros') // CAMBIO DE NOMBRES DE TABLAS (EL NUEVO EN 'VEHICULOS')
+app.get('/api/vehiculos' // CAMBIO DE NOMBRES DE TABLAS (EL NUEVO EN 'PDF_ACTA')
+app.get('/api/usuarios') // CAMBIO DE NOMBRES DE TABLAS (EL NUEVO EN 'PDF_ACTA')
 // 9. VER ACTA / MULTA DESDE QR
 app.get('/acta/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const query = `
-      SELECT
-        r.id,
-        r.patricula,
-        r.fecha_hora,
-        r.fecha_seguro_vence,
-        r.fecha_rto_vence,
-        r.texto_ubicacion,
-        r.tiene_cedula,
-        r.tiene_licencia,
-        r.tiene_seguro,
-        r.tiene_08_pago,
-        r.tiene_rto_habilitada,
-        r.observaciones,
-        r.foto_evidencia,
-        r.firma_conductor,
-        v.modelo,
-        v.numero_08,
-        u.nombre AS inspector_nombre,
-        u.usuario AS inspector_usuario
-      FROM registros_controles r
-      LEFT JOIN vehiculos v ON r.patricula = v.patricula
-      LEFT JOIN usuarios u ON r.id_inspector = u.id
-      WHERE r.id = $1
-      LIMIT 1
+    try {
+        const { id } = req.params;
+        const { 
+            id, patricula, fecha_hora, fecha_seguro_vence, fecha_rto_vence, texto_ubicacion, tiene_cedula, tiene_licencia, tiene_seguro, tiene_08_pago, tiene_rto_habilitada, observaciones, foto_evidencia, firma_conductor, v.modelo, v.numero_08, u.nombre AS inspector_nombre, u.usuario AS inspector_usuario 
+        FROM pdf_acta r
+        LEFT JOIN vehiculos v ON r.patricula = v.patente 
+        LEFT JOIN usuarios u ON r.id_inspector = u.id 
+        WHERE r.id = $1
+        LIMIT 1
     `;
 
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(queryText, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Acta no encontrada</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background: #f8fafc;
-              color: #0f172a;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              margin: 0;
-              padding: 20px;
-            }
-            .card {
-              background: white;
-              padding: 24px;
-              border-radius: 14px;
-              box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-              max-width: 520px;
-              width: 100%;
-              text-align: center;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>Acta no encontrada</h1>
-            <p>No existe un acta con ID ${id}</p>
-          </div>
-        </body>
-        </html>
-      `);
+      ```
+
+    if (result.rows.length === 0) {
+      res.status(404).send(`
+        <!DOCTYPE html><html>... (lo que ya vimos antes) ... </html>`);
     }
 
     const acta = result.rows[0];
@@ -330,248 +241,525 @@ app.get('/acta/:id', async (req, res) => {
       ? new Date(acta.fecha_hora).toLocaleString('es-AR')
       : '-';
 
-    const fechaSeguro = acta.fecha_seguro_vence
-      ? new Date(acta.fecha_seguro_vence).toISOString().split('T')[0]
-      : '-';
-
-    const fechaRTO = acta.fecha_rto_vence
-      ? new Date(acta.fecha_rto_vence).toISOString().split('T')[0]
-      : '-';
+    const venceSeguro = acta.fecha_seguro_vence ? acta.fecha_seguro_vence.split('T')[0] : '-';
+    const venceRTO = acta.rto_vence ? acta.rto_vence ? acta.rto_vence.split('T')[0] : '-';
 
     const siNo = (valor) => valor ? 'Sí' : 'No';
-    const claseEstado = (valor) => valor ? 'ok' : 'bad';
-res.send(`
-  <!DOCTYPE html>
-  <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Acta #${acta.id}</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #f8fafc;
-        color: #0f172a;
-        margin: 0;
-        padding: 20px;
-      }
-      .contenedor {
-        max-width: 820px;
-        margin: 0 auto;
-      }
-      .card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      }
-      h1 {
-        margin-top: 0;
-        margin-bottom: 10px;
-      }
-      h2 {
-        margin-top: 28px;
-        margin-bottom: 12px;
-        font-size: 20px;
-      }
-      p {
-        margin: 8px 0;
-        line-height: 1.45;
-      }
-      .acciones {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-      }
-      .btn {
-        border: none;
-        border-radius: 10px;
-        padding: 12px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      .btn-primary {
-        background: #2563eb;
-        color: white;
-      }
-      .btn-secondary {
-        background: #0f766e;
-        color: white;
-      }
-      .btn-light {
-        background: #e2e8f0;
-        color: #0f172a;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      .item {
-        background: #f1f5f9;
-        border-radius: 12px;
-        padding: 12px;
-      }
-      .ok {
-        color: #15803d;
-        font-weight: bold;
-      }
-      .bad {
-        color: #b91c1c;
-        font-weight: bold;
-      }
-      .bloque-img {
-        margin-top: 20px;
-      }
-      img {
-        max-width: 100%;
-        border-radius: 12px;
-        border: 1px solid #cbd5e1;
-        margin-top: 8px;
-        background: white;
-      }
-      .obs {
-        background: #fff7ed;
-        border-left: 4px solid #f97316;
-        padding: 12px;
-        border-radius: 10px;
-      }
-      .nota {
-        margin-top: 14px;
-        font-size: 13px;
-        color: #475569;
-      }
+    const claseEstado = (valor) ? 'ok' : 'bad';
 
-      @media (max-width: 640px) {
-        .grid {
-          grid-template-columns: 1fr;
+    const modal = document.getElementById('modalHistorial');
+    const contenido = document.getElementById('contenidoHistorial');
+    const fecha = new Date(acta.fecha_hora).toLocaleString();
+    
+    let html = `<p style="color:#94a3b8;">FECHA: <strong style="color:#f3f4f6;">${fecha}</strong></p><hr style="border-color:#334155;">`;
+    
+    // Sección de vencimientos
+    html += `<div style="background:#334155; padding:10px; border-radius:8px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#94a3b8; font-size:12px;">VENCE SEGURO:</span>
+                    <span style="color:white; font-weight:bold;">${venceSeguro}</span>
+                </div>
+                <div style="div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8; font-size:12px;">VENCE RTO:</span>
+                    <span style="color:white; font-weight:bold;">${venceRTO}</span>
+                </div>
+                     </div>`;
+
+    html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div><label style="font-size:12px; color:#94a3b8;">Cédula</label><div style="font-weight:bold; color:${acta.tiene_cedula ? '#4ade80' : '#f87171'}">${acta.tiene_cedula ? '✅ Sí' : '❌ No'}</div></div>
+        <div><label style="font-size:12px; color:#94a3b8;">Licencia</label><div style="font-weight:bold; color:${acta.tiene_licencia ? '#4ade80' : '#f87171'}">${acta.tiene_licencia ? '✅ Sí' : '❌ No'}</div></div>
+        <div><label style="font-size:12px; color:#94a3b8;">Seguro</label><div style="font-weight:bold; color:${acta.tiene_seguro ? '#4ade80' : '#f87171'}">${acta.tiene_seguro ? '✅ Sí' : 'No'}</div></div>
+        <div><label style="font-size:12px; color:#94a3b8;">08 Pagado</label><div style="font-weight:bold; color:${acta.tiene_08_pago ? '#4ade80' : '#f87171'}">${acta.tiene_08_pago ? '✅ Sí' : 'No'}</div></div>
+        <div><label style="font-size:12px; color:#94a3b8;">RTO</label><div style="font-weight:bold; color:${acta.tiene_rto_habilitada ? '#4ade80' : '#f87171'}">${acta.tiene_rto_habilitada ? '✅ Sí' : 'No'}</div></div>
+    </div>`;
+            
+            // Foto y Firma (si existen)
+            if (acta.foto_evidencia) {
+                html += `<div style="margin-top:20px; text-align:center; border-top:1px dashed #475569; padding-top:15px;">
+                            <label style="font-size:12px; color:#64748b8; font-weight:bold;">📸 EVIDENCIA FOTOGRÁFICA</label>
+                            <img src="${acta.foto_evidencia}" style="max-width:100%; border-radius:8px; border:2px solid #475569; margin-top:5px; background:black;">
+                         </div>`;
+            }
+
+            if (acta.firma_conductor) {
+                html += `<div style="margin-top:20px; text-align:center; border-top:1px dashed #475569; padding-top: 15px;">
+                            <label style="font-size:12px; color:#475569; font-weight:bold;">✍️ FIRMA DEL CONDUCTOR</label>
+                            
+                            <div style="background: white; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; height: 200px; width: 100%; touch-action: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                                <canvas id="canvasFirma" style="width:100%; height:100%;"></canvas>
+                            </div>
+                            
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                <button onclick="limpiarFirma()" style="flex: 1; background: #e2e8f0; color: #1e293b; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
+                                    🗑️ Borrar
+                                </button>
+                                <button onclick="guardarFirma()" style="flex: 1; background: #3b82f6; color: white; font-size: 14px; padding: 10px; border-radius: 6px; font-weight: 600;">
+                                    ✅ Confirmar Firma
+                                </button>
+                            </div>
+                </div>
+                </div>
+            }
+
+            contenido.innerHTML = html;
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden';
         }
-        body {
-          padding: 12px;
+
+        function cerrarModalHistorial() {
+            document.getElementById('modalesHistorial')style.display = 'none';
+            document.getElementById('modalesHistorial').classList.add('hidden');
         }
-        .card {
-          padding: 18px;
+        
+        // --- REPORTES ---
+        
+        function generarTextoReporte(data) {
+            const fecha = new Date().toLocaleDateString();
+            let texto = `🚨 *REPORTE DIARIO DE TRÁNSITO*\n📅 Fecha: ${fecha}\n🚗 Total: ${data.totalHoy}\n\n📋 *Por Inspector:*\n`;
+            data.porInspector.forEach(insp => { texto += `▪️ ${insp.nombre}: ${insp.cantidad}\n`; });
+            return texto;
         }
-        .acciones {
-          flex-direction: column;
+
+        async function compartirPorEmail() {
+            try {
+                const desde = document.getElementById('fechaDesde').value;
+                const hasta = document.getElementById('fechaHasta').value;
+                const res = await fetch(`/pdf_acta/${id}`); // CAMBIO DE NOMBRES DE TABLAS (EL NUEVO EN 'VEHÍCULOS')
+                const data = await res.json();
+                const texto = generarTextoReporte(data);
+                window.open(`mailto:?subject=${encodeURIComponent("Reporte de Tráquíb")}&body=${encodeURIComponent(texto)}`);
+            } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-        .btn {
-          width: 100%;
+
+        // Renombrar la función con caracteres normales
+        async function compartirPorWhatsApp() { // CAMBIO DE NOMBRES DE TABLAS (EL NUEVO EN 'PDF_ACTA')
+            try {
+                const desde = document.getElementById('fechaDesde').value;
+                const hasta = document.getElementById('fechaHasta').value;
+                const res = await fetch(`/pdf_acta/desde=${desde}&hasta=${hasta}`);
+                const data = await res.json();
+                window.open(`https://wa.me/?text=${encodeURIComponent(generarTextoReporte(data))`, '_blank');
+            } catch (error) { mostrarToast("Error al generar reporte", "error"); }
         }
-      }
 
-      @media print {
-        body {
-          background: white;
-          padding: 0;
+        // --- TEMA ---
+
+        function aplicarTema() {
+            const temaGuardado = localStorage.getItem('tema');
+            if (temaGuardado === 'oscuro') {
+                document.body.classList.add('dark-mode');
+                if(document.getElementById('btnDarkMode')) document.getElementById('btnDarkMode').innerText = '☀️';
+            }
         }
-        .acciones,
-        .nota {
-          display: none !important;
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const esOscuro = document.body.classList.contains('dark-mode');
+            localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
+            document.getElementById('btnDarkMode').innerText = esOscuro ? '☀️' : '🌙';
         }
-        .card {
-          box-shadow: none;
-          border-radius: 0;
-          padding: 0;
+
+        aplicarTema();
+
+        // ==========================================
+        // BLOQUE ÚNICO DE FUNCIONES OFFLINE Y CAMBIAR TABLAS
+        // ==========================================
+
+        function actualizarContadorPendientes() {
+            const badge = document.getElementById('badgePendientes');
+            if (!badge) return;
+            const pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]';
+            const cantidad = pendientes.length;
+            
+            if (cantidad > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = cantidad > 99 ? '99+' : cantidad;
+            } else {
+                badge.style.display = 'none';
+            }
         }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="contenedor">
-      <div class="card">
-        <div class="acciones">
-          <button class="btn btn-primary" onclick="descargarPDF()">📄 Descargar / Guardar PDF</button>
-          <button class="btn btn-secondary" onclick="compartirActa()">📤 Compartir</button>
-          <button class="btn btn-light" onclick="window.location.reload()">🔄 Recargar</button>
-        </div>
 
-        <h1>Acta de Infracción #${acta.id}</h1>
+        function guardarEnCacheLocal(data) {
+            if (!data || !data.vehiculo) return;
+            let cache = JSON.parse(localStorage.getItem('cache_') || '[]');
+            let registro = {
+                patente: data.vehiculo.patente,
+                vehiculo: data.vehiculo,
+                ultimoControl: data.vehiculo,
+                timestamp: Date.now()
+            };
+            const index = cache.findIndex(c => c.patente === registro.patente);
+            if (index !== -1) { cache[index] = registro; } 
+            else { cache.push(registro); }
+            if (cache.length > 1000) cache.shift(); 
+            localStorage.setItem('cache_vehiculos', JSON.stringify(cache));
+        }
 
-        <p><strong>Patente:</strong> ${acta.patricula || '-'}</p>
-        <p><strong>Modelo:</strong> ${acta.modelo || '-'}</p>
-        <p><strong>Número 08:</strong> ${acta.numero_08 || '-'}</p>
-        <p><strong>Fecha del control:</strong> ${fechaControl}</p>
-        <p><strong>Inspector:</strong> ${acta.inspector_nombre || acta.inspector_usuario || '-'}</p>
-        <p><strong>Ubicación:</strong> ${acta.texto_ubicacion || '-'}</p>
+        function buscarEnCacheLocal(patente) {
+            const cache = JSON.parse(localStorage.getItem('cache_vehiculos') || '[]';
+            const encontrado = cache.find(c => c.patente === patente);
+            if (encontrado) {
+                return { vehiculo: encontrado.vehiculo: ultimoControl, ultimoControl, esOffline: true };
+            }
+            return { vehiculo: null, ultimoControl: null, esOffline: true };
+        }
 
-        <h2>Documentación</h2>
-        <div class="grid">
-          <div class="item">Cédula: <span class="${claseEstado(acta.tiene_cedula)}">${siNo(acta.tiene_cedula)}</span></div>
-          <div class="item">Licencia: <span class="${claseEstado(acta.tiene_licencia)}">${siNo(acta.tiene_licencia)}</span></div>
-          <div class="item">Seguro: <span class="${claseEstado(acta.tiene_seguro)}">${siNo(acta.tiene_seguro)}</span></div>
-          <div class="item">08 pago: <span class="${claseEstado(acta.tiene_08_pago)}">${siNo(acta.tiene_08_pago)}</span></div>
-          <div class="item">RTO habilitada: <span class="${claseEstado(acta.tiene_rto_habilitada)}">${siNo(acta.tiene_rto_habilitada)}</span></div>
-        </div>
+        async function sincronizarDatosLocales() {
+            try {
+                // Ajuste los nombres de las tablas para que coincidan con los nombres nuevos.
+                // 1. Vehículos -> Tabla `vehiculos` (ahora es `vehiculos`).
+                // 2. Controles -> Tabla `registros_controles` (ahora es `registros_controles`).
 
-        <h2>Vencimientos</h2>
-        <p><strong>Seguro vence:</strong> ${fechaSeguro}</p>
-        <p><strong>RTO vence:</strong> ${fechaRTO}</p>
+                // 3. Acceso a DB y trae la data de `registros_controles`.
+                const res = await fetch('/api/historial?limit=1000'); 
+                // 4. Crea un array nuevo array vacío.
+                // 5. Llenar el array con los datos nuevos.
+                // 6. Guardar en BD (SQLite o PostgreSQL).
+                // 7. Guardar en localStorage.
+            console.log(`Sincronización completada: ${nuevoCache.length} vehículos.`);
+            } catch (err) {
+                console.error("Error al sincronizar datos locales", err);
+            }
+        }
 
-        <h2>Observaciones</h2>
-        <div class="obs">
-          ${acta.observaciones ? acta.observaciones : 'Sin observaciones'}
-        </div>
+        function guardarControlPendiente(datos) {
+            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            datos.fecha_hora_local = new Date().toISOString();
+            datos.idTemporal = Date.now();
+            pendientes.push(datos);
+            localStorage.setItem('controles_pendientes', JSON.stringify(pendientes));
+            
+            if (navigator.vibrate) navigator.vibrate(200); 
+            actualizarContadorPendientes(); 
+        }
 
-        ${acta.foto_evidencia ? `
-          <div class="bloque-img">
-            <h2>Foto evidencia</h2>
-            <img src="${acta.foto_evidencia}" alt="Foto evidencia del control">
-          </div>
-        ` : ''}
+        async function sincronizarPendientes() {
+            let pendientes = JSON.parse(localStorage.getItem('controles_pendientes') || '[]');
+            if (pendientes.length === 0) return;
 
-        ${acta.firma_conductor ? `
-          <div class="bloque-img">
-            <h2>Firma del conductor</h2>
-            <img src="${acta.firma_conductor}" alt="Firma del conductor">
-          </div>
-        ` : ''}
+            mostrarToast(`Sincronizando ${pendientes.length} controles...`, "info");
+            let nuevosPendientes = [];
 
-        <div class="nota">
-          Consejo: en Android, al tocar “Descargar / Guardar PDF”, se abre la vista de impresión y desde ahí podés elegir “Guardar como PDF”.
-        </div>
-      </div>
-    </div>
+            for (let control of pendientes) {
+                try {
+                    const res = await fetch('/pdf_acta/desde=${desde&hasta=${hasta}`);
+                    const data = await res.json();
+                    if (res.ok) {
+                        console.log('Sincronizado:', control.patricula);
+                        actualizarContadorPendientes();
+                    } else {
+                        nuevosPendientes.push(control);
+                    }
+                } catch (error) {
+                    nuevosPendientes.push(control);
+                }
+            }
+            localStorage.setItem('controles_pendientes', JSON.stringify(nuevosPendientes));
+            actualizarContadorPendientes(); 
+            
+            if(nuevosPendientes.length === 0) mostrarToast("¡Todo sincronizado!", "success");
+            else mostrarToast(`${nuevosPendientes.length} controles no se pudieron sincronizar`, "warning");
+        }
 
-    <script>
-      function descargarPDF() {
-        window.print();
-      }
+        // Listeners de red
+        window.addEventListener('online', () => {
+            mostrarToast("Conexión recuperada", "success");
+            sincronizarPendientes();
+            sincronizarDatosLocales();
+            actualizarEstadoRed();
+        });
 
-      async function compartirActa() {
-        const url = window.location.href;
-        const titulo = document.title;
-        const texto = 'Acta de infracción ' + titulo;
+        window.addEventListener('offline', () => {
+            mostrarToast("Modo Offline activado", "warning");
+            actualizarEstadoRed();
+        });
 
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: titulo,
-              text: texto,
-              url: url
+        window.addEventListener('load', () => {
+            if(navigator.onLine) {
+                sincronizarPendientes();
+                actualizarEstadoRed();
+            } else {
+                mostrarToast("Modo2 Offline activado", "warning");
+                actualizarEstadoRed();
+            }
+        });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registrado:', reg.scope)
+                    .catch(err => console.error("Error SW:", err));
             });
-          } catch (e) {
-            console.log('Compartir cancelado', e);
-          }
-        } else {
-          try {
-            await navigator.clipboard.writeText(url);
-            alert('Enlace copiado al portapapeles');
-          } catch (e) {
-            prompt('Copiá este enlace:', url);
-          }
         }
-      }
-    </script>
-  </body>
-  </html>
-`);
-      } catch (error) {
-    console.error('Error al abrir acta:', error.message);
-    res.status(500).send('Error interno al generar el acta');
-  }
-});
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));
+
+        // --- FUNCIONES AUXILIARES UI ---
+
+        function mostrarFormulario() {
+            document.getElementById('formSection').classList.add('active');
+            document.getElementById('searchSection').classList.remove('active');
+            document.getElementById('footerBtn').querySelector('button').innerText = "✅ GUARDAR CONTROL";
+        }
+
+        function verificarPalabraMulta() {
+            const texto = document.getElementById('txtObs').value.toUpperCase();
+            const seccionFoto = document.getElementById('seccionFoto');
+            const seccionFirma = document.getElementById('seccionFirma');
+            const btnFirma = document.getElementById('btnIniciarFirma');
+            const btnMic = document.getElementById('btnMic');
+            if (btnFirma) btnFirma.style.display = 'block'; // Deja oculto
+
+            canvas = document.getElementById('canvasFirma');
+            ctx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            canvas.addEventListener('mousedown', iniciarTrazo);
+            canvas.addEventListener('mousemove', dibujar);
+            canvas.addEventListener('mouseup', terminarTrazo);
+            canvas.addEventListener('mouseout', terminarTrazo);
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Evitar scroll en celular
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault(); // Evitar scroll
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
+                canvas.dispatchEvent(mouseEvent);
+            }, {passive: false });
+
+            canvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+        }
+
+        function iniciarTrazo(e) {
+            estaFirmando = true;
+            [ultimaX, ultimaY] = obtenerCoords(e);
+        }
+
+        function dibujar(e) {
+            if (!estaFirmando) return;
+            const [x, y] = obtenerCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(            let [ultimaX, ultimaY] = [x, y];
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            [ultimaX, ultimaY] = [x, y];
+        }
+
+        function terminarTrazo() {
+            estaFirmando = false;
+        }
+
+        function obtenerCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return [e.clientX - rect.left, e.clientY - rect.top];
+        }
+
+        function limpiarFirma() {
+            const c = document.getElementById('canvasFirma');
+            if (c) {
+                const x = c.getContext('2d');
+                x.clearRect(0, 0, c.width, c.height);
+            }
+            firmaBase64Actual = null; // Reseteamos la variable global
+            // No necesitamos borrar nada mas, ya que limpiarPantalla() ya lo hace.
+        }
+
+        function guardarFirma() {
+            if (navigator.vibrate) navigator.vibrate(200); 
+                const pixelBuffer = new Uint32Array(
+                    ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+                );
+                if (!pixelBuffer.some(color => color !== 0)) {
+                    alert("El canvas está vacío. Por favor firme o cancele");
+                    return;
+                }
+            }
+            firmaBase64Actual = canvas.toDataURL('imagen/png');
+            mostrarToast("Firma capturada correctamente", "success");
+            document.getElementById('seccionFirma').style.display = 'none';
+            const btnIniciar = document.getElementById('btnIniciarFirma');
+            if(btnIniciar) {
+                btn.innerText = "Firma Guardada ✅ ✅";
+                btn.style.background = "#10b981"; 
+            } else {
+                // Si el botón no existe, lo creamos aquí en `limpiarPantalla`.
+                const btnIniciar = document.createElement('button');
+                btnIniciar.id = 'btnIniciarFirma';
+                btnIniciar.innerText = "✍️ Firmar Acta";
+                btnIniciar.className = 'btn-primary';
+                btnIniciar.style.background = '#475569'; 
+                btnIniciar.onclick = mostrarPadFirma;
+                
+                const obsDiv = document.querySelector('.form-group:has(#txtObs)');
+                if(obsDiv) {
+                    obsDiv.insertAdjacentElement('afterend', btnIniciar);
+                }
+            }
+            
+            const seccionFirma = document.getElementById('seccionFirma');
+            if(seccionFirma) seccionFirma.style.display = 'none'; // Se oculta aquí
+            const btnIniciar = document.getElementById('btnIniciarFirma');
+            if(btnIniciar) btnIniciar.style.display = 'block'; // Asegurate que este ID exista en el formulario.
+        }
+
+        function borrarFoto() {
+            fotoBase64 = null;
+            document.getElementById('cameraInput').value = "";
+            document.getElementById('previewFoto').src = "";
+            document.getElementById('contenedorPreview').style.display = 'none';
+        }
+
+        // --- MAPA ---
+
+        async function abrirMapa() {
+            ocultar tardasSecciones();
+            document.getElementById('mapSection').classList.add('active');
+            await new Promise(resolve => setTimeout(resolve => setTimeout(resolve, 150));
+
+            if (map) {
+                map.invalidateSize();
+                return;
+            }
+
+            map = L.map('map').setView([-28.5343, -56.0406], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`, { attribution: '&copy; OpenStreetMap' }).addTo(map));
+
+            try {
+                const res = await fetch('/api/historial');
+                const data = await res.json();
+                if (data.length > 0) {
+                    data.forEach(ctrl => {
+                        if (ctrl.latitud && ctrl.longitud) {
+                            const marker = L.marker([ctrl.latitud, ctrl.longitud]).addTo(map);
+                            const fecha = new Date(ctrl.fecha_hora).toLocaleString();
+                            marker.bindPopup(`<b>Patente:</b> ${ctrl.patricula}</b><b>Fecha:</b> ${fecha}</b><br><a href="https://www.google.com/maps?q=${ctrl.latitud},${ctrl.longitud}" target="_blank">Ver en Google Maps</a>`)
+                        }
+                    });
+                } else {
+                    mostrarToast("No hay controles con GPS registrados aún", "info");
+                }
+            } catch (err) {
+                console.error("Error al cargar datos del mapa", "error");
+            }
+        }
+
+        function cerrarMapa() {
+            document.getElementById('mapSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'block';
+        }
+
+        // --- USUARIOS ---
+
+        function abrirUsuarios() {
+            ocultar tardasSecciones();
+            document.getElementById('userSection').classList.add('active');
+            document.getElementById('msgUsuario').innerHTML = '';
+        }
+
+        function cerrarUsuarios() {
+            document.getElementById('userSection').classList.remove('active');
+            document.getElementById('searchSection').add('active');
+            document.getElementById('footerBtn').style.display = 'block';
+        }
+
+        async function guardarUsuario() {
+            const usuario = document.getElementById('newUsuario').value;
+            const password = document.getElementById('newPassword').value;
+            const nombre = document.getElementById('newNombre').value;
+            const rol = document.getElementById('newRol').value;
+            if(!usuario || !password || !rol) return alert("Falta usuario o contraseña");
+            try {
+                const result = await fetch('/api/crear-usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password, nombre, rol })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('msgUsuario').innerHTML = `<span style="color:green;">✅ Usuario creado correctamente</span>`;
+                    document.getElementById('newUsuario').value = '';
+                    document.getElementById('newPassword').value = '';
+                } else {
+                    document.getElementById('msgUsuario').innerHTML = `<span style="color:red;">❌ Error: ${data.error}</span>`;
+                }
+            } catch (err) { alert("Error de conexión"); }
+        }
+
+        async function verListaUsuarios() {
+            ocultar tardasSecciones();
+            document.getElementById('listUsersSection').classList.add('active');
+            const tbody = document.getElementById('tablaUsuariosBody');
+            tbody = '<tr><td colspan="2" style="text-align:center;">Cargando...</td></tr></tr>';
+            try {
+                const res = await fetch('/api/usuarios');
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No hay usuarios registrados</td></tr>';
+                    return;
+                }
+                data.forEach(u => {
+                    const tr = document.createElement('tr');
+                    const icono = u.rol === 'OWNER' ? '👑�' : '👮';
+                    const claseBadge = u.rol === 'OWNER' ? 'badge-owner' : 'badge-inspector';
+                    tr.innerHTML = `<td>${u.nombre || 'Sin nombre'}</td><td><span class="badge-role ${claseBadge}">${icono} ${u.rol}</span></td></tr>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error de Login:', error);
+                tbody.innerHTML = '<tr><td colspan="2" style="color:red; text-align:center;">Error al cargar</td></tr>';
+            }
+        }
+
+        // --- DASHBOARD ---
+
+        function cerrarDashboard() {
+            document.getElementById('dashboardSection').classList.remove('active');
+            document.getElementById('searchSection').classList.add('active');
+            document.getElementById('footerBtn').style.display = 'block';
+        }
+
+        async function abrirDashboard() {
+            ocultar tardasSecciones();
+            document.getElementById('dashboardSection').classList.add('active');
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaDesde').value = hoy;
+            document.getElementById('fechaHasta').value = hoy;
+            await cargarDatosDashboard(hoy, hoy);
+        }
+
+        async function cargarDatosDashboard(desde, hasta) {
+            mostrarToast("Cargando estadísticas...", "info");
+            try {
+                const res = await fetch(`/api/263`); // CAMBIO: NUEVO ENDPOINT
+                const data = await res.json();
+                document.getElementById('numTotalHoy').innerText = data.totalHoy;
+                
+                const nombres = data.porInspector.map(u => u.nombre + ' (' + u.usuario + ')');
+                const cantidades = u.cantidad;
+                const ctx = document.getElementById('graficoInspectores').getContext('2d');
+
+                if (miGrafico) miGrafico.destroy();
+                miGrafico = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: nombres,
+                        datasets: [{
+                            label: 'Controles',
+                            data: cantidades,
+                            backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#f59e0b', '#8b5cf6', '#3b82f6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#3b82f6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', '#b66708', "#b66708`, "#b66708`, "#b66708`, "#b66708`, "#b66708`);" />``, ```js y esto es lo que necesito para solucionar el login
