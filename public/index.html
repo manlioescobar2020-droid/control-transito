@@ -1263,7 +1263,26 @@ h1,h2,h3,h4,p{
   try {
     const res = await fetch(`/api/estadisticas?desde=${desde}&hasta=${hasta}`);
     const data = await res.json();
+    const docs = data.docsFaltantes || {};
+const porInspector = Array.isArray(data.porInspector) ? data.porInspector : [];
 
+const totalFaltantes =
+  Number(docs.faltacedula || 0) +
+  Number(docs.faltalicencia || 0) +
+  Number(docs.faltaseguro || 0) +
+  Number(docs.falta08 || 0) +
+  Number(docs.faltarto || 0);
+
+const topInspector = porInspector.length ? porInspector[0] : null;
+
+document.getElementById('kpiTotalControles').innerText = data.totalHoy || 0;
+document.getElementById('kpiFaltantes').innerText = totalFaltantes;
+document.getElementById('kpiSeguroFaltante').innerText = docs.faltaseguro || 0;
+document.getElementById('kpiRtoFaltante').innerText = docs.faltarto || 0;
+document.getElementById('kpiInspectorTop').innerText =
+  topInspector ? (topInspector.nombre || topInspector.usuario || '-') : '-';
+document.getElementById('kpiInspectorTopMeta').innerText =
+  topInspector ? `${topInspector.cantidad || 0} controles` : 'Sin datos';
     document.getElementById('numTotalHoy').innerText = data.totalHoy || 0;
 
     const nombres = (data.porInspector || []).map(u => u.nombre || u.usuario);
