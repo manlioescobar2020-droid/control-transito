@@ -562,7 +562,37 @@ h1,h2,h3,h4,p{
           </div>
         </div>
       </div>
+      <section class="kpi-grid" id="kpiGrid">
+  <article class="kpi-card">
+    <div class="kpi-label">Total de controles</div>
+    <div class="kpi-value" id="kpiTotalControles">0</div>
+    <div class="kpi-meta">Controles dentro del rango seleccionado</div>
+  </article>
 
+  <article class="kpi-card">
+    <div class="kpi-label">Faltantes</div>
+    <div class="kpi-value" id="kpiFaltantes">0</div>
+    <div class="kpi-meta">Controles con documentación incompleta</div>
+  </article>
+
+  <article class="kpi-card">
+    <div class="kpi-label">Seguros faltantes</div>
+    <div class="kpi-value" id="kpiSeguroFaltante">0</div>
+    <div class="kpi-meta">Según controles del período</div>
+  </article>
+
+  <article class="kpi-card">
+    <div class="kpi-label">RTO faltante</div>
+    <div class="kpi-value" id="kpiRtoFaltante">0</div>
+    <div class="kpi-meta">Vehículos sin RTO habilitada</div>
+  </article>
+
+  <article class="kpi-card">
+    <div class="kpi-label">Inspector destacado</div>
+    <div class="kpi-value" id="kpiInspectorTop" style="font-size:18px;line-height:1.2;">-</div>
+    <div class="kpi-meta" id="kpiInspectorTopMeta">Sin datos</div>
+  </article>
+</section>
       <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:15px; margin-bottom:20px;">
         <div class="card" style="background:#f0f9ff; border-color:#bae6fd; text-align:center; padding:10px;">
           <p style="margin:0; color:#64748b; font-size:12px; font-weight:bold;">CONTROLES EN RANGO</p>
