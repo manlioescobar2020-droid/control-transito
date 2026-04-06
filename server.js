@@ -313,7 +313,11 @@ app.get('/api/estadisticas', async (req, res) => {
     }
 
     const totalResult = await pool.query(
-      'SELECT COUNT(*)::int AS total FROM registros_controles WHERE fecha_hora::date BETWEEN $1 AND $2',
+      `
+      SELECT COUNT(*)::int AS total
+      FROM registros_controles
+      WHERE fecha_hora::date BETWEEN $1 AND $2
+      `,
       [desde, hasta]
     );
 
