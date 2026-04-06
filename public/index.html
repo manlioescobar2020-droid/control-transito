@@ -541,6 +541,36 @@ h1,h2,h3,h4,p{
     grid-template-columns:1fr;
   }
 }
+    #formSection .date-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+#formSection .date-field{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+}
+
+#formSection .date-field label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+#formSection .date-field input{
+  margin-bottom:0;
+}
+
+@media (max-width: 768px){
+  #formSection .date-row{
+    grid-template-columns:1fr;
+  }
+}
   </style>
 </head>
 <body>
