@@ -813,10 +813,11 @@ h1,h2,h3,h4,p{
     }
 
     function mostrarFormulario() {
-      document.getElementById('searchSection').classList.remove('active');
-      document.getElementById('formSection').classList.add('active');
-      document.querySelector('#footerBtn button').innerText = '✅ GUARDAR CONTROL';
-    }
+  document.getElementById('searchSection').classList.remove('active');
+  document.getElementById('formSection').classList.add('active');
+  document.getElementById('footerBtn').style.display = 'block';
+  document.querySelector('#footerBtn button').innerText = '✅ GUARDAR CONTROL';
+}
 
     function cerrarFormulario() {
       document.getElementById('formSection').classList.remove('active');
