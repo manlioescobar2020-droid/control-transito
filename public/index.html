@@ -872,6 +872,14 @@ h1,h2,h3,h4,p{
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
+    window.addEventListener('DOMContentLoaded', () => {
+  aplicarTema();
+  const guardado = localStorage.getItem('usuarioGuardado');
+  if (guardado) {
+    usuarioActual = JSON.parse(guardado);
+    mostrarMainApp();
+  }
+});
     let usuarioActual = null;
     let vehiculoActual = null;
     let infoUltimoControl = null;
