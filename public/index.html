@@ -391,6 +391,13 @@ h1,h2,h3,h4,p{
 #formSection.active{
   display:block;
 }
+
+#mapSection, #userSection, #listUsersSection, #dashboardSection {
+  display: none;
+}
+#mapSection.active, #userSection.active, #listUsersSection.active, #dashboardSection.active {
+  display: block;
+}
     #divResultado{
   margin-top:16px;
   display:flex;
@@ -735,7 +742,7 @@ h1,h2,h3,h4,p{
 
     <div id="mapSection" class="section">
       <button onclick="cerrarMapa()" style="position:absolute; top:10px; left:10px; z-index:1000; width:auto; padding:10px;" class="btn-primary">← Volver</button>
-      <div id="map"></div>
+      <div id="map" style="height:420px; width:100%; border-radius:12px;"></div>
     </div>
 
     <div id="userSection" class="section">
@@ -1371,7 +1378,7 @@ const data = await res.json();
       ocultarTodasLasSecciones();
       document.getElementById('mapSection').classList.add('active');
 
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       if (!map) {
         map = L.map('map').setView([-28.5343, -56.0406], 14);
