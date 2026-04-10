@@ -645,16 +645,8 @@ h1,h2,h3,h4,p{
             <span id="badgePendientes" class="badge-pendientes">0</span>
           </div>
           <p>Inspector: <span id="spanNombre">...</span> (<span id="spanRol">...</span>)</p>
-
-          <div id="adminTools" class="toolbar">
-            <button class="btn-success" onclick="abrirDashboard()">📊 Stats</button>
-            <button class="btn-danger" onclick="abrirMapa()">📍 Mapa</button>
-            <button class="btn-purple" onclick="abrirUsuarios()">👤 Usuarios</button>
-          </div>
         </div>
-
         <div class="header-actions">
-          <button onclick="exportarPendientes()" title="Exportar pendientes">📋</button>
           <button onclick="toggleDarkMode()" id="btnDarkMode">🌙</button>
           <button onclick="cerrarSesion()" class="btn-secondary">Salir ❌</button>
         </div>
@@ -666,6 +658,17 @@ h1,h2,h3,h4,p{
       <input type="text" id="txtPatente" placeholder="Ej: ABC123" oninput="this.value = this.value.toUpperCase()">
       <button class="btn-primary" onclick="buscarVehiculo()">🔍 CONSULTAR</button>
       <div id="divResultado"></div>
+
+      <!-- Menú de navegación -->
+      <div id="adminTools" style="display:none; margin-top:24px; border-top:1px solid #e2e8f0; padding-top:20px;">
+        <p style="color:#94a3b8; font-size:12px; font-weight:bold; margin-bottom:12px; text-align:center; letter-spacing:1px;">HERRAMIENTAS</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button class="btn-success" onclick="abrirDashboard()" style="padding:14px; font-size:15px; border-radius:12px;">📊 Estadísticas</button>
+          <button class="btn-danger" onclick="abrirMapa()" style="padding:14px; font-size:15px; border-radius:12px;">📍 Mapa en vivo</button>
+          <button class="btn-purple" onclick="abrirUsuarios()" style="padding:14px; font-size:15px; border-radius:12px;">👤 Usuarios</button>
+          <button onclick="exportarPendientes()" class="btn-secondary" style="padding:14px; font-size:15px; border-radius:12px;">📋 Exportar</button>
+        </div>
+      </div>
     </div>
 
     <div id="formSection" class="section">
@@ -934,7 +937,7 @@ h1,h2,h3,h4,p{
       document.getElementById('mainApp').style.display = 'block';
       document.getElementById('spanNombre').innerText = usuarioActual?.nombre || '...';
       document.getElementById('spanRol').innerText = usuarioActual?.rol || '...';
-      document.getElementById('adminTools').style.display = usuarioActual?.rol === 'OWNER' ? 'flex' : 'none';
+      document.getElementById('adminTools').style.display = usuarioActual?.rol === 'OWNER' ? 'block' : 'none';
       actualizarContadorPendientes();
       iniciarRastreadorGPS();
       setTimeout(() => document.getElementById('txtPatente').focus(), 300);
