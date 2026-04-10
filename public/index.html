@@ -1,3 +1,4 @@
+
 <!DOCTYPE html> 
 <html lang="es">
 <head>
@@ -1683,6 +1684,24 @@ document.getElementById('kpiInspectorTopMeta').innerText =
         </span>
       </div>
     </div>
+    ${infoUltimoControl.observaciones ? `
+    <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155; margin-top:12px;">
+      <div style="color:#94a3b8; font-size:12px; margin-bottom:8px; font-weight:bold;">📝 OBSERVACIONES</div>
+      <p style="color:#f3f4f6; font-size:14px;">${infoUltimoControl.observaciones}</p>
+    </div>` : ''}
+
+    ${infoUltimoControl.foto_evidencia ? `
+    <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155; margin-top:12px;">
+      <div style="color:#94a3b8; font-size:12px; margin-bottom:8px; font-weight:bold;">📸 FOTO EVIDENCIA</div>
+      <img src="${infoUltimoControl.foto_evidencia}" style="width:100%; border-radius:8px;" />
+    </div>` : ''}
+
+    ${infoUltimoControl.firma_conductor ? `
+    <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155; margin-top:12px;">
+      <div style="color:#94a3b8; font-size:12px; margin-bottom:8px; font-weight:bold;">✍️ FIRMA DEL CONDUCTOR</div>
+      <img src="${infoUltimoControl.firma_conductor}" style="width:100%; border-radius:8px; background:white; padding:4px;" />
+    </div>` : ''}
+
   `;
 
   document.getElementById('contenidoHistorial').innerHTML = html;
