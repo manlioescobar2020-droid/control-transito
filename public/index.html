@@ -983,7 +983,11 @@ h1,h2,h3,h4,p{
 
       try {
         const res = await fetch('/api/vehiculos/' + encodeURIComponent(patente));
-        const data = await res.json();
+if (!res.ok) {
+  mostrarToast('Vehículo no encontrado', 'warning');
+  return;
+}
+const data = await res.json();
 
         vehiculoActual = data.vehiculo || null;
         infoUltimoControl = data.ultimoControl || null;
